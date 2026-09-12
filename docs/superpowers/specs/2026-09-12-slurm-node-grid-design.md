@@ -32,7 +32,10 @@ In:
 - One Grafana panel plugin rendering one cell per Slurm node.
 - Colour from node state, with an optional continuous mode (CPU / memory / GPU
   fill).
-- Grouping by any label, overlapping groups allowed.
+- Grouping by a key that comes from a label, a capture on the node name, or a
+  chunk of the node ordinal — so a cluster can be read as racks without any
+  inventory.
+- A rack-shaped layout: each group as a vertical column, bottom-up, fixed width.
 - A tooltip carrying the facts a drained node's owner needs: reason, age, CPU,
   memory, GRES per model, partitions.
 - A data link so a click leaves the panel for a node dashboard.
@@ -48,8 +51,11 @@ Out, deliberately, and each is its own later slice:
   can now. This is slice 1bis, not "someday".
 - `slurmrestd`, and therefore anything job-level: queue, pending reasons, job
   detail. No backend in this slice, no Go, no JWT, no secrets.
-- Physical topology (rack, room, U position). Nothing here reads placement — see
-  Open questions.
+- **U-accurate rack elevation.** Racks can be grouped and drawn rack-shaped
+  without any inventory, and that is in scope. Placing a node at its real U,
+  with its real height and slot, is not: it needs `u_position`, `u_height` and a
+  per-model slot matrix, none of which can be derived from anything Prometheus
+  holds today. See Open questions.
 - Write operations of any kind.
 - Accounting history through `sacct` / `slurmdbd`.
 
@@ -91,11 +97,12 @@ slurm-views/
 │   ├── state/parse.ts        "idle*" -> { base, modifiers }
 │   ├── state/severity.ts     Severity type and rollup
 │   ├── state/classify.ts     buckets + modifier floors -> Severity
+│   ├── group/keys.ts         label | capture | chunk -> a grouping key
 │   └── group/build.ts        grouping, overlap allowed
 ├── plugins/nodegrid-panel/   tomzone-slurmnodegrid-panel
 │   ├── src/module.ts         panel registration and options
 │   ├── src/components/       grid, cell, tooltip, group header
-│   └── src/editor/           the two drag-and-drop lists
+│   └── src/editor/           the two drag-and-drop lists, the key source
 ├── dev/                      docker compose, provisioning, dashboards
 └── docs/
 ```
@@ -236,6 +243,55 @@ turned off rather than tuned.
 
 Everything above is a default. All of it is configurable.
 
+## Grouping, and reading a cluster as racks
+
+Grouping is by a key, and the key comes from one of three sources, listed here
+from most to least trustworthy. This is the model `datacenter-view` arrived at
+for the same problem, and it holds here for the same reason: how much structure
+is reachable depends entirely on what the data carries.
+
+| Source | Example | What it costs |
+|---|---|---|
+| **label** | `partition`, `gres_type`, or a `rack` label a site provides through `file_sd` | nothing; the value is read |
+| **capture** | a regex on the node name: `r012c04n03` → `r012`, `x1000c0s0b0n0` → `x1000c0` | nothing, where the name encodes position — a vendor convention, not a norm |
+| **chunk** | slice the ordinal by N: `compute0421` → rack 11 at 40 per rack | it **invents** structure |
+
+`slurm_exporter` publishes `partition`, `status` and `gres_type`, so label
+grouping works out of the box. Nothing it publishes carries a rack, which is why
+the other two sources exist at all.
+
+Chunking is the only source that asserts something the data does not say. In HPC
+the numbering usually does follow the floor; usually is not always. So every
+group built by chunking keeps an **assumed** marker visible in the panel itself,
+not only in the editor — a wrong rack drawn confidently is worse than no rack.
+
+### Three levels of rack fidelity
+
+```
+Level 1 — rack as a group              Level 2 — the card shaped as a rack
+┌─ R01 ──────────┐ ┌─ R02 ──────────┐   ┌ R01 ┐ ┌ R02 ┐ ┌ R03 ┐ ┌ R04 ┐
+│ ■■■■■■■■■■■■■■ │ │ ■■■□■■■■■■▨■■■ │   │ ■ ■ │ │ ■ ■ │ │ ■ ■ │ │ □ □ │
+│ ■■■■■■■■■■■■■■ │ │ ■■■■■■■■■■■■■■ │   │ ■ ■ │ │ ■ ▨ │ │ ■ ■ │ │ □ □ │
+│ ■■■■■■■■■■■■   │ │ ■■■■■■■■■■■■   │   │ ■ ■ │ │ ■ ■ │ │ ▩ ■ │ │ □ □ │
+└────────────────┘ └────────────────┘   └─────┘ └─────┘ └─────┘ └─────┘
+```
+
+**Level 1** needs only "which node is in which rack", which the three key
+sources provide. **Level 2** adds an intra-rack order, which the ordinal in the
+node name provides, and renders each group as a fixed-width vertical column read
+bottom-up. Both are in this slice, and together they are the `compact` mode of
+the Rackscope wallboard — the one that produces the wall-of-racks reading.
+
+**Level 3**, placing each node at its true U with its true height, is not in this
+slice and is not derivable. Rackscope's `rack` and `columns` modes reach it by
+resolving a topology YAML against a device-template catalogue with a per-model
+slot matrix; that is inventory, not inference. See Open questions.
+
+Ordering within a group is by the ordinal in the node name where there is one,
+falling back to a natural sort of the name. A node whose name ends in no number
+still lands somewhere stable across refreshes, which matters more than being
+right about a position nothing told us.
+
 ## The options editor
 
 Two lists, not one. States and modifiers are configured separately because
@@ -274,7 +330,22 @@ Modifiers — severity floor applied on top of the state
   ^  reboot issued ........... WARNING ▾
   %  powering down ........... none    ▾
   !  power down pending ...... none    ▾
+
+Grouping — where the group key comes from
+
+  ( ) Label      [ partition        ▾ ]   detected: partition, status, gres_type
+  (•) Capture    [ ^([a-z]+\d+)c    ] on the node name
+                 preview:  r012c04n03 → r012      18 groups
+  ( ) Chunk      [ 40 ] nodes per group, named [ rack{n} ]
+                 ⚠ invents structure — groups will be marked as assumed
+  ( ) None       flat grid
+
+  Layout  ( ) wrap   (•) rack-shaped columns
 ```
+
+The capture and chunk sources show a live preview against the node names
+actually present, because a regex typed blind into a panel option is a regex
+nobody can tell is wrong until the panel is empty.
 
 An unclassified state renders UNKNOWN grey, never green, and the panel shows a
 count of them. A state that appears after a Slurm upgrade has to be visible, not
@@ -294,9 +365,14 @@ One encoding at a time is a legibility decision. A cell carrying state as
 background and utilisation as an inner bar reads well at 200 nodes and turns to
 noise at 2 000.
 
-Grouping is by a label, `partition` by default, with overlapping groups allowed.
-Each group header carries its name, a node count, and a severity rolled up from
-its members.
+Grouping is by the key described above, `partition` by default, with overlapping
+groups allowed. Each group header carries its name, a node count, a severity
+rolled up from its members, and the assumed marker when the group was chunked.
+
+`layout` chooses how a group is drawn: `wrap` fills the available width, and
+`rack` renders a fixed-width vertical column read bottom-up, which is what makes
+a row of groups read as a row of racks. The two differ only in how cells are laid
+out inside a group; the cell, the tooltip and the link are identical.
 
 The tooltip carries: node name, readable state (`mixed, planned by backfill`),
 partitions, CPU allocated over total, memory allocated over total, GRES used over
@@ -339,7 +415,11 @@ Warnings are rendered in the panel, not logged to a console nobody opens.
 **Engine** — plain TypeScript under Node, table-driven. Covered: both Prometheus
 frame shapes; a node in several partitions; the nine modifiers plus an unknown
 trailing character; absent versus unclassified; the GRES fan-out with two models
-on one node; severity rollup; grouping with and without overlap.
+on one node; severity rollup; grouping with and without overlap; the three key
+sources, including a regex that does not compile, a capture group that matches
+nothing, a chunk over names carrying no ordinal, and the stability of both
+grouping and intra-group order across two refreshes that return rows in a
+different order.
 
 Fixtures come from the real exporter output captured against the test cluster,
 not hand-written, so the parsers are tested against the shape Prometheus actually
@@ -389,23 +469,24 @@ own label, the parser keeps working and the label becomes an alternative source.
 
 Recorded rather than decided, so they are not rediscovered from scratch later.
 
-### Slurm state drawn on a rack elevation
+### Slurm state at a node's true U position
 
-Rackscope could do it, and it is the single most requested thing a wallboard
-does: colour a physical rack by what the scheduler thinks of its nodes. It needs
-two halves — Slurm semantics, which live here, and placement, which does not.
+Levels 1 and 2 — racks as groups, drawn rack-shaped — are in this slice and need
+no inventory. What stays open is level 3: each node at its real U, with its real
+height, in a rack of a known size.
 
-The blocker is upstream of both: **`slurm_exporter` emits no placement label at
-all.** Not rack, not room, not U position. Slurm does not know them, so the
-exporter cannot report them.
+**`slurm_exporter` emits no placement label at all.** Not rack, not room, not U
+position. Slurm does not know them, so the exporter cannot report them. Levels 1
+and 2 work around that by deriving the rack from the node name; a true elevation
+cannot, because height and slot are properties of the hardware, not of the name.
 
 Three ways placement could reach a panel, none of them free:
 
-1. **Derived from the node name.** `r012c04n03` yields rack and position through
-   a regex; `compute0421` yields a chunk of N nodes per rack. No new data, no new
-   file, works today. But the second form *invents* structure — numbering usually
-   follows the floor, and usually is not always — so anything built that way has
-   to stay marked as assumed wherever it is shown.
+1. **Derived from the node name.** Already done in this slice, and it is what
+   gets levels 1 and 2. It does not reach level 3: a name can say which rack a
+   node is in and in what order, never how many U it occupies or which slot of a
+   chassis it sits in. Two nodes named consecutively may be two 1U servers or two
+   blades of a 2U quad, and no regex can tell them apart.
 2. **Per-target labels through Prometheus `file_sd`.** The standard, tool-agnostic
    answer, and the one a site with an inventory (Ansible, BlueBanquise, NetBox)
    can already generate. Nothing to change in Slurm or in the exporter; the cost
