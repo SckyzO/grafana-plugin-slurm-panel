@@ -40,9 +40,16 @@ In:
 
 Out, deliberately, and each is its own later slice:
 
+- **Named views** — switchable presets bundling a grouping, a colour mode and a
+  filter, selected from the panel rather than from the options editor. A view is
+  a small object, `{ name, groupBy, colorMode, filter }`, and the grid already
+  has every mechanism it needs. It is deferred on purpose: which groupings
+  actually deserve a preset is a question the real cluster answers better than we
+  can now. This is slice 1bis, not "someday".
 - `slurmrestd`, and therefore anything job-level: queue, pending reasons, job
   detail. No backend in this slice, no Go, no JWT, no secrets.
-- Physical topology (rack, room, U position). Nothing here reads placement.
+- Physical topology (rack, room, U position). Nothing here reads placement — see
+  Open questions.
 - Write operations of any kind.
 - Accounting history through `sacct` / `slurmdbd`.
 
@@ -378,8 +385,63 @@ parse time makes it correct against the exporter as it is today, and against the
 history already in Prometheus. If the exporter later exposes the modifier as its
 own label, the parser keeps working and the label becomes an alternative source.
 
+## Open questions
+
+Recorded rather than decided, so they are not rediscovered from scratch later.
+
+### Slurm state drawn on a rack elevation
+
+Rackscope could do it, and it is the single most requested thing a wallboard
+does: colour a physical rack by what the scheduler thinks of its nodes. It needs
+two halves — Slurm semantics, which live here, and placement, which does not.
+
+The blocker is upstream of both: **`slurm_exporter` emits no placement label at
+all.** Not rack, not room, not U position. Slurm does not know them, so the
+exporter cannot report them.
+
+Three ways placement could reach a panel, none of them free:
+
+1. **Derived from the node name.** `r012c04n03` yields rack and position through
+   a regex; `compute0421` yields a chunk of N nodes per rack. No new data, no new
+   file, works today. But the second form *invents* structure — numbering usually
+   follows the floor, and usually is not always — so anything built that way has
+   to stay marked as assumed wherever it is shown.
+2. **Per-target labels through Prometheus `file_sd`.** The standard, tool-agnostic
+   answer, and the one a site with an inventory (Ansible, BlueBanquise, NetBox)
+   can already generate. Nothing to change in Slurm or in the exporter; the cost
+   is a generator to write and maintain on the Prometheus side.
+3. **A placement file read by `slurm_exporter`.** The exporter already holds the
+   node list, so it could join a static mapping onto it and publish, say,
+   `slurm_node_location_info{node,rack,room,u}`. Every site running the exporter
+   would get placement with no Prometheus plumbing.
+
+Option 3 is tempting and is the one to be careful with. The exporter's contract
+is *expose what Slurm knows*, and Slurm knows nothing about racks; adding a
+static inventory turns a metrics exporter into an inventory database. It also
+brings a reconciliation problem nobody asked for — a node in the file but not in
+Slurm, and the reverse — and makes fixing a typo in a rack name a redeployment.
+The lighter variant, a pattern mapping with wildcards in the style of Rackscope's
+`node_mapping.yaml`, is a handful of lines for a homogeneous cluster but still
+plants the inventory concept in the wrong layer.
+
+And which panel draws the elevation is a second, independent question.
+`datacenter-view` already has `tomzone-rackview-panel` on its roadmap, and its
+`STATUS.md` records that Rackscope's `RackElevation` is pure CSS that ports
+directly. What that panel lacks in order to colour by Slurm state is one generic
+capability: reading state from a **label** rather than from the series value,
+since `slurm_node_status` is always `1` and the state lives in `status`. That is
+a change worth making there on its own merits — `node_systemd_unit_state`,
+`ipmi_sensor_state` and `ceph_health_status` have the same shape.
+
+So the choice is between `slurm-views` growing its own elevation renderer, and
+`datacenter-view` gaining label-sourced state. Both are defensible; neither is
+decided here, and neither is needed for this slice.
+
 ## What comes after this slice
 
-Drain board, then a `slurmrestd` data source, then the live queue, then pages,
-then cross-tool correlation, then accounting, then write operations. Each is
-usable on its own; none is started before the previous one ships.
+Named views first, once the grid has run against a real cluster long enough to
+show which groupings earn a preset. Then the drain board, then a `slurmrestd`
+data source, then the live queue, then pages, then cross-tool correlation, then
+accounting, then write operations.
+
+Each is usable on its own; none is started before the previous one ships.
