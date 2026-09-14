@@ -26,7 +26,7 @@ Every task's requirements implicitly include this section. Values are copied ver
 - **Plugin id: `tomzone-slurmnodegrid-panel`.** Org `tomzone`, name `slurmnodegrid`, type `panel`.
 - **No hex colours anywhere in the plugin.** Colour, spacing and typography come from `useTheme2()` and theme colour names resolved through `theme.visualization.getColorByName`.
 - **`packages/core` imports nothing from `@grafana/*` and touches no DOM.** Enforced by a lint rule, not by discipline.
-- **`@grafana/data` needs a DOM at import time.** Any test importing it runs under `testEnvironment: 'jsdom'`. `packages/core` tests run under `node`.
+- **`@grafana/data` needs a DOM at import time**, and its dependency chain defeats Jest's module loader. The one workspace that imports it (`tests/contract`) runs on `node --test` with a jsdom global setup and plain CommonJS — no Jest, no transform. `packages/core` keeps Jest under `testEnvironment: 'node'`, which is what makes a stray Grafana import there fail loudly. The plugin workspace uses `@grafana/create-plugin`'s own Jest setup, which handles Grafana's ESM packages itself. See Task 2, *Why not Jest*.
 - **Conventional Commits** (`type(scope): subject`). Commit messages, docs, code comments and any public text are written in the first person as the maintainer. No mention of tooling or generation, in the body or in a trailer.
 - **Non-regression is a test, not an intention.** Every bug fix lands with a test that fails before it and passes after.
 - **English** for all code, comments, docs and commit messages.
@@ -291,20 +291,63 @@ git commit -m "chore: set up the pnpm workspace and supply-chain controls"
 
 ## Task 2: Contract test — what we rely on Grafana to keep doing
 
-The panel's whole colour design rests on three behaviours of `getDisplayProcessor` that are not documented and were established by running it. Two of them are traps that fail silently. A contract test pins all three, so a Grafana upgrade that changes any of them breaks a test here rather than a wallboard in production.
+The panel's whole colour design rests on three behaviours of `getDisplayProcessor`
+that are not documented and were established by running it. Two of them are traps
+that fail silently. A contract test pins all three, so a Grafana upgrade that
+changes any of them breaks a test here rather than a wallboard in production.
+
+**This test runs on Node's built-in test runner, not Jest, and is written in plain
+CommonJS rather than TypeScript.** That is deliberate and was settled by
+measurement — see *Why not Jest* below. `packages/core` keeps Jest; only this
+workspace differs.
 
 **Files:**
-- Create: `tests/contract/package.json`, `tests/contract/jest.config.js`, `tests/contract/tsconfig.json`
-- Create: `tests/contract/value-mappings.test.ts`
+- Create: `tests/contract/package.json`
+- Create: `tests/contract/value-mappings.test.cjs`
 - Modify: `pnpm-workspace.yaml` (add `tests/*`)
+- Modify: `eslint.config.js` if the new workspace needs coverage
 
 **Interfaces:**
 - Consumes: nothing from other tasks.
-- Produces: the verified fact that a string field resolves value mappings, which Task 3 relies on when it types `SlurmNode.state` as `string` rather than a numeric code.
+- Produces: the verified fact that a string field resolves value mappings, which
+  Task 3 relies on when it types `SlurmNode.state` as `string` rather than a
+  numeric code.
+
+### Why not Jest
+
+Jest was tried first and abandoned on evidence. Under Jest's ESM mode,
+`@grafana/data` drags in a chain of dependencies whose named exports cannot be
+resolved statically, and each fix uncovers the next:
+
+| Package | Failure | Why config cannot fix it |
+|---|---|---|
+| `rxjs` | `SyntaxError: Unexpected token 'export'` | pnpm's virtual store puts real files under `node_modules/.pnpm/<pkg>/node_modules/<pkg>`, so a `transformIgnorePatterns` negative lookahead is satisfied at the *first* `node_modules/` segment and the file is never transformed |
+| `moment-timezone` | `does not provide an export named 'tz'` | a UMD factory attaches `.tz` at runtime; `cjs-module-lexer` cannot see it statically |
+| `lodash` | `does not provide an export named 'isNumber'` | same class, third package — the chain is open-ended |
+
+Jest's CJS mode fails differently and worse: `@grafana/data`'s CJS build
+`require()`s `marked@16.3.0`, which is ESM-only with no `require` condition.
+
+Node's own loader has none of these problems, because CommonJS `require()` does no
+static named-export analysis. Measured: `node --test` with a jsdom global setup
+resolves all three behaviours correctly against `@grafana/data@12.4.10`, with zero
+transforms and zero shims.
+
+There is also a principled reason to prefer it here. This test pins how an external
+library behaves at runtime. Loading that library the way a consumer actually loads
+it is a more faithful pin than loading it through a test runner's re-implementation
+of module resolution. Less machinery between the assertion and the library is the
+point, not a compromise.
+
+TypeScript is dropped for the same reason: the file calls three functions and
+asserts on strings. There is no product code for types to check against, and
+type-stripping would put a transform back in the path this task exists to keep
+clear.
 
 - [ ] **Step 1: Add the test workspace**
 
-Add `- 'tests/*'` to the `packages:` list in `pnpm-workspace.yaml`.
+Add `- 'tests/*'` to the `packages:` list in `pnpm-workspace.yaml`, leaving the
+supply-chain keys below it untouched.
 
 `tests/contract/package.json`:
 
@@ -313,56 +356,61 @@ Add `- 'tests/*'` to the `packages:` list in `pnpm-workspace.yaml`.
   "name": "@slurm-views/contract-tests",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "scripts": {
-    "test": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "test": "node --test"
   },
   "devDependencies": {
     "@grafana/data": "^12.3.0",
-    "jest-environment-jsdom": "^29.7.0"
+    "jsdom": "^26.0.0"
   }
 }
 ```
 
-`tests/contract/tsconfig.json`:
-
-```json
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "lib": ["ES2022", "DOM"], "noEmit": true },
-  "include": ["*.ts"]
-}
-```
-
-`tests/contract/jest.config.js` — note the environment, which is the whole reason this lives outside `packages/core`:
-
-```js
-/** @type {import('jest').Config} */
-export default {
-  testEnvironment: 'jsdom',
-  preset: 'ts-jest/presets/default-esm',
-  extensionsToTreatAsEsm: ['.ts'],
-  transform: { '^.+\\.tsx?$': ['ts-jest', { useESM: true, tsconfig: { verbatimModuleSyntax: false } }] },
-  transformIgnorePatterns: ['node_modules/(?!(@grafana)/)'],
-  testMatch: ['<rootDir>/*.test.ts'],
-};
-```
+No `jest`, no `ts-jest`, no `jest-environment-jsdom`, no `tsconfig.json`. `jsdom`
+is a direct dependency because pnpm isolates transitive ones and this file
+requires it by name.
 
 - [ ] **Step 2: Write the failing test**
 
-`tests/contract/value-mappings.test.ts`:
+`tests/contract/value-mappings.test.cjs`:
 
-```ts
-import { createTheme, FieldType, getDisplayProcessor, MappingType, stringToJsRegex } from '@grafana/data';
-import type { Field, ValueMapping } from '@grafana/data';
+```js
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const { JSDOM } = require('jsdom');
 
-const rule = (pattern: string, text: string, color: string): ValueMapping => ({
+// @grafana/data touches window and document at import time and throws
+// "window is not defined" under bare Node, so the DOM goes up first.
+const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>', {
+  url: 'http://localhost',
+});
+for (const key of [
+  'window', 'document', 'navigator', 'localStorage',
+  'HTMLElement', 'Element', 'Node', 'getComputedStyle', 'requestAnimationFrame',
+]) {
+  if (globalThis[key] === undefined) {
+    try {
+      globalThis[key] = key === 'window' ? dom.window : dom.window[key];
+    } catch {
+      // Some globals are read-only on newer Node; the ones that matter are not.
+    }
+  }
+}
+
+const {
+  createTheme, FieldType, getDisplayProcessor, MappingType, stringToJsRegex,
+} = require('@grafana/data');
+
+const rule = (pattern, text, color) => ({
   type: MappingType.RegexToText,
   options: { pattern, result: { text, color } },
 });
 
-const DEFAULTS: ValueMapping[] = [
+// The plugin keeps its own copy of this list at
+// plugins/nodegrid-panel/src/defaults/mappings.ts. The duplication is
+// deliberate: this file pins GRAFANA's behaviour, and importing our own
+// plugin here would turn a contract test into a test of ourselves.
+const DEFAULTS = [
   rule('/^.*\\*$/', 'not responding', 'semi-dark-orange'),
   rule('/^.*~$/', 'powered down', 'text'),
   rule('/^idle-.*$/', 'idle, backfill', 'semi-dark-green'),
@@ -376,25 +424,21 @@ const DEFAULTS: ValueMapping[] = [
   rule('/^maint.*$/', 'maintenance', 'purple'),
 ];
 
-const displayFor = (values: string[]) => {
-  const field = {
-    name: 'status',
-    type: FieldType.string,
-    values,
-    config: { mappings: DEFAULTS },
-  } as unknown as Field;
-  return getDisplayProcessor({ field, theme: createTheme() });
-};
-
-describe('Grafana value mappings on a string field', () => {
-  // The load-bearing assumption: status is a string, not a number.
-  it('resolves mappings on a string field at all', () => {
-    const dv = displayFor(['idle'])('idle');
-    expect(dv.text).toBe('idle');
-    expect(dv.color).toBeDefined();
+const displayFor = (values, mappings = DEFAULTS) =>
+  getDisplayProcessor({
+    field: { name: 'status', type: FieldType.string, values, config: { mappings } },
+    theme: createTheme(),
   });
 
-  it.each([
+// The load-bearing assumption: status is a string, not a number.
+test('value mappings resolve on a string field at all', () => {
+  const dv = displayFor(['idle'])('idle');
+  assert.equal(dv.text, 'idle');
+  assert.ok(dv.color, 'expected a colour to be resolved');
+});
+
+test('every shipped default maps its state to the intended text', () => {
+  const cases = [
     ['idle', 'idle'],
     ['idle*', 'not responding'],
     ['idle~', 'powered down'],
@@ -411,48 +455,43 @@ describe('Grafana value mappings on a string field', () => {
     ['fail', 'down'],
     ['failing', 'down'],
     ['maint', 'maintenance'],
-  ])('maps %s to %s', (value, expected) => {
-    expect(displayFor([value])(value).text).toBe(expected);
-  });
-
-  it.each(['perfctrs', 'blocked', 'inval'])(
-    'leaves %s unmapped, keeping its raw text',
-    (value) => {
-      expect(displayFor([value])(value).text).toBe(value);
-    }
-  );
+  ];
+  for (const [value, expected] of cases) {
+    assert.equal(displayFor([value])(value).text, expected, `mapping ${value}`);
+  }
 });
 
-describe('the two traps the defaults are written around', () => {
-  // Trap 1: a bare pattern is anchored at both ends, so a prefix rule
-  // silently becomes an exact match and idle* falls through it.
-  it('wraps an undelimited pattern in ^...$', () => {
-    expect(stringToJsRegex('^idle').source).toBe('^^idle$');
-    expect(stringToJsRegex('^idle').test('idle*')).toBe(false);
-    expect(stringToJsRegex('/^idle/').source).toBe('^idle');
-    expect(stringToJsRegex('/^idle/').test('idle*')).toBe(true);
-  });
+test('a state matching no mapping keeps its raw text', () => {
+  for (const value of ['perfctrs', 'blocked', 'inval']) {
+    assert.equal(displayFor([value])(value).text, value);
+  }
+});
 
-  // Trap 2: RegexToText replaces the match rather than labelling the value,
-  // so a pattern that stops short leaves the remainder glued to the result.
-  it('replaces only the matched portion', () => {
-    const short = [rule('/^drain/', 'drained', 'yellow')];
-    const field = {
-      name: 'status', type: FieldType.string, values: ['drained'], config: { mappings: short },
-    } as unknown as Field;
-    const display = getDisplayProcessor({ field, theme: createTheme() });
-    expect(display('drained').text).toBe('draineded');
-  });
+// Trap 1: a bare pattern is anchored at both ends, so a prefix rule silently
+// becomes an exact match and idle* falls straight through it.
+test('Grafana wraps an undelimited pattern in ^...$', () => {
+  assert.equal(stringToJsRegex('^idle').source, '^^idle$');
+  assert.equal(stringToJsRegex('^idle').test('idle*'), false);
+  assert.equal(stringToJsRegex('/^idle/').source, '^idle');
+  assert.equal(stringToJsRegex('/^idle/').test('idle*'), true);
+});
+
+// Trap 2: RegexToText replaces the match rather than labelling the value, so a
+// pattern that stops short leaves the remainder glued to the result.
+test('RegexToText replaces only the matched portion', () => {
+  const short = [rule('/^drain/', 'drained', 'yellow')];
+  assert.equal(displayFor(['drained'], short)('drained').text, 'draineded');
 });
 ```
 
 - [ ] **Step 3: Run the test to verify it fails**
 
 ```bash
-pnpm --filter @slurm-views/contract-tests test
+cd tests/contract && node --test
 ```
 
-Expected: FAIL — `Cannot find module '@grafana/data'`, because Step 1's manifest has not been installed yet.
+Expected: FAIL — `Cannot find module 'jsdom'`, because Step 1's manifest has not
+been installed yet. Record the real output.
 
 - [ ] **Step 4: Install and make it pass**
 
@@ -461,9 +500,23 @@ pnpm install
 pnpm --filter @slurm-views/contract-tests test
 ```
 
-Expected: PASS, all cases. If the last case now returns `drained` rather than `draineded`, Grafana has changed `RegexToText` from a replace to a label — that is good news, but stop and re-read `defaults/mappings.ts` in Task 7 before continuing, because the patterns can then be simplified.
+Expected: 5 tests, all passing. If the last one now returns `drained` rather than
+`draineded`, Grafana has changed `RegexToText` from a replace to a label — that is
+good news, but stop and re-read `defaults/mappings.ts` in Task 7 before
+continuing, because the patterns can then be simplified. Do not edit the
+assertion to make it green.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Confirm the rest of the repo is unaffected**
+
+```bash
+pnpm -r test
+pnpm lint
+```
+
+`packages/core` keeps Jest and `testEnvironment: 'node'` — do not change it. That
+setting is what makes a stray `@grafana/data` import there fail loudly.
+
+- [ ] **Step 6: Commit**
 
 ```bash
 git add -A
