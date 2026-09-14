@@ -2343,7 +2343,7 @@ export function NodeCell({ node, size, display, shapeChannel, href, sled }: Node
   const theme = useTheme2();
   const styles = getStyles(theme);
   const dv = display(node.state);
-  const mapped = dv.text !== node.state;
+  const mapped = dv.percent === undefined;  // NOT a text comparison — see below
 
   return (
     <Tooltip content={<NodeTooltip node={node} />} placement="top" interactive>
@@ -2494,6 +2494,15 @@ git commit -m "feat(panel): add the node tooltip, group header and cell shape ch
 ```
 
 ---
+
+> **Why `percent` and not a text comparison.** Grafana returns early when a value
+> mapping matches and never computes `percent`; an unmatched value falls through
+> to the threshold path, which sets it. `DEFAULT_MAPPINGS` maps `idle` to the text
+> `"idle"` — identical to its input — so `dv.text !== node.state` reports the
+> commonest healthy state as *unmapped*. And with thresholds configured, which
+> `useFieldConfig()` guarantees, a genuinely unmapped value takes the threshold
+> base colour: green. The two together painted unknown states as healthy. This is
+> pinned in `tests/contract/value-mappings.test.cjs`.
 
 ## Task 9: Rack layout
 
@@ -3859,7 +3868,7 @@ Pass both down through `NodeGroup` into `NodeCell`, and in `NodeCell` choose:
 ```tsx
 const fraction = fractionFor(node, colorMode);
 const dv = stateDisplay(node.state);
-const mapped = dv.text !== node.state;
+const mapped = dv.percent === undefined;  // NOT a text comparison — see below
 // One encoding at a time: state as a fill, or utilisation as a fill. A cell
 // carrying both reads well at 200 nodes and turns to noise at 2000.
 const background =
