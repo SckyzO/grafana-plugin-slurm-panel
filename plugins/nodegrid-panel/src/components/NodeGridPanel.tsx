@@ -4,6 +4,7 @@ import { FieldType, getDisplayProcessor } from '@grafana/data';
 import type { Field, GrafanaTheme2, PanelProps } from '@grafana/data';
 import { useTheme2 } from '@grafana/ui';
 import { useNodeModel } from '../hooks/useNodeModel';
+import { NodeGroup } from './NodeGroup';
 import type { PanelOptions } from '../types';
 
 const getStyles = (theme: GrafanaTheme2) => ({
@@ -15,8 +16,6 @@ const getStyles = (theme: GrafanaTheme2) => ({
     gap: theme.spacing(1),
     padding: theme.spacing(1),
   }),
-  cells: css({ display: 'flex', flexWrap: 'wrap' }),
-  cell: css({ flex: '0 0 auto', borderRadius: 0 }),
   empty: css({ color: theme.colors.text.secondary, padding: theme.spacing(1) }),
 });
 
@@ -44,23 +43,7 @@ export function NodeGridPanel({ data, options, fieldConfig }: PanelProps<PanelOp
   return (
     <div className={styles.wrap} data-testid="slurm-node-grid">
       {model.groups.map((group) => (
-        <div key={group.key}>
-          <div className={styles.cells} style={{ gap: options.gap }}>
-            {group.nodes.map((node) => {
-              const dv = display(node.state);
-              return (
-                <div
-                  key={`${group.key}/${node.name}`}
-                  className={styles.cell}
-                  data-testid={`node-cell-${node.name}`}
-                  data-state={node.state}
-                  aria-label={`${node.name}, ${dv.text}`}
-                  style={{ width: options.cellSize, height: options.cellSize, background: dv.color }}
-                />
-              );
-            })}
-          </div>
-        </div>
+        <NodeGroup key={group.key} group={group} display={display} options={options} />
       ))}
     </div>
   );

@@ -58,6 +58,14 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
         defaultValue: DEFAULT_OPTIONS.gap,
         settings: { min: 0, max: 8, step: 1 },
         category: ['Layout'],
+      })
+      .addBooleanSwitch({
+        path: 'shapeChannel',
+        name: 'Shape channel',
+        description:
+          'Carry state as a shape as well as a fill. Keeps the grid readable in greyscale, in print and with a colour-vision deficiency.',
+        defaultValue: DEFAULT_OPTIONS.shapeChannel,
+        category: ['Display'],
       });
   })
   .setNoPadding();
