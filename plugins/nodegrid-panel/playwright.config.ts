@@ -11,16 +11,22 @@ import baseConfig from './.config/playwright.config';
  * `readProvisionedDashboard` / `readProvisionedDataSource` must resolve
  * against `dev/provisioning`, not the scaffold's own unused
  * `plugins/nodegrid-panel/provisioning/`.
+ *
+ * There are deliberately no Chromium launch flags here. An earlier revision
+ * passed --no-sandbox, --disable-gpu, --disable-dev-shm-usage and
+ * --disable-software-rasterizer, because Chromium's defaults crashed the
+ * renderer when the browser ran on a WSL2 host. The browser now runs inside
+ * the toolchain container, where that is no longer true: the suite was re-run
+ * with every flag removed and passed 7/7, so they are gone rather than
+ * carried along. Their absence leaves Chromium's own sandbox switched on,
+ * which is the point of removing them rather than merely tidying them.
+ *
+ * GRAFANA_URL is set by the `tools` compose service to Grafana's address on
+ * the compose network; the localhost fallback is for a run driven by hand.
  */
 export default defineConfig<PluginOptions>(baseConfig, {
   use: {
     baseURL: process.env.GRAFANA_URL ?? 'http://localhost:3001',
     provisioningRootDir: resolve(__dirname, '../../dev/provisioning'),
-    launchOptions: {
-      // Chromium's defaults crash the renderer under WSL2 and in containers; the
-      // symptom is "Target page, context or browser has been closed" partway
-      // through a navigation, which reads like a hang. CI runners need these too.
-      args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--disable-software-rasterizer'],
-    },
   },
 });
