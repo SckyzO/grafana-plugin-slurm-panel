@@ -58,9 +58,23 @@ describe('ingest reports rather than guesses', () => {
   });
 
   it('is stable when the rows come back in a different order', () => {
-    const forward = ingest({ frames: load('node-status.numeric-multi.json'), slots: SLOTS, labels: LABELS });
-    const reversed = ingest({ frames: load('node-status.numeric-multi.json').reverse(), slots: SLOTS, labels: LABELS });
-    expect(reversed.nodes.map((n) => n.name)).toEqual(forward.nodes.map((n) => n.name));
+    const forwardFrames = load('node-status.numeric-multi.json');
+    const reversedFrames = [...forwardFrames].reverse();
+    // Guard against this test becoming a tautology: if `.reverse()` above
+    // were ever dropped (a one-character-class edit someone could make
+    // while debugging), forwardFrames and reversedFrames would be identical
+    // and every assertion below would pass no matter what ingest() does.
+    expect(reversedFrames).not.toEqual(forwardFrames);
+
+    const forward = ingest({ frames: forwardFrames, slots: SLOTS, labels: LABELS });
+    const reversed = ingest({ frames: reversedFrames, slots: SLOTS, labels: LABELS });
+
+    // ingest() sorts its output by node name unconditionally, so comparing
+    // only the name lists would pass even if the internal collapsing were
+    // order-sensitive — the final sort would hide exactly the bug this test
+    // is named after. Compare the whole result structure instead.
+    expect(reversed.nodes).toEqual(forward.nodes);
+    expect(reversed.warnings).toEqual(forward.warnings);
     expect(reversed.nodes.find((n) => n.name === 'c1')?.partitions).toEqual(['cpu', 'debug', 'high']);
   });
 });

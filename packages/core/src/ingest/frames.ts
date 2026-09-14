@@ -25,18 +25,26 @@ const warn = (kind: IngestWarning['kind'], refId: string | undefined, detail: st
 export function ingest({ frames, slots, labels }: IngestInput): IngestResult {
   const warnings: IngestWarning[] = [];
   const nodes = new Map<string, SlurmNode>();
+  // Per-node set of label keys seen with more than one differing value;
+  // see the comment where this is populated, below.
+  const ambiguousLabelKeys = new Map<string, Set<string>>();
 
   // --- identity and state -------------------------------------------------
   for (const frame of framesFor(frames, slots.state)) {
-    const identified = toSamples(frame).filter((s) => typeof s.labels[labels.node] === 'string');
+    // Narrow to `{ sample, name: string }` here, in the same step that
+    // filters, so a later edit to the filter can't silently invalidate a
+    // separate `!` at the point of use — the compiler ties them together.
+    const identified = toSamples(frame).flatMap((sample) => {
+      const name = sample.labels[labels.node];
+      return typeof name === 'string' ? [{ sample, name }] : [];
+    });
 
     if (identified.length === 0) {
       warnings.push(warn('no-identity', frame.refId, 'no node label or column'));
       continue;
     }
 
-    for (const sample of identified) {
-      const name = sample.labels[labels.node]!;
+    for (const { sample, name } of identified) {
       let node = nodes.get(name);
       if (!node) {
         node = { name, state: sample.labels[labels.state] ?? '', partitions: [], labels: {}, facets: emptyFacets() };
@@ -48,9 +56,24 @@ export function ingest({ frames, slots, labels }: IngestInput): IngestResult {
       if (partition !== undefined && !node.partitions.includes(partition)) {
         node.partitions.push(partition);
       }
+      // A label like `partition` genuinely differs across this node's
+      // samples; keeping whichever sample happened to be seen first would
+      // make `labels` depend on input order, which is exactly what
+      // `partitions` above already models properly. Keep a key only while
+      // every sample seen so far agrees on it, and once two disagree, drop
+      // it for good rather than let the next sample silently reinstate it.
+      const ambiguous = ambiguousLabelKeys.get(name) ?? new Set<string>();
+      ambiguousLabelKeys.set(name, ambiguous);
       for (const [key, value] of Object.entries(sample.labels)) {
-        if (key !== '__name__' && node.labels[key] === undefined) {
+        if (key === '__name__' || ambiguous.has(key)) {
+          continue;
+        }
+        const existing = node.labels[key];
+        if (existing === undefined) {
           node.labels[key] = value;
+        } else if (existing !== value) {
+          delete node.labels[key];
+          ambiguous.add(key);
         }
       }
     }
