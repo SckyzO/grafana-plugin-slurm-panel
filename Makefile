@@ -14,7 +14,7 @@ export GID := $(shell id -g)
 RUN := $(COMPOSE) run --rm tools
 
 .DEFAULT_GOAL := help
-.PHONY: help image deps install build watch test lint typecheck react-detect \
+.PHONY: help image deps install lock build watch test lint typecheck react-detect \
         check e2e up down restart logs logs-once shell validate clean
 
 help: ## Show this help
@@ -32,6 +32,14 @@ deps:
 
 install: ## Install dependencies into the node_modules volume
 	$(RUN) pnpm install --frozen-lockfile
+
+lock: ## Update pnpm-lock.yaml after editing a package.json
+	@# Every other target installs with --frozen-lockfile, which is what makes
+	@# a build reproducible and what lets CI verify the lockfile against the
+	@# supply-chain policies. Changing a manifest therefore needs this target
+	@# once, deliberately, and the resulting lockfile change is reviewed like
+	@# any other diff.
+	$(RUN) pnpm install --no-frozen-lockfile
 
 build: deps ## Build every workspace package
 	$(RUN) pnpm build
@@ -58,7 +66,7 @@ react-detect: build ## Check the panel for React 19 incompatibilities
 	@# findDOMNode and jsx-runtime imports — is the half that is ours to fix.
 	@# The warning is deliberately left visible so the gap closes loudly when
 	@# either side gains support for the other.
-	$(RUN) sh -c 'cd plugins/nodegrid-panel && npx --yes @grafana/react-detect@latest'
+	$(RUN) sh -c 'cd plugins/nodegrid-panel && pnpm exec react-detect'
 
 check: lint typecheck test build react-detect ## Everything CI runs before e2e
 
@@ -97,9 +105,7 @@ validate: build ## Run Grafana's official plugin validator
 	  && cp -r dist tomzone-slurmnodegrid-panel \
 	  && zip -qr .artifacts/plugin.zip tomzone-slurmnodegrid-panel \
 	  && rm -rf tomzone-slurmnodegrid-panel'
-	docker run --rm --pull=always \
-	  -v "$(CURDIR)/plugins/nodegrid-panel/.artifacts/plugin.zip:/archive.zip:ro" \
-	  grafana/plugin-validator-cli /archive.zip
+	$(COMPOSE) run --rm validator /archive/plugin.zip
 
 clean: ## Remove the stack, the node_modules volumes and the build output
 	$(COMPOSE) down -v --remove-orphans

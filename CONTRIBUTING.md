@@ -44,6 +44,11 @@ make shell   # a shell inside the toolchain container
 make clean   # drop the stack, the volumes and the build output
 ```
 
+Adding or bumping a dependency means editing the `package.json` and then
+running `make lock` once — every other target installs with
+`--frozen-lockfile`, which is what makes a build reproducible and what lets CI
+check the lockfile against the supply-chain policies.
+
 `make` with no target lists them all. `make e2e` builds the plugin, starts the
 stack and waits for Grafana to answer before it runs a test, so there is no
 separate setup step and nothing CI does that you do not.

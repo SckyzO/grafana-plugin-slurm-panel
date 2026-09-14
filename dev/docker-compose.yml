@@ -71,6 +71,19 @@ services:
       - contract-node-modules:/work/tests/contract/node_modules
       - pnpm-store:/pnpm
 
+  validator:
+    # Grafana's official plugin validator. Pinned, and declared here rather
+    # than run as `docker run grafana/plugin-validator-cli` from the Makefile,
+    # for two reasons: an unpinned tag with --pull=always fetches whatever was
+    # published most recently — at the time of writing, an image less than a
+    # day old, well inside the three-day cooldown this project imposes on its
+    # own dependencies — and a tag named in a Makefile is invisible to the
+    # dependabot entry that watches every other image in this file.
+    profiles: ['tools']
+    image: grafana/plugin-validator-cli:v0.49.1
+    volumes:
+      - ../plugins/nodegrid-panel/.artifacts:/archive:ro
+
 volumes:
   root-node-modules:
   core-node-modules:
