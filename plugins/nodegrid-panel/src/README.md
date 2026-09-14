@@ -62,8 +62,10 @@ takes, and the engine only builds that list for partitions.
 **Display > Colour by** picks one encoding for the cell fill at a time:
 
 - **State** (default) — the mapped Slurm state, from the panel's own **Value
-  mappings** section. The shipped mappings live in
-  `plugins/nodegrid-panel/src/defaults/mappings.ts`. A hand-written rule fails
+  mappings** section. Eleven rules covering the Slurm states and their
+  modifiers are applied by default, so the grid is coloured out of the box;
+  they can be edited or removed like any other field config. A hand-written
+  rule fails
   silently in three ways: a bare pattern such as `^idle` compiles to
   `/^^idle$/` — an exact match, not a prefix — unless delimited with slashes
   (`/^idle/`); a regex mapping replaces only the matched portion, so

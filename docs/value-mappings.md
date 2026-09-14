@@ -4,18 +4,27 @@ The panel ships a starting set of mappings and then gets out of the way: state
 colour is Grafana's **Value mappings**, edited in the panel like any other
 field config.
 
-There is no button in the panel that writes these for you, and there cannot
-be one. A custom panel option editor — which is what would have to draw such
-a button — receives a `StandardEditorContext`, and that interface carries
-`data`, `options`, `instanceState` and a handful of others, but no
-`onFieldConfigChange`. That handler exists only on `PanelProps`, a different
-interface the options editor never sees. There is no supported way for a
-panel to seed its own `fieldConfig.defaults.mappings`.
+**You do not have to write these.** The panel ships all eleven as the default
+value of the standard **Value mappings** option, so a panel dropped on a new
+dashboard is coloured before anything is configured, and none of the
+provisioned dashboards carries a mappings block. They are a default and not a
+lock: the rules appear in the panel's own **Value mappings** section and can
+be edited, reordered or deleted like any others.
 
-So: either copy the eleven mappings below from the provisioned dashboard at
-[`dev/provisioning/dashboards/slurm-node-grid.json`](../dev/provisioning/dashboards/slurm-node-grid.json)
-(its panel already carries them — open its JSON model, or open the panel in
-the dev stack and copy the Value mappings section), or type them by hand into the panel's own **Value mappings** section.
+There is still no *button* that writes them, and there cannot be one. A custom
+panel option editor — which is what would have to draw such a button —
+receives a `StandardEditorContext`, and that interface carries `data`,
+`options`, `instanceState` and a handful of others, but no
+`onFieldConfigChange`. That handler exists only on `PanelProps`, a different
+interface the options editor never sees. What the panel does instead is pass
+`standardOptions: { [FieldConfigProperty.Mappings]: { defaultValue: ... } }`
+to `useFieldConfig`, which is a supported route to a default and a different
+mechanism entirely from an editor writing config at runtime.
+
+The table below therefore documents what you already have rather than what you
+must type. Read it when you are changing the rules, adding a state, or
+debugging one that is not firing — because a rule edited by hand fails
+silently in three distinct ways.
 
 Three traps make hand-written rules fail silently. All three were found by
 running `getDisplayProcessor` against real `@grafana/data`, not by reading
