@@ -51,7 +51,13 @@ export interface SlurmNode {
   name: string;
   state: string;
   partitions: string[];
-  /** Every label seen on this node's state series, for use as a grouping key. */
+  /**
+   * Labels whose value agrees across every series for this node, for use as
+   * a grouping key. A label that differs between series is dropped rather
+   * than resolved arbitrarily, because a value that varies per node cannot
+   * be a stable grouping key — `partition` is the common case, and it is
+   * modelled properly by `partitions` above instead.
+   */
   labels: Record<string, string>;
   facets: NodeFacets;
 }
