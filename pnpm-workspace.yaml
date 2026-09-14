@@ -1,6 +1,7 @@
 packages:
   - 'packages/*'
   - 'plugins/*'
+  - 'tests/*'
 
 # Supply chain. Set at scaffolding time, not retrofitted.
 strictDepBuilds: true

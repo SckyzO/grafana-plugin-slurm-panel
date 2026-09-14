@@ -4,7 +4,19 @@ const { defineConfig, globalIgnores } = require('eslint/config');
 const tseslint = require('typescript-eslint');
 
 module.exports = defineConfig(
-  globalIgnores(['**/dist/**', '**/node_modules/**', '**/coverage/**', '.superpowers/**']),
+  globalIgnores([
+    '**/dist/**',
+    '**/node_modules/**',
+    '**/coverage/**',
+    '.superpowers/**',
+    // Deliberately plain CommonJS, not TypeScript (see tests/contract's
+    // brief): it pins an external library's runtime behaviour by loading it
+    // the way a real consumer does, with no transform between the assertion
+    // and the library. Running typescript-eslint over it would put a
+    // transform back in that path for no benefit — there is no product code
+    // here for types to check against.
+    'tests/contract/*.cjs',
+  ]),
   {
     files: ['**/*.ts', '**/*.tsx'],
     extends: [tseslint.configs.recommended],

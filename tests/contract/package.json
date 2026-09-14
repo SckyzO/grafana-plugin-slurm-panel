@@ -1,0 +1,12 @@
+{
+  "name": "@slurm-views/contract-tests",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "@grafana/data": "^12.3.0",
+    "jsdom": "^26.0.0"
+  }
+}
