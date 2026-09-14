@@ -12,9 +12,7 @@ const toMinimal = (frame: DataFrame): MinimalFrame => ({
     name: f.name,
     type: f.type,
     labels: f.labels,
-    values: typeof (f.values as { toArray?: () => unknown[] }).toArray === 'function'
-      ? (f.values as unknown as { toArray: () => unknown[] }).toArray()
-      : (f.values as unknown as unknown[]),
+    values: f.values,
   })),
 });
 
