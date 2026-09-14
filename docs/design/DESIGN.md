@@ -36,17 +36,17 @@ colour names, never hex.
 The shipped defaults are delimited, whole-value regexes:
 
 ```
-  1.  /^.*\*$/           →  not responding
- 2.  /^.*~$/            →  powered down
- 3.  /^idle-.*$/        →  idle, backfill
- 4.  /^idle.*$/         →  idle
- 5.  /^mixed-.*$/       →  mixed, backfill
- 6.  /^mixed.*$/        →  mixed
- 7.  /^alloc-.*$/       →  allocated, backfill
- 8.  /^alloc.*$/        →  allocated
- 9.  /^drain.*$/        →  drained
-10.  /^(down|fail).*$/  →  down
-11.  /^maint.*$/        →  maintenance
+ 1.  /^.*\*$/            →  not responding
+ 2.  /^.*~$/             →  powered down
+ 3.  /^idle-.*$/         →  idle, backfill
+ 4.  /^idle.*$/          →  idle
+ 5.  /^mixed-.*$/        →  mixed, backfill
+ 6.  /^mixed.*$/         →  mixed
+ 7.  /^alloc-.*$/        →  allocated, backfill
+ 8.  /^alloc.*$/         →  allocated
+ 9.  /^drain.*$/         →  drained
+10.  /^(down|fail).*$/   →  down
+11.  /^maint.*$/         →  maintenance
 ```
 
 Three rules govern that list, and two of them are not visible from the Value

@@ -246,17 +246,17 @@ Both corrections together give the shipped set: delimited, whole-value, specific
 before general.
 
 ```
- 1.  /^.*\*$/          →  "not responding"    a modifier rule must precede
- 2.  /^.*~$/            →  "powered down"      the base rule that would
- 3.  /^idle-.*$/        →  "idle, backfill"    otherwise swallow it
- 4.  /^idle.*$/         →  "idle"
- 5.  /^mixed-.*$/       →  "mixed, backfill"
- 6.  /^mixed.*$/        →  "mixed"
- 7.  /^alloc-.*$/       →  "allocated, backfill"
- 8.  /^alloc.*$/        →  "allocated"
- 9.  /^drain.*$/        →  "drained"
-10.  /^(down|fail).*$/  →  "down"
-11.  /^maint.*$/        →  "maintenance"
+ 1.  /^.*\*$/            →  "not responding"    a modifier rule must precede
+ 2.  /^.*~$/             →  "powered down"      the base rule that would
+ 3.  /^idle-.*$/         →  "idle, backfill"    otherwise swallow it
+ 4.  /^idle.*$/          →  "idle"
+ 5.  /^mixed-.*$/        →  "mixed, backfill"
+ 6.  /^mixed.*$/         →  "mixed"
+ 7.  /^alloc-.*$/        →  "allocated, backfill"
+ 8.  /^alloc.*$/         →  "allocated"
+ 9.  /^drain.*$/         →  "drained"
+10.  /^(down|fail).*$/   →  "down"
+11.  /^maint.*$/         →  "maintenance"
 ```
 
 Ordering is still load-bearing — rule 4 placed before rule 1 puts an unreachable
