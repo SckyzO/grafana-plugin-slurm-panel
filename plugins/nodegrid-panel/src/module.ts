@@ -68,6 +68,21 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
         defaultValue: DEFAULT_OPTIONS.shapeChannel,
         category: ['Display'],
       })
+      .addRadio({
+        path: 'colorMode',
+        name: 'Colour by',
+        description: 'One encoding at a time. Continuous modes are driven by Thresholds.',
+        defaultValue: DEFAULT_OPTIONS.colorMode,
+        settings: {
+          options: [
+            { value: 'state', label: 'State' },
+            { value: 'cpu', label: 'CPU' },
+            { value: 'mem', label: 'Memory' },
+            { value: 'gres', label: 'GPU' },
+          ],
+        },
+        category: ['Display'],
+      })
       .addNumberInput({
         path: 'maxCells',
         name: 'Cell warning threshold',

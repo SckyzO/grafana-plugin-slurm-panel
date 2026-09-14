@@ -2,11 +2,11 @@ import React from 'react';
 import { css } from '@emotion/css';
 import type { DisplayProcessor, GrafanaTheme2 } from '@grafana/data';
 import { useTheme2 } from '@grafana/ui';
-import type { NodeGroup as NodeGroupModel } from '@slurm-views/core';
+import type { NodeGroup as NodeGroupModel, SlurmNode } from '@slurm-views/core';
 import { GroupHeader } from './GroupHeader';
 import { NodeCell } from './NodeCell';
 import { RackFrame } from './RackFrame';
-import type { PanelOptions } from '../types';
+import type { ColorMode, PanelOptions } from '../types';
 
 const getStyles = (theme: GrafanaTheme2, gap: number) => ({
   group: css({ display: 'flex', flexDirection: 'column', gap: theme.spacing(0.5) }),
@@ -15,11 +15,15 @@ const getStyles = (theme: GrafanaTheme2, gap: number) => ({
 
 export interface NodeGroupProps {
   group: NodeGroupModel;
-  display: DisplayProcessor;
+  stateDisplay: DisplayProcessor;
+  valueDisplay: DisplayProcessor;
+  colorMode: ColorMode;
+  /** Resolves the first data link's interpolated URL for a node, if the field config carries one. */
+  hrefFor: (node: SlurmNode) => string | undefined;
   options: PanelOptions;
 }
 
-export function NodeGroup({ group, display, options }: NodeGroupProps) {
+export function NodeGroup({ group, stateDisplay, valueDisplay, colorMode, hrefFor, options }: NodeGroupProps) {
   const theme = useTheme2();
   const styles = getStyles(theme, options.gap);
 
@@ -28,8 +32,11 @@ export function NodeGroup({ group, display, options }: NodeGroupProps) {
       key={node.name}
       node={node}
       size={options.cellSize}
-      display={display}
+      stateDisplay={stateDisplay}
+      valueDisplay={valueDisplay}
+      colorMode={colorMode}
       shapeChannel={options.shapeChannel}
+      href={hrefFor(node)}
       sled={options.layout === 'rack'}
     />
   ));

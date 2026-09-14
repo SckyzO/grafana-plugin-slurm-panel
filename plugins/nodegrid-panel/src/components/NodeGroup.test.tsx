@@ -23,6 +23,8 @@ const display: DisplayProcessor = getDisplayProcessor({
   theme,
 });
 
+const noLink = () => undefined;
+
 const nodeWith = (name: string): SlurmNode => ({
   name,
   state: 'idle',
@@ -39,7 +41,16 @@ const group: NodeGroupModel = {
 
 describe('NodeGroup', () => {
   it('draws a rack frame of sleds when layout is rack', () => {
-    render(<NodeGroup group={group} display={display} options={{ ...DEFAULT_OPTIONS, layout: 'rack' }} />);
+    render(
+      <NodeGroup
+        group={group}
+        stateDisplay={display}
+        valueDisplay={display}
+        colorMode="state"
+        hrefFor={noLink}
+        options={{ ...DEFAULT_OPTIONS, layout: 'rack' }}
+      />
+    );
 
     expect(screen.getByTestId('node-group-rack-1')).toHaveAttribute('data-layout', 'rack');
     const rack = screen.getByTestId('rack-frame');
@@ -55,12 +66,42 @@ describe('NodeGroup', () => {
   });
 
   it('lays cells out in a wrapping row, with no rack frame, when layout is wrap', () => {
-    render(<NodeGroup group={group} display={display} options={{ ...DEFAULT_OPTIONS, layout: 'wrap' }} />);
+    render(
+      <NodeGroup
+        group={group}
+        stateDisplay={display}
+        valueDisplay={display}
+        colorMode="state"
+        hrefFor={noLink}
+        options={{ ...DEFAULT_OPTIONS, layout: 'wrap' }}
+      />
+    );
 
     expect(screen.getByTestId('node-group-rack-1')).toHaveAttribute('data-layout', 'wrap');
     expect(screen.queryByTestId('rack-frame')).not.toBeInTheDocument();
 
     const cell = screen.getByTestId('node-cell-node-a');
     expect(cell.style.width).toBe(`${DEFAULT_OPTIONS.cellSize}px`);
+  });
+
+  it('resolves a click-through link per node via hrefFor', () => {
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+    const hrefFor = (node: SlurmNode) => `/d/some-dash?var-node=${node.name}`;
+
+    render(
+      <NodeGroup
+        group={group}
+        stateDisplay={display}
+        valueDisplay={display}
+        colorMode="state"
+        hrefFor={hrefFor}
+        options={{ ...DEFAULT_OPTIONS, layout: 'wrap' }}
+      />
+    );
+
+    screen.getByTestId('node-cell-node-a').click();
+    expect(openSpy).toHaveBeenCalledWith('/d/some-dash?var-node=node-a', '_self');
+
+    openSpy.mockRestore();
   });
 });

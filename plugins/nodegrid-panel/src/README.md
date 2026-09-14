@@ -4,6 +4,31 @@ Remove any remaining comments before publishing as these may be displayed on Gra
 
 # Slurmnodegrid
 
+## Data links
+
+Set a data link under **Standard options > Data links** to make a cell open a node
+dashboard on click. The link URL can use two template variables, interpolated per
+node before navigation:
+
+- `${__node}` — the node name.
+- `${__state}` — the node's Slurm state.
+
+Example: `/d/some-dash?var-node=${__node}&var-state=${__state}`.
+
+Only the first configured data link is followed; a cell with no link configured is
+not clickable.
+
+## Colour by
+
+**Display > Colour by** picks one encoding for the cell fill at a time:
+
+- **State** (default) — the mapped Slurm state, from Value mappings.
+- **CPU**, **Memory**, **GPU** — a continuous fill driven by that facet's allocation,
+  resolved through **Thresholds** rather than a fixed colour scale.
+
+A cell always names its node and state in words, in the tooltip and in its
+accessible label, regardless of which colour mode is active.
+
 <!-- To help maximize the impact of your README and improve usability for users, we propose the following loose structure:
 
 **BEFORE YOU BEGIN**
