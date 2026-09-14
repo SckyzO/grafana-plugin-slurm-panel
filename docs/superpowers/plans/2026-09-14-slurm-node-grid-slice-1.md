@@ -26,6 +26,10 @@ Every task's requirements implicitly include this section. Values are copied ver
 - **Plugin id: `tomzone-slurmnodegrid-panel`.** Org `tomzone`, name `slurmnodegrid`, type `panel`.
 - **No hex colours anywhere in the plugin.** Colour, spacing and typography come from `useTheme2()` and theme colour names resolved through `theme.visualization.getColorByName`.
 - **`packages/core` imports nothing from `@grafana/*` and touches no DOM.** Enforced by a lint rule, not by discipline.
+- **Plugin unit tests live beside their source, under `src/`.** The scaffolded
+  Jest config scopes `testMatch` to `src/**`, so a test placed in a top-level
+  `tests/` directory is not merely skipped — the suite reports "No tests found"
+  and passes **green**. A test that cannot fail is worse than no test.
 - **`@grafana/data` needs a DOM at import time**, and its dependency chain defeats Jest's module loader. The one workspace that imports it (`tests/contract`) runs on `node --test` with a jsdom global setup and plain CommonJS — no Jest, no transform. `packages/core` keeps Jest under `testEnvironment: 'node'`, which is what makes a stray Grafana import there fail loudly. The plugin workspace uses `@grafana/create-plugin`'s own Jest setup, which handles Grafana's ESM packages itself. See Task 2, *Why not Jest*.
 - **Conventional Commits** (`type(scope): subject`). Commit messages, docs, code comments and any public text are written in the first person as the maintainer. No mention of tooling or generation, in the body or in a trailer.
 - **Non-regression is a test, not an intention.** Every bug fix lands with a test that fails before it and passes after.
@@ -2115,7 +2119,7 @@ The tooltip is what a drained node's owner actually opens. It carries the facts 
 
 **Files:**
 - Create: `plugins/nodegrid-panel/src/utils/format.ts`
-- Create: `plugins/nodegrid-panel/tests/format.test.ts`
+- Create: `plugins/nodegrid-panel/src/utils/format.test.ts`
 - Create: `plugins/nodegrid-panel/src/components/NodeTooltip.tsx`
 - Create: `plugins/nodegrid-panel/src/components/NodeCell.tsx`
 - Create: `plugins/nodegrid-panel/src/components/GroupHeader.tsx`
@@ -2138,10 +2142,10 @@ the name.
 
 - [ ] **Step 1: Write the failing formatter test**
 
-`plugins/nodegrid-panel/tests/format.test.ts`:
+`plugins/nodegrid-panel/src/utils/format.test.ts`:
 
 ```ts
-import { formatAge, formatBytes } from '../src/utils/format';
+import { formatAge, formatBytes } from './format';
 
 describe('formatAge', () => {
   it.each([
@@ -2615,7 +2619,7 @@ Never paint a node healthy for lack of information, and never put the explanatio
 
 **Files:**
 - Create: `plugins/nodegrid-panel/src/utils/unmapped.ts`
-- Create: `plugins/nodegrid-panel/tests/unmapped.test.ts`
+- Create: `plugins/nodegrid-panel/src/utils/unmapped.test.ts`
 - Create: `plugins/nodegrid-panel/src/components/PanelWarnings.tsx`
 - Modify: `plugins/nodegrid-panel/src/components/NodeGridPanel.tsx`, `src/module.ts`
 
@@ -2627,10 +2631,10 @@ Never paint a node healthy for lack of information, and never put the explanatio
 
 - [ ] **Step 1: Write the failing test**
 
-`plugins/nodegrid-panel/tests/unmapped.test.ts`:
+`plugins/nodegrid-panel/src/utils/unmapped.test.ts`:
 
 ```ts
-import { collectUnmapped, summarise } from '../src/utils/unmapped';
+import { collectUnmapped, summarise } from './unmapped';
 import type { DisplayProcessor } from '@grafana/data';
 import type { GroupedModel, SlurmNode } from '@slurm-views/core';
 
@@ -3729,7 +3733,7 @@ The two loose ends Task 7 left in the options type. An option that silently does
 
 **Files:**
 - Create: `plugins/nodegrid-panel/src/utils/colorMode.ts`
-- Create: `plugins/nodegrid-panel/tests/colorMode.test.ts`
+- Create: `plugins/nodegrid-panel/src/utils/colorMode.test.ts`
 - Modify: `plugins/nodegrid-panel/src/components/NodeGridPanel.tsx`, `NodeCell.tsx`, `NodeGroup.tsx`, `src/module.ts`
 
 **Interfaces:**
@@ -3743,10 +3747,10 @@ The two loose ends Task 7 left in the options type. An option that silently does
 
 - [ ] **Step 1: Write the failing test**
 
-`plugins/nodegrid-panel/tests/colorMode.test.ts`:
+`plugins/nodegrid-panel/src/utils/colorMode.test.ts`:
 
 ```ts
-import { fractionFor } from '../src/utils/colorMode';
+import { fractionFor } from './colorMode';
 import type { SlurmNode } from '@slurm-views/core';
 
 const node = (facets: Partial<SlurmNode['facets']>): SlurmNode => ({
