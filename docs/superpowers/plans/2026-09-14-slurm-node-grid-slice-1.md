@@ -4035,10 +4035,16 @@ would otherwise swallow it — `/^idle.*$/` placed above `/^.*\*$/` swallows
 
 ## The shipped set
 
-See `plugins/nodegrid-panel/src/defaults/mappings.ts`, or press **Write Slurm
-state mappings** in the panel options. States matching nothing keep their raw
-text and Grafana's default grey, and the panel names them in its warnings strip
-so a state introduced by a Slurm upgrade is visible.
+See `plugins/nodegrid-panel/src/defaults/mappings.ts`, or copy them from the
+provisioned dashboard at `dev/provisioning/dashboards/slurm-node-grid.json` —
+its panel already carries them. There is no button that writes these for you:
+a custom option editor receives a `StandardEditorContext`, which has no
+`onFieldConfigChange`, so the panel cannot seed its own
+`fieldConfig.defaults.mappings`. States matching nothing keep their raw text;
+with thresholds always configured, Grafana would otherwise colour them with
+the threshold base colour — green — so the panel refuses that colour and
+draws a hollow ring instead, and names the state in its warnings strip so a
+state introduced by a Slurm upgrade is visible.
 ````
 
 - [ ] **Step 3: Write CONTRIBUTING.md**
