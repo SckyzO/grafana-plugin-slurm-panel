@@ -1,0 +1,104 @@
+# Value mappings for Slurm states
+
+The panel ships a starting set of mappings and then gets out of the way: state
+colour is Grafana's **Value mappings**, edited in the panel like any other
+field config.
+
+There is no button in the panel that writes these for you, and there cannot
+be one. A custom panel option editor — which is what would have to draw such
+a button — receives a `StandardEditorContext`, and that interface carries
+`data`, `options`, `instanceState` and a handful of others, but no
+`onFieldConfigChange`. That handler exists only on `PanelProps`, a different
+interface the options editor never sees. There is no supported way for a
+panel to seed its own `fieldConfig.defaults.mappings`.
+
+So: either copy the eleven mappings below from the provisioned dashboard at
+[`dev/provisioning/dashboards/slurm-node-grid.json`](../dev/provisioning/dashboards/slurm-node-grid.json)
+(its panel already carries them — open its JSON model, or open the panel in
+the dev stack and copy the Value mappings section), or type them by hand into the panel's own **Value mappings** section.
+
+Three traps make hand-written rules fail silently. All three were found by
+running `getDisplayProcessor` against real `@grafana/data`, not by reading
+about it, and all three are pinned in
+[`tests/contract/value-mappings.test.cjs`](../tests/contract/value-mappings.test.cjs)
+so a future Grafana release that changes this behaviour breaks CI instead of
+breaking a dashboard quietly.
+
+## Delimit the pattern
+
+Grafana compiles a value-mapping pattern with `stringToJsRegex`, which wraps
+anything not already delimited by slashes in `^...$`:
+
+| Typed | Compiled | Matches |
+|---|---|---|
+| `^idle` | `/^^idle$/` | `idle` only — **not** `idle*` |
+| `^down\|^fail` | `/^^down\|^fail$/` | inconsistent: branch 1 a prefix, branch 2 exact |
+| `/^idle/` | `/^idle/` | `idle`, `idle*`, `idle~` — the prefix rule intended |
+
+A rule typed as `^idle` stops being a prefix rule without saying so, and a
+node the controller cannot reach goes back to reading as healthy.
+
+## Span the whole value
+
+A regex mapping **replaces the matched portion**; it does not label the
+value. Whatever the pattern did not consume stays glued to the result:
+
+| Pattern | Result text | `drained` renders as |
+|---|---|---|
+| `/^drain/` | `drained` | `draineded` |
+| `/^drain.*$/` | `drained` | `drained` |
+
+## Anchor a modifier at the end, not after the base
+
+`sinfo` glues its backfill suffix onto the *full* state name, not onto an
+abbreviated prefix of it. The state Slurm reports is `allocated-`, so a rule
+written as `/^alloc-.*$/` — which reads as "alloc, then a dash" — matches
+nothing: the dash never follows `alloc` directly, only `allocated`. The
+working form anchors the modifier at the end instead:
+
+| Pattern | Matches `allocated-`? |
+|---|---|
+| `/^alloc-.*$/` | no — `alloc` is not immediately followed by `-` |
+| `/^alloc.*-$/` | yes |
+
+The `idle` and `mixed` rules in the shipped set look like they follow the
+same shape as `alloc` and happen to work — but only because `idle` and
+`mixed` are themselves already complete base states, so there is nothing
+abbreviated to trip over. `alloc` is not a complete base state (`allocated`
+is), which is what makes it the one that breaks.
+
+## Order
+
+Specific before general. A modifier rule must come before the base rule that
+would otherwise swallow it — `/^idle.*-$/` placed above `/^idle.*$/` is what
+keeps `idle-` reading as "idle, backfill" rather than falling into the plain
+"idle" rule below it. Grafana evaluates value mappings top to bottom and
+stops at the first match.
+
+## The shipped set
+
+Transcribed from
+[`plugins/nodegrid-panel/src/defaults/mappings.ts`](../plugins/nodegrid-panel/src/defaults/mappings.ts) —
+if the two ever disagree, the source file is right and this table is stale.
+
+| # | Pattern | Text | Colour |
+|---|---|---|---|
+| 1 | `/^.*\*$/` | not responding | `semi-dark-orange` |
+| 2 | `/^.*~$/` | powered down | `text` |
+| 3 | `/^idle.*-$/` | idle, backfill | `semi-dark-green` |
+| 4 | `/^idle.*$/` | idle | `green` |
+| 5 | `/^mixed.*-$/` | mixed, backfill | `semi-dark-blue` |
+| 6 | `/^mixed.*$/` | mixed | `blue` |
+| 7 | `/^alloc.*-$/` | allocated, backfill | `semi-dark-blue` |
+| 8 | `/^alloc.*$/` | allocated | `dark-blue` |
+| 9 | `/^drain.*$/` | drained | `yellow` |
+| 10 | `/^(down\|fail).*$/` | down | `red` |
+| 11 | `/^maint.*$/` | maintenance | `purple` |
+
+Colours are theme colour names, resolved by the active theme — no hex, so the
+defaults stay legible in both the light and dark Grafana surfaces.
+
+States matching none of these keep their raw text and Grafana's default
+grey, rather than disappearing or erroring. The panel names them in its
+warnings strip (capped at eight, `and N more` past that), so a state
+introduced by a Slurm upgrade is visible instead of quietly blending in.
