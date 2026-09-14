@@ -1,112 +1,133 @@
-# Design tokens — Slurm node grid
+# Design notes — Slurm node grid
 
-The decisions the panel implements, and the measurements behind them. The
-companion review page is `nodegrid-mockups.html` — open it directly, add
+What was measured, and what the panel does with it. This is **not** a token file:
+the plugin hardcodes no colour. Grafana's documented best practice is to take
+colour, spacing and typography from theme variables rather than from literals,
+and the state colours come from the field config. See the *Colour and options*
+section of the spec.
+
+The companion review page is `nodegrid-mockups.html` — open it directly, add
 `?theme=dark` or `?vision=protan`.
 
-## What the panel does and does not own
+## What the panel owns
 
 A Grafana panel inherits its background, its typeface and its theme. Grafana
-draws the frame, the title and the padding. So this design defines **the cell,
-the grid, the group, the node card, and the meaning of the colours** — and
-nothing else. No brand surface, no display face, no imported font.
+draws the frame, the title and the padding. So this design covers **the cell
+geometry, the grid, the group header, the node card and the layout** — and
+nothing else. No brand surface, no display face, no imported font, no palette.
 
-## State colours
-
-Produced by the `dataviz` palette validator, not chosen by eye. Validated
-against both Grafana surfaces: `#ffffff` light, `#181b1f` dark.
-
-| Role | Hex | Fill | Shape |
-|---|---|---|---|
-| OK | `#3f7f96` | solid | plain square |
-| WARN | `#c98500` | solid | top-right corner cut |
-| CRIT | `#d03b3b` | solid | full diagonal |
-| UNKNOWN | — | none | 1.5px inset ring, `#8e949c` |
-
-Measured, all-pairs, both modes:
-
-```
-lightness band     PASS   all three inside the mode band
-CVD separation     PASS   worst pair ΔE 10.2 deutan · 13.9 tritan
-contrast vs surface PASS  all three ≥ 3:1 on white and on #181b1f
-chroma floor       FAIL   #3f7f96 at 0.074, below the 0.1 floor
+```ts
+const theme = useTheme2();
+// spacing, colour, typography all come from here
 ```
 
-The chroma failure is deliberate. That floor exists so a categorical series is
-not mistaken for a grid line; here the quiet **is** the signal, and UNKNOWN is
-separated by shape rather than hue. Documented, not overlooked.
+## Where colour comes from
 
-### Why not a traffic light
+| Question | Mechanism |
+|---|---|
+| which state is which colour | **Value mappings** (exact + regex, ordered, first match wins) |
+| continuous fill for CPU / memory / GPU | **Thresholds** |
+| resolving either to a colour | `getDisplayProcessor({ field, theme })` → `field.display(v).color` |
+| a named colour to a hex | `theme.visualization.getColorByName('semi-dark-orange')` |
+
+The panel ships **default value mappings**, not a palette. Defaults use theme
+colour names, never hex.
+
+The ordering of those defaults is the part that matters:
+
+```
+1.  regex  .*\*$        →  not responding
+2.  regex  ^idle        →  idle
+3.  regex  ^mixed       →  mixed
+4.  regex  ^drain       →  drained
+5.  regex  ^down|^fail  →  down
+```
+
+A naive `^idle` placed first swallows `idle*`, and a node the controller cannot
+reach reads as healthy. Specific before general, always.
+
+## The colour-vision measurements
+
+Run with the `dataviz` palette validator against both Grafana surfaces —
+`#ffffff` light, `#181b1f` dark, all pairs. Kept here because they inform an
+option, not because the plugin implements them.
 
 | Palette | Worst pair, deficient vision | Contrast on white |
 |---|---|---|
 | green `#0ca30c` / amber `#fab219` / red `#d03b3b` | ΔE **4.1** deutan | amber 1.83:1 |
 | Grafana defaults `#73bf69` / `#ff9830` / `#f2495c` | ΔE **6.2** protan | 2.24:1 · 2.15:1 |
-| quiet OK | ΔE **10.2** deutan | all ≥ 3:1 |
+| desaturated OK `#3f7f96` / `#c98500` / `#d03b3b` | ΔE **10.2** deutan · 13.9 tritan | all ≥ 3:1 |
 
-No choice of hue rescues a traffic light: red against green measures 4.1, red
-against a desaturated slate measures 13.0. The separation comes from dropping
-chroma on the healthy state. It also fixes a second problem — on a healthy
-cluster 95% of cells are OK, and a loud green wall drowns the three red cells
-the panel exists to reveal.
+Two things follow.
 
-These are **defaults**. Colour is user-configurable through the panel options; a
-site that wants green sets green, and the shape channel keeps it readable.
+**No choice of hue rescues a traffic light.** Red against green measures 4.1; red
+against a desaturated slate measures 13.0. Separation comes from dropping chroma
+on the healthy state, not from hunting a better green. Roughly 8% of men have a
+red-green deficiency, and on a wallboard read across a room that is a functional
+failure rather than an aesthetic one.
 
-## The second channel
+**A wall of saturated green hides what matters.** On a healthy cluster 95% of
+cells are OK. Loud green fills the screen and the three red cells the panel
+exists to reveal become three pixels in a shouting field. A car dashboard has no
+green light for "the engine is fine".
 
-The validator permits a palette in the ΔE 6–8 band only with a secondary
-encoding. Here the state changes the **shape** of the cell, not only its fill, so
-the grid survives greyscale, print, `forced-colors`, deficient colour vision and
-being read across a room.
+The panel does **not** impose this. Colour follows Grafana, and a site that wants
+green sets green. What the measurements justify is the option below.
 
-```css
-[data-s="WARN"] { clip-path: polygon(0 0, 66% 0, 100% 34%, 100% 100%, 0 100%); }
-[data-s="CRIT"] { clip-path: polygon(0 0, 100% 0, 100% 62%, 62% 100%, 0 100%, 0 38%); }
-[data-s="UNKNOWN"] { background: transparent; box-shadow: inset 0 0 0 1.5px var(--unknown); }
-```
+## The shape channel — an option, off by default
 
-Below 10px the notch stops being legible and the fill carries alone — which is
-also where a cell stops being a usable hover target. That is the honest floor of
-the density ladder, and the panel says so rather than shrinking past it.
-
-## Type
-
-Grafana's inherited UI face for everything except one case: **node identifiers
-are monospaced**. `c04`, `r012c04n03` and `g10` are fixed-width tokens that get
-aligned in columns and compared character by character — that is tabular data,
-not a small-label decoration. Use the stack Grafana already ships; import
-nothing.
+A cell can carry its state as a shape as well as a fill. With it on, the grid
+stays readable in greyscale, in print, under `forced-colors`, and with a
+red-green deficiency — whatever palette the site chose.
 
 ```
---id: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+OK        plain square
+WARN      top-right corner cut
+CRIT      full diagonal
+UNKNOWN   no fill, inset ring
 ```
 
-No display face. A panel has no headline.
+Off by default: the default should look like every other Grafana panel in the
+dashboard. On for sites that need the second channel, or that put the panel on a
+wall.
 
 ## Geometry
 
 | Element | Rule |
 |---|---|
-| Cell | square, `border-radius: 0` below 20px — rounding eats the colour that carries the meaning |
-| Cell gap | 2–3px; the gap is what makes a grid readable, not a border |
-| Group header | one line, 16px tall, a 2px rail carrying the rolled-up state |
-| Rack slot | wide and short (a 1U sled), stacked bottom-up inside a 1px frame with a 3px bottom edge |
+| Cell | square, no border radius below 20px — rounding eats the colour that carries the meaning |
+| Cell gap | `theme.spacing(0.25)`–`(0.5)`; the gap is what makes a grid readable, not a border |
+| Group header | one line, a rail carrying the rolled-up state |
+| Rack slot | wide and short (a 1U sled), stacked bottom-up inside a frame with a heavier bottom edge |
 | Chrome | no cards, no shadows, no radius on containers |
 
 A rack slot is drawn wide and short because that is what a rack slot is. Drawing
 it square turns an elevation back into a list.
 
+Below 10px a notch stops being legible and a cell stops being a usable hover
+target. That is the honest floor of the density ladder, and the panel says so
+rather than shrinking past it.
+
+## Type
+
+The inherited Grafana UI face for everything, with one exception: **node
+identifiers are monospaced**. `c04`, `r012c04n03` and `g10` are fixed-width
+tokens that get aligned in columns and compared character by character — tabular
+data, not a small-label decoration. Use the stack Grafana already ships; import
+no font.
+
+No display face. A panel has no headline.
+
 ## Motion
 
-None, except hover and focus. A wallboard that refreshes every 30 seconds and
+None, except hover and focus. A wallboard refreshing every 30 seconds that
 animates its transitions produces noise, not information. `prefers-reduced-motion`
-is respected anyway.
+is respected regardless.
 
 ## Accessibility floor
 
 - Every cell carries an `aria-label` naming the node and its state in words.
-- State is never colour alone — shape is the second channel, and the node card
-  spells the state out.
+- The node card spells the state out, so meaning never rests on colour alone even
+  with the shape channel off.
 - Focus is visible on every cell; the grid is keyboard reachable.
-- Contrast verified in both themes against the real Grafana surfaces.
+- Contrast is verified in both themes against the real Grafana surfaces.
