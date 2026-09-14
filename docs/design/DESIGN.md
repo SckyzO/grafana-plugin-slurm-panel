@@ -38,11 +38,11 @@ The shipped defaults are delimited, whole-value regexes:
 ```
  1.  /^.*\*$/            →  not responding
  2.  /^.*~$/             →  powered down
- 3.  /^idle-.*$/         →  idle, backfill
+ 3.  /^idle.*-$/         →  idle, backfill
  4.  /^idle.*$/          →  idle
- 5.  /^mixed-.*$/        →  mixed, backfill
+ 5.  /^mixed.*-$/        →  mixed, backfill
  6.  /^mixed.*$/         →  mixed
- 7.  /^alloc-.*$/        →  allocated, backfill
+ 7.  /^alloc.*-$/        →  allocated, backfill
  8.  /^alloc.*$/         →  allocated
  9.  /^drain.*$/         →  drained
 10.  /^(down|fail).*$/   →  down
@@ -56,6 +56,9 @@ mappings UI:
   a node the controller cannot reach reads as healthy.
 - **Delimit the pattern.** A bare `^idle` is compiled by Grafana as `/^^idle$/` —
   an exact match. It fails silently and looks correct.
+- **Anchor a modifier at the end, not after the base.** The suffix follows the
+  *full* state name. `/^alloc-.*$/` looks right and matches nothing, because the
+  state is `allocated-` and the `-` never follows `alloc` directly.
 - **Span the whole value.** `RegexToText` substitutes the result for the matched
   portion; `/^drain/ → "drained"` renders `drained` as `draineded`.
 

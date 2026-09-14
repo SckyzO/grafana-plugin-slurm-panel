@@ -248,16 +248,23 @@ before general.
 ```
  1.  /^.*\*$/            →  "not responding"    a modifier rule must precede
  2.  /^.*~$/             →  "powered down"      the base rule that would
- 3.  /^idle-.*$/         →  "idle, backfill"    otherwise swallow it
+ 3.  /^idle.*-$/         →  "idle, backfill"    otherwise swallow it
  4.  /^idle.*$/          →  "idle"
- 5.  /^mixed-.*$/        →  "mixed, backfill"
+ 5.  /^mixed.*-$/        →  "mixed, backfill"
  6.  /^mixed.*$/         →  "mixed"
- 7.  /^alloc-.*$/        →  "allocated, backfill"
+ 7.  /^alloc.*-$/        →  "allocated, backfill"
  8.  /^alloc.*$/         →  "allocated"
  9.  /^drain.*$/         →  "drained"
 10.  /^(down|fail).*$/   →  "down"
 11.  /^maint.*$/         →  "maintenance"
 ```
+
+A modifier rule anchors the modifier at the **end**, not after the base: the
+suffix follows the *full* state name, and several of these rules abbreviate it.
+`/^alloc-.*$/` looks right and matches nothing, because the state is `allocated-`
+and the `-` never follows `alloc` directly. `/^alloc.*-$/` is the form that works,
+and it is used uniformly so no rule depends on whether its prefix happens to be a
+complete base state.
 
 Ordering is still load-bearing — rule 4 placed before rule 1 puts an unreachable
 node back to reading as healthy — but the anchoring trap is the one that bites
