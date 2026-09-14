@@ -98,7 +98,11 @@ if the two ever disagree, the source file is right and this table is stale.
 Colours are theme colour names, resolved by the active theme — no hex, so the
 defaults stay legible in both the light and dark Grafana surfaces.
 
-States matching none of these keep their raw text and Grafana's default
-grey, rather than disappearing or erroring. The panel names them in its
-warnings strip (capped at eight, `and N more` past that), so a state
-introduced by a Slurm upgrade is visible instead of quietly blending in.
+States matching none of these keep their raw text, rather than disappearing
+or erroring. With the panel's thresholds always configured, Grafana would
+colour an unmatched value with the threshold base colour — green, by
+default — the same colour a healthy node gets. The panel refuses that
+colour for an unmapped state and draws a hollow ring instead, and names the
+state in its warnings strip (capped at eight, `and N more` past that), so a
+state introduced by a Slurm upgrade is visible instead of quietly reading as
+healthy.

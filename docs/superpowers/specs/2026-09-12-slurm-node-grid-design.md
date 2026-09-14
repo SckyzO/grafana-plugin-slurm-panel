@@ -269,8 +269,10 @@ complete base state.
 Ordering is still load-bearing — rule 4 placed before rule 1 puts an unreachable
 node back to reading as healthy — but the anchoring trap is the one that bites
 first, because it fails silently and looks right. States matching nothing
-(`perfctrs`, `blocked`, `inval`) keep their raw text and Grafana's default grey,
-which is the behaviour *Error handling* asks for.
+(`perfctrs`, `blocked`, `inval`) keep their raw text; with thresholds always
+configured, Grafana would otherwise colour them with the threshold base colour —
+green — so the panel refuses that colour for an unmapped state and draws a
+hollow ring instead, which is the behaviour *Error handling* asks for.
 
 **Colours use theme names** (`green`, `semi-dark-orange`, `red`, `text`),
 resolved through `theme.visualization.getColorByName`. No hex anywhere in the
