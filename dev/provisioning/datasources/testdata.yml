@@ -1,0 +1,11 @@
+apiVersion: 1
+datasources:
+  # Grafana's built-in TestData source, used by the scenario dashboards: a
+  # dashboard that carries its own CSV renders the same cluster every time,
+  # with no exporter, no Prometheus and no scrape timing involved. That is
+  # what makes a scenario reproducible rather than merely seeded.
+  - name: TestData
+    type: grafana-testdata-datasource
+    uid: slurm-views-testdata
+    access: proxy
+    isDefault: false

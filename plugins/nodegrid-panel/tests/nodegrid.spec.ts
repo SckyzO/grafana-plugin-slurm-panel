@@ -70,6 +70,41 @@ test.describe('the node grid renders against a real Grafana', () => {
   });
 });
 
+test.describe('the panel supplies its own state colours', () => {
+  test('colours a dashboard that configures no value mappings at all', async ({
+    gotoDashboardPage,
+    readProvisionedDashboard,
+    page,
+  }) => {
+    // slurm-node-scenarios.json carries no fieldConfig.defaults.mappings: not
+    // an empty array, the key is absent. Anything coloured here came from the
+    // plugin's own standardOptions default, which is the whole claim. Written
+    // against a build without that default first, where it failed with 0
+    // mapped cells out of 31.
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-scenarios.json' });
+    await gotoDashboardPage(dashboard);
+
+    await expect(page.getByTestId('slurm-node-grid').first()).toBeVisible({ timeout: 15_000 });
+
+    // One compound selector, not `.locator(cell).locator(mapped)` — the second
+    // form searches for a mapped element *inside* each cell and matches
+    // nothing, which reports zero on a grid that is fully coloured.
+    const mapped = page.locator('[data-testid^="node-cell-"][data-mapped="true"]');
+    // The four panels carry 231 cells between them and 220 match a shipped
+    // rule. A bound of 1 would pass on a single lucky cell; 150 fails if the
+    // defaults reach only one panel, and stays clear of 220 so that adding an
+    // unmapped state to the reference panel does not break it.
+    await expect.poll(() => mapped.count(), { timeout: 15_000 }).toBeGreaterThan(150);
+
+    // Mapped is not the same as coloured: a uniformly grey grid would still
+    // report every cell as mapped. The eleven rules resolve to nine colours.
+    const colours = await mapped.evaluateAll((nodes) =>
+      Array.from(new Set(nodes.map((n) => getComputedStyle(n).backgroundColor)))
+    );
+    expect(colours.length).toBeGreaterThan(4);
+  });
+});
+
 test.describe('the options editor', () => {
   test('exposes the standard sections, which proves useFieldConfig is wired', async ({
     panelEditPage,

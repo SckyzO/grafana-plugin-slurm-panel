@@ -1,0 +1,245 @@
+{
+  "uid": "slurm-node-scenarios",
+  "title": "Slurm node grid - scenarios",
+  "description": "Hand-written clusters that render the same way every time. Every panel carries its own CSV, so this dashboard needs no exporter, no Prometheus and no scrape to have happened.",
+  "tags": [
+    "slurm",
+    "scenarios"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "",
+  "time": {
+    "from": "now-5m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "Every state, and the colour it gets",
+      "description": "One node per state string Slurm can report, grouped by the raw state so the group header is the input and the cell is the output. The four states at the end match no rule and are drawn hollow rather than coloured \u2014 that is the panel refusing to paint an unknown state with the threshold base colour.",
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "slurm-views-testdata"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "slurm-views-testdata"
+          },
+          "scenarioId": "csv_content",
+          "csvContent": "node,partition,status,Value\nn001,cpu,idle,1\nn002,cpu,idle*,1\nn003,cpu,idle~,1\nn004,cpu,idle-,1\nn005,cpu,mixed,1\nn006,cpu,mixed*,1\nn007,cpu,mixed-,1\nn008,cpu,allocated,1\nn009,cpu,allocated*,1\nn010,cpu,allocated-,1\nn011,cpu,drained,1\nn012,cpu,drained*,1\nn013,cpu,draining,1\nn014,cpu,down,1\nn015,cpu,down*,1\nn016,cpu,fail,1\nn017,cpu,failing,1\nn018,cpu,maint,1\nn019,cpu,maint*,1\nn020,cpu,planned,1\nn021,cpu,reserved,1\nn022,cpu,completing,1\nn023,cpu,blocked,1\nn024,cpu,perfctrs,1\nn025,cpu,inval,1\nn026,cpu,unknown,1\nn027,cpu,powering_up,1\nn028,cpu,powering_down,1\nn029,cpu,power_down~,1\nn030,cpu,reboot^,1\nn031,cpu,future#,1\n"
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A"
+        },
+        "grouping": {
+          "kind": "label",
+          "label": "status"
+        },
+        "multiValueLabel": false,
+        "layout": "wrap",
+        "cellSize": 22,
+        "gap": 3,
+        "shapeChannel": false,
+        "colorMode": "state",
+        "maxCells": 3000
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "A rack on the floor",
+      "description": "Four racks of twenty; r003 has lost power. Rack layout, grouped by the rack label, which is what the synthetic exporter publishes and the real one does not.",
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "slurm-views-testdata"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "slurm-views-testdata"
+          },
+          "scenarioId": "csv_content",
+          "csvContent": "node,rack,partition,status,Value\nr001n0001,r001,cpu,idle,1\nr001n0002,r001,cpu,idle,1\nr001n0003,r001,cpu,mixed,1\nr001n0004,r001,cpu,allocated,1\nr001n0005,r001,cpu,idle,1\nr001n0006,r001,cpu,mixed,1\nr001n0007,r001,cpu,allocated,1\nr001n0008,r001,cpu,idle,1\nr001n0009,r001,cpu,idle,1\nr001n0010,r001,cpu,idle,1\nr001n0011,r001,cpu,mixed,1\nr001n0012,r001,cpu,allocated,1\nr001n0013,r001,cpu,idle,1\nr001n0014,r001,cpu,mixed,1\nr001n0015,r001,cpu,allocated,1\nr001n0016,r001,cpu,idle,1\nr001n0017,r001,cpu,idle,1\nr001n0018,r001,cpu,idle,1\nr001n0019,r001,cpu,mixed,1\nr001n0020,r001,cpu,allocated,1\nr002n0021,r002,cpu,idle,1\nr002n0022,r002,cpu,mixed,1\nr002n0023,r002,cpu,allocated,1\nr002n0024,r002,cpu,idle,1\nr002n0025,r002,cpu,idle,1\nr002n0026,r002,cpu,idle,1\nr002n0027,r002,cpu,mixed,1\nr002n0028,r002,cpu,allocated,1\nr002n0029,r002,cpu,idle,1\nr002n0030,r002,cpu,mixed,1\nr002n0031,r002,cpu,allocated,1\nr002n0032,r002,cpu,idle,1\nr002n0033,r002,cpu,idle,1\nr002n0034,r002,cpu,idle,1\nr002n0035,r002,cpu,mixed,1\nr002n0036,r002,cpu,allocated,1\nr002n0037,r002,cpu,idle,1\nr002n0038,r002,cpu,mixed,1\nr002n0039,r002,cpu,allocated,1\nr002n0040,r002,cpu,idle,1\nr003n0041,r003,cpu,down,1\nr003n0042,r003,cpu,down,1\nr003n0043,r003,cpu,down,1\nr003n0044,r003,cpu,down,1\nr003n0045,r003,cpu,down,1\nr003n0046,r003,cpu,down,1\nr003n0047,r003,cpu,down,1\nr003n0048,r003,cpu,down,1\nr003n0049,r003,cpu,down,1\nr003n0050,r003,cpu,down,1\nr003n0051,r003,cpu,down,1\nr003n0052,r003,cpu,down,1\nr003n0053,r003,cpu,down,1\nr003n0054,r003,cpu,down,1\nr003n0055,r003,cpu,down,1\nr003n0056,r003,cpu,down,1\nr003n0057,r003,cpu,down,1\nr003n0058,r003,cpu,down,1\nr003n0059,r003,cpu,down,1\nr003n0060,r003,cpu,down,1\nr004n0061,r004,cpu,idle,1\nr004n0062,r004,cpu,mixed,1\nr004n0063,r004,cpu,allocated,1\nr004n0064,r004,cpu,idle,1\nr004n0065,r004,cpu,idle,1\nr004n0066,r004,cpu,idle,1\nr004n0067,r004,cpu,mixed,1\nr004n0068,r004,cpu,allocated,1\nr004n0069,r004,cpu,idle,1\nr004n0070,r004,cpu,mixed,1\nr004n0071,r004,cpu,allocated,1\nr004n0072,r004,cpu,idle,1\nr004n0073,r004,cpu,idle,1\nr004n0074,r004,cpu,idle,1\nr004n0075,r004,cpu,mixed,1\nr004n0076,r004,cpu,allocated,1\nr004n0077,r004,cpu,idle,1\nr004n0078,r004,cpu,mixed,1\nr004n0079,r004,cpu,allocated,1\nr004n0080,r004,cpu,idle,1\n"
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A"
+        },
+        "grouping": {
+          "kind": "label",
+          "label": "rack"
+        },
+        "multiValueLabel": false,
+        "layout": "rack",
+        "cellSize": 16,
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "state",
+        "maxCells": 3000
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "The same rack, read without colour",
+      "description": "Identical data to the panel on the left with the shape channel switched on. State is carried by a notch as well as a fill, so the grid survives greyscale, print and colour-vision deficiency \u2014 where four blues and a green do not.",
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "slurm-views-testdata"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "slurm-views-testdata"
+          },
+          "scenarioId": "csv_content",
+          "csvContent": "node,rack,partition,status,Value\nr001n0001,r001,cpu,idle,1\nr001n0002,r001,cpu,idle,1\nr001n0003,r001,cpu,mixed,1\nr001n0004,r001,cpu,allocated,1\nr001n0005,r001,cpu,idle,1\nr001n0006,r001,cpu,mixed,1\nr001n0007,r001,cpu,allocated,1\nr001n0008,r001,cpu,idle,1\nr001n0009,r001,cpu,idle,1\nr001n0010,r001,cpu,idle,1\nr001n0011,r001,cpu,mixed,1\nr001n0012,r001,cpu,allocated,1\nr001n0013,r001,cpu,idle,1\nr001n0014,r001,cpu,mixed,1\nr001n0015,r001,cpu,allocated,1\nr001n0016,r001,cpu,idle,1\nr001n0017,r001,cpu,idle,1\nr001n0018,r001,cpu,idle,1\nr001n0019,r001,cpu,mixed,1\nr001n0020,r001,cpu,allocated,1\nr002n0021,r002,cpu,idle,1\nr002n0022,r002,cpu,mixed,1\nr002n0023,r002,cpu,allocated,1\nr002n0024,r002,cpu,idle,1\nr002n0025,r002,cpu,idle,1\nr002n0026,r002,cpu,idle,1\nr002n0027,r002,cpu,mixed,1\nr002n0028,r002,cpu,allocated,1\nr002n0029,r002,cpu,idle,1\nr002n0030,r002,cpu,mixed,1\nr002n0031,r002,cpu,allocated,1\nr002n0032,r002,cpu,idle,1\nr002n0033,r002,cpu,idle,1\nr002n0034,r002,cpu,idle,1\nr002n0035,r002,cpu,mixed,1\nr002n0036,r002,cpu,allocated,1\nr002n0037,r002,cpu,idle,1\nr002n0038,r002,cpu,mixed,1\nr002n0039,r002,cpu,allocated,1\nr002n0040,r002,cpu,idle,1\nr003n0041,r003,cpu,down,1\nr003n0042,r003,cpu,down,1\nr003n0043,r003,cpu,down,1\nr003n0044,r003,cpu,down,1\nr003n0045,r003,cpu,down,1\nr003n0046,r003,cpu,down,1\nr003n0047,r003,cpu,down,1\nr003n0048,r003,cpu,down,1\nr003n0049,r003,cpu,down,1\nr003n0050,r003,cpu,down,1\nr003n0051,r003,cpu,down,1\nr003n0052,r003,cpu,down,1\nr003n0053,r003,cpu,down,1\nr003n0054,r003,cpu,down,1\nr003n0055,r003,cpu,down,1\nr003n0056,r003,cpu,down,1\nr003n0057,r003,cpu,down,1\nr003n0058,r003,cpu,down,1\nr003n0059,r003,cpu,down,1\nr003n0060,r003,cpu,down,1\nr004n0061,r004,cpu,idle,1\nr004n0062,r004,cpu,mixed,1\nr004n0063,r004,cpu,allocated,1\nr004n0064,r004,cpu,idle,1\nr004n0065,r004,cpu,idle,1\nr004n0066,r004,cpu,idle,1\nr004n0067,r004,cpu,mixed,1\nr004n0068,r004,cpu,allocated,1\nr004n0069,r004,cpu,idle,1\nr004n0070,r004,cpu,mixed,1\nr004n0071,r004,cpu,allocated,1\nr004n0072,r004,cpu,idle,1\nr004n0073,r004,cpu,idle,1\nr004n0074,r004,cpu,idle,1\nr004n0075,r004,cpu,mixed,1\nr004n0076,r004,cpu,allocated,1\nr004n0077,r004,cpu,idle,1\nr004n0078,r004,cpu,mixed,1\nr004n0079,r004,cpu,allocated,1\nr004n0080,r004,cpu,idle,1\n"
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A"
+        },
+        "grouping": {
+          "kind": "label",
+          "label": "rack"
+        },
+        "multiValueLabel": false,
+        "layout": "rack",
+        "cellSize": 16,
+        "gap": 2,
+        "shapeChannel": true,
+        "colorMode": "state",
+        "maxCells": 3000
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "A drain storm, with the reasons attached",
+      "description": "The join this panel exists for. slurm_node_drain_reason_info carries no partition label, so no stock panel can put the reason next to the state. Query B supplies it here; hover a yellow cell.",
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "slurm-views-testdata"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "slurm-views-testdata"
+          },
+          "scenarioId": "csv_content",
+          "csvContent": "node,partition,status,Value\ngpu001,gpu,drained,1\ngpu002,gpu,idle,1\ngpu003,gpu,mixed,1\ngpu004,gpu,drained,1\ngpu005,gpu,mixed,1\ngpu006,gpu,idle,1\ngpu007,gpu,drained,1\ngpu008,gpu,idle,1\ngpu009,gpu,mixed,1\ngpu010,gpu,drained,1\ngpu011,gpu,mixed,1\ngpu012,gpu,idle,1\ngpu013,gpu,drained,1\ngpu014,gpu,idle,1\ngpu015,gpu,mixed,1\ngpu016,gpu,drained,1\ngpu017,gpu,mixed,1\ngpu018,gpu,idle,1\ngpu019,gpu,drained,1\ngpu020,gpu,idle,1\ngpu021,gpu,mixed,1\ngpu022,gpu,drained,1\ngpu023,gpu,mixed,1\ngpu024,gpu,idle,1\ngpu025,gpu,drained,1\ngpu026,gpu,idle,1\ngpu027,gpu,mixed,1\ngpu028,gpu,drained,1\ngpu029,gpu,mixed,1\ngpu030,gpu,idle,1\ngpu031,gpu,drained,1\ngpu032,gpu,idle,1\ngpu033,gpu,mixed,1\ngpu034,gpu,drained,1\ngpu035,gpu,mixed,1\ngpu036,gpu,idle,1\ngpu037,gpu,drained,1\ngpu038,gpu,idle,1\ngpu039,gpu,mixed,1\ngpu040,gpu,drained,1\n"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "slurm-views-testdata"
+          },
+          "scenarioId": "csv_content",
+          "csvContent": "node,reason,Value\ngpu001,healthcheck: /scratch not mounted,1\ngpu004,Kill task failed,1\ngpu007,NHC: check_hw_ib failed,1\ngpu010,GPU fell off the bus - RMA pending,1\ngpu013,node not responding,1\ngpu016,NHC: check_fs_mount /home,1\ngpu019,manual: firmware upgrade,1\ngpu022,Epilog error,1\ngpu025,healthcheck: /scratch not mounted,1\ngpu028,Kill task failed,1\ngpu031,NHC: check_hw_ib failed,1\ngpu034,GPU fell off the bus - RMA pending,1\ngpu037,node not responding,1\ngpu040,NHC: check_fs_mount /home,1\n"
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A",
+          "drainReason": "B"
+        },
+        "grouping": {
+          "kind": "chunk",
+          "size": 10
+        },
+        "multiValueLabel": false,
+        "layout": "wrap",
+        "cellSize": 18,
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "state",
+        "maxCells": 3000
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    }
+  ]
+}

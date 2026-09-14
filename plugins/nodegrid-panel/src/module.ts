@@ -1,5 +1,6 @@
-import { PanelPlugin } from '@grafana/data';
+import { FieldConfigProperty, PanelPlugin } from '@grafana/data';
 import { NodeGridPanel } from './components/NodeGridPanel';
+import { DEFAULT_MAPPINGS } from './defaults/mappings';
 import { GroupingEditor } from './editor/GroupingEditor';
 import { DEFAULT_OPTIONS } from './types';
 import type { PanelOptions } from './types';
@@ -8,7 +9,27 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
   // Without this call Grafana shows no Standard options, no Thresholds and no
   // Value mappings, and every cell is painted the same colour. It is covered
   // by an end-to-end test rather than trusted.
-  .useFieldConfig()
+  .useFieldConfig({
+    standardOptions: {
+      // Ship the Slurm state colours as the default value of the standard
+      // Mappings option, so a panel dropped on a new dashboard is coloured
+      // before anyone configures anything.
+      //
+      // This is not the mechanism that was tried and abandoned earlier. A
+      // custom option editor cannot do this: it receives a
+      // StandardEditorContext, which has no onFieldConfigChange, so it can
+      // never write fieldConfig.defaults. `standardOptions` is the supported
+      // route, and it is a default rather than a lock — the Value mappings
+      // section still shows all eleven rules, and editing or deleting them
+      // works exactly as it would on any other panel.
+      //
+      // These rules are not obvious and do not survive being retyped from
+      // memory: an undelimited pattern gets wrapped in ^...$ by Grafana, and
+      // RegexToText replaces the matched portion rather than labelling the
+      // value. See docs/value-mappings.md.
+      [FieldConfigProperty.Mappings]: { defaultValue: DEFAULT_MAPPINGS },
+    },
+  })
   .setPanelOptions((builder) => {
     builder
       .addTextInput({
