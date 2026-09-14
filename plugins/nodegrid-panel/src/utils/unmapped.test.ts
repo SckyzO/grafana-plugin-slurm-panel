@@ -76,7 +76,11 @@ describe('summarise', () => {
   });
 
   it('warns past the cell threshold and suggests a filter', () => {
-    expect(summarise(model(4000, 4000), [], [], 3000))
+    // nodeCount and slotCount deliberately differ here: with both at 4000 the
+    // assertion below cannot tell whether the code compares slotCount or
+    // nodeCount against maxCells. slotCount (4000) exceeds it; nodeCount
+    // (2000) does not.
+    expect(summarise(model(2000, 4000), [], [], 3000))
       .toContain('4000 cells exceeds 3000. Filter the query or split the view by region.');
   });
 });
