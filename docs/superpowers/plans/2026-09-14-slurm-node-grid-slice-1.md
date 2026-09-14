@@ -3084,7 +3084,7 @@ In `module.ts`, add a `Grouping` category and the reset button under `Data`:
 .addBooleanSwitch({
   path: 'multiValueLabel',
   name: 'Node may appear in several groups',
-  description: 'For a label a node can hold several values of, such as partition.',
+  description: 'Draw a node once per partition it belongs to. Only the partition label is supported: fanning out an arbitrary multi-valued label would need a per-node map of every value, which the engine does not build.',
   defaultValue: DEFAULT_OPTIONS.multiValueLabel,
   category: ['Grouping'],
 })
