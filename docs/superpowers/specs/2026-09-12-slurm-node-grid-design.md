@@ -468,7 +468,7 @@ chosen must meet the threshold and carry the controls:
 
 | | Minimum | Controls |
 |---|---|---|
-| pnpm | 11.0.0 | `strictDepBuilds: true`, `dangerouslyAllowAllBuilds: false`, `allowBuilds: []`, `minimumReleaseAge: 4320`, `blockExoticSubdeps: true` |
+| pnpm | 11.0.0 | `strictDepBuilds: true`, `dangerouslyAllowAllBuilds: false`, `allowBuilds: {}`, `minimumReleaseAge: 4320`, `blockExoticSubdeps: true` |
 | npm | 11.15.0 | `ignore-scripts=true`, `allow-git=none`, `min-release-age=3` |
 | yarn | 4.14.0 | `enableScripts: false`, `approvedGitRepositories: []`, `npmMinimalAgeGate: 4320` |
 
