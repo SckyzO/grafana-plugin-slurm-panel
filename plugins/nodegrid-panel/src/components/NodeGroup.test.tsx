@@ -4,6 +4,7 @@ import { FieldType, ThresholdsMode, createTheme, getDisplayProcessor } from '@gr
 import type { DisplayProcessor } from '@grafana/data';
 import type { NodeGroup as NodeGroupModel, SlurmNode } from '@slurm-views/core';
 import { NodeGroup } from './NodeGroup';
+import { rackWidthFor } from './rackGeometry';
 import { DEFAULT_MAPPINGS } from '../defaults/mappings';
 import { DEFAULT_OPTIONS } from '../types';
 
@@ -41,7 +42,11 @@ describe('NodeGroup', () => {
     render(<NodeGroup group={group} display={display} options={{ ...DEFAULT_OPTIONS, layout: 'rack' }} />);
 
     expect(screen.getByTestId('node-group-rack-1')).toHaveAttribute('data-layout', 'rack');
-    expect(screen.getByTestId('rack-frame')).toBeInTheDocument();
+    const rack = screen.getByTestId('rack-frame');
+    expect(rack).toBeInTheDocument();
+    // NodeGroup threads options.cellSize through to RackFrame rather than
+    // computing (or hardcoding) the rack's width itself.
+    expect(getComputedStyle(rack).width).toBe(`${rackWidthFor(DEFAULT_OPTIONS.cellSize)}px`);
 
     // A sled is wide and short, not a square: NodeCell only stretches to fill
     // the rack's width (auto) when it received sled={true}.

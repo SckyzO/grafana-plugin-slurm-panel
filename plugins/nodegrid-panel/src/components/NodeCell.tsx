@@ -4,6 +4,7 @@ import type { DisplayProcessor, GrafanaTheme2 } from '@grafana/data';
 import { Tooltip, useTheme2 } from '@grafana/ui';
 import type { SlurmNode } from '@slurm-views/core';
 import { NodeTooltip } from './NodeTooltip';
+import { sledHeightFor } from './rackGeometry';
 
 const getStyles = (theme: GrafanaTheme2) => ({
   cell: css({
@@ -72,7 +73,7 @@ export function NodeCell({ node, size, display, shapeChannel, href, sled }: Node
         style={{
           width: sled ? 'auto' : size,
           alignSelf: sled ? 'stretch' : undefined,
-          height: sled ? Math.max(5, Math.round(size / 2)) : size,
+          height: sled ? sledHeightFor(size) : size,
           background: mapped ? dv.color : undefined,
           clipPath: shapeChannel ? shapeFor(dv.text) : undefined,
         }}

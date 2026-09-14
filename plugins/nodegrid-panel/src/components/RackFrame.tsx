@@ -2,6 +2,7 @@ import React from 'react';
 import { css } from '@emotion/css';
 import type { GrafanaTheme2 } from '@grafana/data';
 import { useTheme2 } from '@grafana/ui';
+import { rackWidthFor } from './rackGeometry';
 
 const getStyles = (theme: GrafanaTheme2, width: number) => ({
   // column-reverse so slot 1 sits at the bottom, the way a rack is read.
@@ -20,12 +21,12 @@ const getStyles = (theme: GrafanaTheme2, width: number) => ({
 
 export interface RackFrameProps {
   children: React.ReactNode;
-  width: number;
+  cellSize: number;
 }
 
-export function RackFrame({ children, width }: RackFrameProps) {
+export function RackFrame({ children, cellSize }: RackFrameProps) {
   const theme = useTheme2();
-  const styles = getStyles(theme, width);
+  const styles = getStyles(theme, rackWidthFor(cellSize));
   return (
     <div className={styles.rack} data-testid="rack-frame">
       {children}

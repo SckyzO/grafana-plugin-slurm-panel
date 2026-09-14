@@ -38,7 +38,7 @@ export function NodeGroup({ group, display, options }: NodeGroupProps) {
     <div className={styles.group} data-testid={`node-group-${group.key}`} data-layout={options.layout}>
       <GroupHeader group={group} />
       {options.layout === 'rack' ? (
-        <RackFrame width={Math.max(40, options.cellSize * 4)}>{cells}</RackFrame>
+        <RackFrame cellSize={options.cellSize}>{cells}</RackFrame>
       ) : (
         <div className={styles.wrap}>{cells}</div>
       )}
