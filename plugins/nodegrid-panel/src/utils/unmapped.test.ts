@@ -61,6 +61,15 @@ describe('summarise', () => {
       .toContain('2 states matched no value mapping: blocked, perfctrs');
   });
 
+  it('caps the named list and says how many it held back', () => {
+    // The panel clips its overflow, so an unbounded list eats the grid.
+    const many = Array.from({ length: 12 }, (_, i) => `state${i}`);
+    const line = summarise(model(2, 2), [], many, 3000)[0];
+    expect(line).toContain('12 states matched no value mapping:');
+    expect(line).toContain('and 4 more');
+    expect(line).not.toContain('state8');
+  });
+
   it('passes an ingest warning through with its refId', () => {
     expect(summarise(model(0, 0), [{ kind: 'no-identity', refId: 'B', detail: 'no node label or column' }], [], 3000))
       .toContain('Query B skipped: no node label or column');
