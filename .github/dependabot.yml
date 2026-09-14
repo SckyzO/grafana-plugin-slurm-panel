@@ -1,0 +1,76 @@
+# Dependabot reads this file only at the repository root. An identical-looking
+# copy previously sat in plugins/nodegrid-panel/.github/, where the scaffold
+# had put it and where it did precisely nothing.
+version: 2
+updates:
+  # pnpm workspace. One lockfile at the root; Dependabot reads the `packages`
+  # globs out of pnpm-workspace.yaml and picks up every workspace member from
+  # there, so a single entry covers packages/, plugins/ and tests/.
+  #
+  # Dependabot regenerates the lockfile with its own pnpm, which may be older
+  # than the pinned 12.4.1 and therefore may ignore the supply-chain controls
+  # in pnpm-workspace.yaml. That is survivable rather than dangerous: CI runs
+  # `pnpm install --frozen-lockfile` under 12.4.1, which verifies the whole
+  # lockfile against those policies and fails the pull request if it does not
+  # hold. Dependabot proposes; CI disposes.
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: weekly
+    # Roughly the minimumReleaseAge this project already enforces at install
+    # time: a release nobody has looked at yet is not one to jump on.
+    cooldown:
+      default-days: 5
+      exclude:
+        # Excluded because plugin-e2e's canary releases track Grafana's own
+        # nightlies, and holding them back produces false e2e failures.
+        - '@grafana/plugin-e2e'
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      unit-test:
+        patterns: ['@testing-library/*', 'jest*', '@types/jest']
+      eslint:
+        patterns: ['@grafana/eslint-config', 'eslint*', '@typescript-eslint/*', '@stylistic/*', 'typescript-eslint']
+      grafana:
+        patterns: ['@grafana/*']
+        dependency-type: production
+        update-types: [minor, patch]
+      react:
+        # Minor and patch only, deliberately. React's major is not this
+        # project's to choose: Grafana supplies the running React instance and
+        # a plugin that bundles a different major breaks at runtime. React 19
+        # arrives when Grafana's own scaffold moves, not when npm does.
+        patterns: ['react', 'react-dom', '@types/react', '@types/react-dom']
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: 'chore(ci)'
+    open-pull-requests-limit: 5
+
+  # The toolchain image pins Node to an exact patch; without this the pin is a
+  # promise to bump it by hand, which is a promise nobody keeps.
+  - package-ecosystem: docker
+    directory: /dev
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: 'chore(dev)'
+    open-pull-requests-limit: 3
+
+  # Grafana and Prometheus are pinned in dev/docker-compose.yml for the reason
+  # given there. Pinned is not the same as frozen: this surfaces each new
+  # release as a pull request that CI runs the e2e matrix against.
+  - package-ecosystem: docker-compose
+    directory: /dev
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: 'chore(dev)'
+    open-pull-requests-limit: 3
