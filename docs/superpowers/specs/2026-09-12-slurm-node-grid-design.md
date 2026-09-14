@@ -217,34 +217,71 @@ parallel editor would mean writing, testing, documenting and supporting a worse
 version of something already there.
 
 The panel contributes **defaults**, not a mechanism: an action that writes a
-starting set of value mappings for Slurm states, ordered so the specific rules
-come before the general ones.
+starting set of value mappings for Slurm states.
+
+Writing those defaults correctly turned out to need two things the Value
+mappings UI does not tell you, both established by running
+`getDisplayProcessor` rather than by reading about it.
+
+**A bare pattern is anchored at both ends.** Grafana compiles a value-mapping
+pattern with `stringToJsRegex`, which wraps anything not delimited by slashes in
+`^...$`:
 
 ```
-1.  regex  .*\*$        →  "not responding"    (a suffix rule must precede
-2.  regex  ^idle        →  "idle"               the base rule it would
-3.  regex  ^mixed       →  "mixed"              otherwise be swallowed by)
-4.  regex  ^drain       →  "drained"
-5.  regex  ^down|^fail  →  "down"
+"^idle"        compiles to  /^^idle$/        — an exact match on "idle"
+"^down|^fail"  compiles to  /^^down|^fail$/  — branch 1 unanchored, branch 2 exact
+"/^idle/"      compiles to  /^idle/          — the prefix rule actually intended
 ```
 
-Ordering is the whole game here, and it is where the panel earns its keep: a
-naive `^idle` rule placed first swallows `idle*`, and an unreachable node goes
-back to reading as healthy. The shipped defaults handle it; the documentation
-says why.
+So a rule typed as `^idle` silently stops being a prefix rule, and `idle*` falls
+through it. The delimited form is the only one that means what it looks like.
+
+**`RegexToText` replaces the match, it does not label the value.** The result
+text is substituted for the matched portion, and whatever the pattern did not
+consume stays glued to it — `/^drain/ → "drained"` turns `drained` into
+`draineded`, and `/\*$/ → "not responding"` turns `idle*` into
+`idlenot responding`. The pattern must therefore span the whole value.
+
+Both corrections together give the shipped set: delimited, whole-value, specific
+before general.
+
+```
+ 1.  /^.*\*$/          →  "not responding"    a modifier rule must precede
+ 2.  /^.*~$/            →  "powered down"      the base rule that would
+ 3.  /^idle-.*$/        →  "idle, backfill"    otherwise swallow it
+ 4.  /^idle.*$/         →  "idle"
+ 5.  /^mixed-.*$/       →  "mixed, backfill"
+ 6.  /^mixed.*$/        →  "mixed"
+ 7.  /^alloc-.*$/       →  "allocated, backfill"
+ 8.  /^alloc.*$/        →  "allocated"
+ 9.  /^drain.*$/        →  "drained"
+10.  /^(down|fail).*$/  →  "down"
+11.  /^maint.*$/        →  "maintenance"
+```
+
+Ordering is still load-bearing — rule 4 placed before rule 1 puts an unreachable
+node back to reading as healthy — but the anchoring trap is the one that bites
+first, because it fails silently and looks right. States matching nothing
+(`perfctrs`, `blocked`, `inval`) keep their raw text and Grafana's default grey,
+which is the behaviour *Error handling* asks for.
 
 **Colours use theme names** (`green`, `semi-dark-orange`, `red`, `text`),
 resolved through `theme.visualization.getColorByName`. No hex anywhere in the
 plugin — the documented best practice is to use theme variables for colour,
 spacing and typography rather than hardcoding values.
 
-### One assumption that must be tested before it is load-bearing
+### The string-field assumption, now tested
 
-`status` is a **string** field, and the mechanism above assumes
-`getDisplayProcessor` applies value mappings to string fields. This has not been
-verified. It is the first thing the dev stack is used for, and if it does not
-hold, the fallback is to map the state to a numeric field in the engine and let
-mappings run on that instead. The rest of the design does not change either way.
+`status` is a **string** field, and the mechanism above assumed
+`getDisplayProcessor` applies value mappings to string fields. **It does.**
+Verified against `@grafana/data` 12.4.10 by resolving the eleven rules above over
+nineteen real state values; every one resolved to the intended text and a theme
+colour. The numeric-field fallback the earlier draft held in reserve is not
+needed and is dropped.
+
+One practical consequence for the test setup: `@grafana/data` touches `window`
+and `document` at import time, so any test that imports it runs under
+`jsdom`, not under the plain Node environment `packages/core` uses.
 
 ### Custom options
 
@@ -522,3 +559,17 @@ memory.
 | "A Playwright test" | `@grafana/plugin-e2e` with a Grafana version matrix from `plugin-actions/e2e-version` |
 | Dev stack with an unspecified Grafana | Grafana 13.x, version pinned and visibly bumped, `GRAFANA_VERSION`/`GRAFANA_IMAGE` shared with CI |
 | Supply chain unmentioned | Thresholds and controls fixed at scaffolding time; every local tool is currently below its threshold |
+
+## Revision — 2026-09-14, second pass
+
+Written while turning the spec into a plan. Running the mechanism beat reading
+about it: the assumption flagged above held, and two defects underneath it did
+not.
+
+| Was | Is |
+|---|---|
+| "`getDisplayProcessor` on a string field is unverified; numeric fallback in reserve" | Verified working against `@grafana/data` 12.4.10; the fallback is dropped |
+| Defaults written as bare patterns `^idle`, `^mixed`, `^drain`, `^down\|^fail` | Grafana wraps a bare pattern in `^...$`, so four of the five were exact matches that silently never fired. Defaults are delimited: `/^idle.*$/` |
+| Defaults assumed a regex mapping labels a value | `RegexToText` *replaces* the match; an unconsumed remainder stays glued to the result. Every pattern now spans the whole value |
+| — | `@grafana/data` needs a DOM at import; tests importing it run under `jsdom` |
+| "pnpm 11 is the recommendation" | pnpm's current release is **12.4.1**, comfortably above the 11.0.0 floor; the plan pins 12.x |
