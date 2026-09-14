@@ -66,14 +66,18 @@ test.describe('the options editor', () => {
   test('exposes the standard sections, which proves useFieldConfig is wired', async ({
     panelEditPage,
     readProvisionedDataSource,
-    page,
   }) => {
     const ds = await readProvisionedDataSource({ fileName: 'prometheus.yml' });
     await panelEditPage.datasource.set(ds.name);
     await panelEditPage.setVisualization('Slurmnodegrid');
 
-    await expect(page.getByRole('button', { name: /Value mappings/i })).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole('button', { name: /Standard options/i })).toBeVisible({ timeout: 15_000 });
+    // A bare `getByRole('button', { name: /Value mappings/i })` is ambiguous:
+    // once the group is expanded it also matches the "Add value mappings"
+    // button inside it. The group's own page model scopes to the section,
+    // toggle and content together, matching what a missing useFieldConfig()
+    // call would remove entirely.
+    await expect(panelEditPage.getValueMappingOptions().element).toBeVisible({ timeout: 15_000 });
+    await expect(panelEditPage.getStandardOptions().element).toBeVisible({ timeout: 15_000 });
   });
 
   test('previews the grouping key against the nodes present', async ({
