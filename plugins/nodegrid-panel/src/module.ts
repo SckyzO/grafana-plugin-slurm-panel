@@ -66,6 +66,13 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
           'Carry state as a shape as well as a fill. Keeps the grid readable in greyscale, in print and with a colour-vision deficiency.',
         defaultValue: DEFAULT_OPTIONS.shapeChannel,
         category: ['Display'],
+      })
+      .addNumberInput({
+        path: 'maxCells',
+        name: 'Cell warning threshold',
+        description: 'Past this the panel still renders, and says the view needs splitting.',
+        defaultValue: DEFAULT_OPTIONS.maxCells,
+        category: ['Layout'],
       });
   })
   .setNoPadding();
