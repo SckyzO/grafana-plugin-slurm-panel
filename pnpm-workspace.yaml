@@ -1,0 +1,10 @@
+packages:
+  - 'packages/*'
+  - 'plugins/*'
+
+# Supply chain. Set at scaffolding time, not retrofitted.
+strictDepBuilds: true
+dangerouslyAllowAllBuilds: false
+allowBuilds: {}
+minimumReleaseAge: 4320
+blockExoticSubdeps: true
