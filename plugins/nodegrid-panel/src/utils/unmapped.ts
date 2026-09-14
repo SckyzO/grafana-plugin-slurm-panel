@@ -2,9 +2,11 @@ import type { DisplayProcessor } from '@grafana/data';
 import type { GroupedModel, IngestWarning, SlurmNode } from '@slurm-views/core';
 
 /**
- * A state whose display text equals its raw value matched no mapping. Naming
- * these in the panel is how a state introduced by a Slurm upgrade becomes
- * visible instead of quietly grey.
+ * A state matched no value mapping when `display()` falls through to the
+ * threshold path and sets `percent`; a matched mapping returns early and
+ * leaves `percent` undefined. Naming these in the panel is how a state
+ * introduced by a Slurm upgrade becomes visible instead of silently taking
+ * the threshold base colour.
  */
 export function collectUnmapped(nodes: SlurmNode[], display: DisplayProcessor): string[] {
   const unmapped = new Set<string>();
