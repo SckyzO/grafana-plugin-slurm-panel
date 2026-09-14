@@ -2,8 +2,9 @@
 
 ## Toolchain
 
-Node >= 22, pnpm >= 11.0.0 — both enforced by `package.json#engines` and
-`packageManager`.
+Node >= 22, pnpm >= 11.0.0. `package.json#engines` enforces the Node floor;
+the pnpm floor is enforced by the `packageManager` pin, which corepack reads
+to install and run the exact pinned version.
 
 The pnpm floor is not arbitrary: `pnpm-workspace.yaml` carries this project's
 supply-chain controls (`strictDepBuilds`, `minimumReleaseAge`,
