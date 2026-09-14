@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "node --test"
+    "test": "node --test value-mappings.test.cjs"
   },
   "devDependencies": {
     "@grafana/data": "^12.3.0",
