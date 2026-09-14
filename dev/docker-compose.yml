@@ -1,0 +1,33 @@
+services:
+  grafana:
+    # Pinned, never floating. `docker compose up -d` does not recreate a
+    # running container when a tag moves, so a floating tag silently does not
+    # move — slurm_exporter's own stack sat on 12.4.2 for nine days while
+    # :latest was 13.2.1. A pinned version that is visibly bumped is honest.
+    image: ${GRAFANA_IMAGE:-grafana/grafana}:${GRAFANA_VERSION:-13.2.1}
+    ports:
+      - '3001:3000'
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_BASIC_ENABLED: 'true'
+      GF_DEFAULT_APP_MODE: development
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: tomzone-slurmnodegrid-panel
+    volumes:
+      - ../plugins/nodegrid-panel/dist:/var/lib/grafana/plugins/tomzone-slurmnodegrid-panel
+      - ./provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    ports:
+      - '9091:9090'
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  synthetic-exporter:
+    build: ./synthetic-exporter
+    environment:
+      NODES: ${SYNTH_NODES:-240}
+      RACKS: ${SYNTH_RACKS:-6}
