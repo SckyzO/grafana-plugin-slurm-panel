@@ -7,12 +7,16 @@ import { useNodeModel } from '../hooks/useNodeModel';
 import { NodeGroup } from './NodeGroup';
 import type { PanelOptions } from '../types';
 
-const getStyles = (theme: GrafanaTheme2) => ({
+const getStyles = (theme: GrafanaTheme2, layout: PanelOptions['layout']) => ({
   wrap: css({
     height: '100%',
     overflow: 'auto',
     display: 'flex',
-    flexDirection: 'column',
+    // Racks read as an elevation drawn side by side; wrapped groups stack
+    // as a column so each group keeps the full row width to wrap cells into.
+    flexDirection: layout === 'rack' ? 'row' : 'column',
+    alignItems: layout === 'rack' ? 'flex-start' : 'stretch',
+    flexWrap: layout === 'rack' ? 'wrap' : 'nowrap',
     gap: theme.spacing(1),
     padding: theme.spacing(1),
   }),
@@ -21,7 +25,7 @@ const getStyles = (theme: GrafanaTheme2) => ({
 
 export function NodeGridPanel({ data, options, fieldConfig }: PanelProps<PanelOptions>) {
   const theme = useTheme2();
-  const styles = getStyles(theme);
+  const styles = getStyles(theme, options.layout);
   const { model, stateField } = useNodeModel(data, options);
 
   // Colour is never chosen here. The state string goes through the field

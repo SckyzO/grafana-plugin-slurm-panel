@@ -5,6 +5,7 @@ import { useTheme2 } from '@grafana/ui';
 import type { NodeGroup as NodeGroupModel } from '@slurm-views/core';
 import { GroupHeader } from './GroupHeader';
 import { NodeCell } from './NodeCell';
+import { RackFrame } from './RackFrame';
 import type { PanelOptions } from '../types';
 
 const getStyles = (theme: GrafanaTheme2, gap: number) => ({
@@ -29,13 +30,18 @@ export function NodeGroup({ group, display, options }: NodeGroupProps) {
       size={options.cellSize}
       display={display}
       shapeChannel={options.shapeChannel}
+      sled={options.layout === 'rack'}
     />
   ));
 
   return (
     <div className={styles.group} data-testid={`node-group-${group.key}`} data-layout={options.layout}>
       <GroupHeader group={group} />
-      <div className={styles.wrap}>{cells}</div>
+      {options.layout === 'rack' ? (
+        <RackFrame width={Math.max(40, options.cellSize * 4)}>{cells}</RackFrame>
+      ) : (
+        <div className={styles.wrap}>{cells}</div>
+      )}
     </div>
   );
 }
