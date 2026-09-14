@@ -2088,7 +2088,7 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
   .setNoPadding();
 ```
 
-The shipped `DEFAULT_MAPPINGS` are applied by the provisioned dashboard in Task 12 and by the "Reset to Slurm defaults" button added in Task 11. `PanelPlugin` has no supported hook for seeding `fieldConfig.defaults.mappings` at registration time, so do not invent one — check before assuming otherwise:
+The shipped `DEFAULT_MAPPINGS` reach a panel through the provisioned dashboard in Task 12. A "write the defaults" button was attempted in Task 11 and abandoned: a custom option editor receives a `StandardEditorContext`, which carries no `onFieldConfigChange` — that lives on `PanelProps`, a different interface. There is no supported way for a panel to seed `fieldConfig.defaults.mappings` from its own code. `PanelPlugin` has no supported hook for seeding `fieldConfig.defaults.mappings` at registration time, so do not invent one — check before assuming otherwise:
 
 ```bash
 node -e "const {PanelPlugin}=require('./plugins/nodegrid-panel/node_modules/@grafana/data'); console.log(Object.getOwnPropertyNames(PanelPlugin.prototype).join(' '))"
@@ -2900,7 +2900,6 @@ A regex typed blind into a panel option is one nobody can tell is wrong until th
 
 **Files:**
 - Create: `plugins/nodegrid-panel/src/editor/GroupingEditor.tsx`
-- Create: `plugins/nodegrid-panel/src/editor/ResetMappingsEditor.tsx`
 - Modify: `plugins/nodegrid-panel/src/module.ts`
 
 **Interfaces:**
@@ -3025,49 +3024,7 @@ export function GroupingEditor({ value, onChange, context }: Props) {
 }
 ```
 
-- [ ] **Step 2: Write the reset-mappings button**
-
-The panel contributes defaults, and this is how an operator gets them onto a panel they built by hand.
-
-`plugins/nodegrid-panel/src/editor/ResetMappingsEditor.tsx`:
-
-```tsx
-import React from 'react';
-import type { StandardEditorProps } from '@grafana/data';
-import { Button } from '@grafana/ui';
-import { DEFAULT_MAPPINGS } from '../defaults/mappings';
-import type { PanelOptions } from '../types';
-
-type Props = StandardEditorProps<unknown, unknown, PanelOptions>;
-
-export function ResetMappingsEditor({ context }: Props) {
-  return (
-    <Button
-      variant="secondary"
-      size="sm"
-      data-testid="reset-slurm-mappings"
-      onClick={() => {
-        // Writes into the field config, so the operator can then edit them in
-        // the Value mappings section like any other panel's.
-        context.onFieldConfigChange?.({
-          ...context.fieldConfig,
-          defaults: { ...context.fieldConfig.defaults, mappings: DEFAULT_MAPPINGS },
-        });
-      }}
-    >
-      Write Slurm state mappings
-    </Button>
-  );
-}
-```
-
-If `context.onFieldConfigChange` is not present on `StandardEditorContext` in `@grafana/data` 12.3, drop this file and rely on the provisioned dashboard alone — note that in the commit body rather than shipping a button that does nothing. Check first:
-
-```bash
-grep -rn "onFieldConfigChange" plugins/nodegrid-panel/node_modules/@grafana/data/dist/types/field/*.d.ts | head
-```
-
-- [ ] **Step 3: Register both**
+- [ ] **Step 3: Register the grouping editor**
 
 In `module.ts`, add a `Grouping` category and the reset button under `Data`:
 
@@ -3088,18 +3045,9 @@ In `module.ts`, add a `Grouping` category and the reset button under `Data`:
   defaultValue: DEFAULT_OPTIONS.multiValueLabel,
   category: ['Grouping'],
 })
-.addCustomEditor({
-  id: 'resetMappings',
-  path: 'resetMappings',
-  name: 'Slurm state mappings',
-  description: 'Writes the shipped defaults into Value mappings. Ordering and anchoring both matter; see the docs.',
-  editor: ResetMappingsEditor,
-  defaultValue: undefined,
-  category: ['Data'],
-})
 ```
 
-with the two imports.
+with its import.
 
 - [ ] **Step 4: Build and commit**
 
