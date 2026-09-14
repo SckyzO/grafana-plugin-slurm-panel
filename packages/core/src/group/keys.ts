@@ -70,17 +70,3 @@ export function makeKeyFn(source: KeySource): (node: SlurmNode) => KeyResult {
       return () => NO_KEY;
   }
 }
-
-export function describeKeySource(source: KeySource): string {
-  switch (source.kind) {
-    case 'label':
-      return `label ${source.label}`;
-    case 'capture':
-      return `capture ${source.pattern}`;
-    case 'chunk':
-      return `${source.size} per group (assumed)`;
-    case 'none':
-    default:
-      return 'no grouping';
-  }
-}
