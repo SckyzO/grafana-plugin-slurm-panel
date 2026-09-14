@@ -18,7 +18,7 @@ Every task's requirements implicitly include this section. Values are copied ver
 
 - **Node >= 22.** Pin in `.nvmrc`. Local is v22.17.0.
 - **Package manager: pnpm >= 11.0.0.** Pin `"packageManager": "pnpm@12.4.1"`. Corepack 0.33.0 is installed; local pnpm is 10.28.2 and must be upgraded before the first install.
-- **Supply chain, set at scaffolding time, never retrofitted.** In `pnpm-workspace.yaml`: `strictDepBuilds: true`, `dangerouslyAllowAllBuilds: false`, `allowBuilds: {}`, `minimumReleaseAge: 4320`, `blockExoticSubdeps: true`. (`allowBuilds` is a **map** on pnpm 12; an array is a parse error.)
+- **Supply chain, set at scaffolding time, never retrofitted.** In `pnpm-workspace.yaml`: `strictDepBuilds: true`, `dangerouslyAllowAllBuilds: false`, `minimumReleaseAge: 4320`, `blockExoticSubdeps: true`, and `allowBuilds` as a **map** of package to boolean (an array is a parse error on pnpm 12). `strictDepBuilds` makes the install *fail* until every package wanting a build script has a recorded decision; `false` is the decision "we looked, and it does not get to run". Never `pnpm approve-builds`, never `dangerouslyAllowAllBuilds`.
 - **Dependency ranges stay semver.** No git URLs, tarballs, `file:` or `link:` entries. `workspace:` is allowed between packages in this repo.
 - **`grafanaDependency: ">=12.3.0"`** in `plugin.json`.
 - **`react` and `react-dom` at `^18.3.0`.** The plugin does not move to 19. `react/jsx-runtime` and `react/jsx-dev-runtime` are externalised.

@@ -6,6 +6,11 @@ packages:
 # Supply chain. Set at scaffolding time, not retrofitted.
 strictDepBuilds: true
 dangerouslyAllowAllBuilds: false
-allowBuilds: {}
+allowBuilds:
+  # Explicit decisions, not an allow-list: `false` means "we looked, and this
+  # package does not get to run its build script". strictDepBuilds requires a
+  # recorded decision per package rather than silent ignoring.
+  '@parcel/watcher': false
+  '@swc/core': false
 minimumReleaseAge: 4320
 blockExoticSubdeps: true
