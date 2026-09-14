@@ -1,5 +1,6 @@
 import { PanelPlugin } from '@grafana/data';
 import { NodeGridPanel } from './components/NodeGridPanel';
+import { GroupingEditor } from './editor/GroupingEditor';
 import { DEFAULT_OPTIONS } from './types';
 import type { PanelOptions } from './types';
 
@@ -73,6 +74,23 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
         description: 'Past this the panel still renders, and says the view needs splitting.',
         defaultValue: DEFAULT_OPTIONS.maxCells,
         category: ['Layout'],
+      })
+      .addCustomEditor({
+        id: 'grouping',
+        path: 'grouping',
+        name: 'Group by',
+        description: 'A label, a capture on the node name, or a chunk of its ordinal.',
+        editor: GroupingEditor,
+        defaultValue: DEFAULT_OPTIONS.grouping,
+        category: ['Grouping'],
+      })
+      .addBooleanSwitch({
+        path: 'multiValueLabel',
+        name: 'Node may appear in several groups',
+        description:
+          'Draw a node once per partition it belongs to. Only the partition label is supported: fanning out an arbitrary multi-valued label would need a per-node map of every value, which the engine does not build.',
+        defaultValue: DEFAULT_OPTIONS.multiValueLabel,
+        category: ['Grouping'],
       });
   })
   .setNoPadding();
