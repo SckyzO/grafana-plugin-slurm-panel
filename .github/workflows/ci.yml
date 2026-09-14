@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and unit test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+  resolve-versions:
+    name: Resolve Grafana e2e versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      matrix: ${{ steps.resolve-versions.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - id: resolve-versions
+        uses: grafana/plugin-actions/e2e-version@main
+        with:
+          # The plugin lives in a monorepo subdirectory; the action reads
+          # grafanaDependency from its plugin.json, not the repo root's.
+          plugin-directory: plugins/nodegrid-panel
+      - name: Guard against an empty matrix
+        # A matrix with zero entries makes the e2e job report success without
+        # running a single test - the exact failure mode this matrix exists
+        # to prevent. Fail loudly instead of shipping that silently.
+        run: |
+          count=$(echo '${{ steps.resolve-versions.outputs.matrix }}' | jq 'length')
+          if [ "$count" -eq 0 ]; then
+            echo "::error::grafana/plugin-actions/e2e-version resolved zero Grafana versions."
+            exit 1
+          fi
+
+  e2e:
+    name: e2e ${{ matrix.GRAFANA_IMAGE.name }}@${{ matrix.GRAFANA_IMAGE.VERSION }}
+    needs: [build, resolve-versions]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        GRAFANA_IMAGE: ${{ fromJson(needs.resolve-versions.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter tomzone-slurmnodegrid-panel build
+      - run: pnpm --filter tomzone-slurmnodegrid-panel exec playwright install --with-deps chromium
+
+      - name: Start the dev stack
+        # Same GRAFANA_VERSION / GRAFANA_IMAGE variables as dev/docker-compose.yml
+        # (see dev/README.md) - this matrix is what catches a break on a new
+        # Grafana before a user does.
+        run: |
+          GRAFANA_VERSION=${{ matrix.GRAFANA_IMAGE.VERSION }} \
+          GRAFANA_IMAGE=${{ matrix.GRAFANA_IMAGE.NAME }} \
+          docker compose -f dev/docker-compose.yml up -d --build
+
+      - uses: grafana/plugin-actions/wait-for-grafana@main
+        with:
+          url: http://localhost:3001/login
+
+      - run: pnpm e2e
+
+      - name: Dump Grafana logs
+        if: ${{ failure() }}
+        run: docker compose -f dev/docker-compose.yml logs grafana
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ failure() }}
+        with:
+          name: playwright-report-${{ matrix.GRAFANA_IMAGE.VERSION }}
+          path: plugins/nodegrid-panel/playwright-report/
+          retention-days: 7
+
+      - name: Stop the dev stack
+        if: ${{ always() }}
+        run: docker compose -f dev/docker-compose.yml down
