@@ -20,7 +20,8 @@ const getStyles = (theme: GrafanaTheme2) => ({
   }),
   // A node with no value for the state query stays distinguishable from one
   // whose state matched no mapping. Collapsing the two is how a dead node
-  // ends up green.
+  // ends up green. `percent` (see `mapped` below) is what keeps this true:
+  // it is only set when the value fell through to the threshold path.
   unmapped: css({ background: 'transparent', boxShadow: `inset 0 0 0 1.5px ${theme.colors.text.disabled}` }),
 });
 
@@ -53,7 +54,11 @@ export function NodeCell({ node, size, display, shapeChannel, href, sled }: Node
   const theme = useTheme2();
   const styles = getStyles(theme);
   const dv = display(node.state);
-  const mapped = dv.text !== node.state;
+  // Grafana returns early when a value mapping matches, so `percent` is only
+  // set when nothing did and the value fell through to the threshold path.
+  // Do not compare text: a mapping whose result equals its input — `idle`
+  // maps to "idle" — is a real match that text comparison reports as a miss.
+  const mapped = dv.percent === undefined;
 
   return (
     <Tooltip content={<NodeTooltip node={node} />} placement="top" interactive>

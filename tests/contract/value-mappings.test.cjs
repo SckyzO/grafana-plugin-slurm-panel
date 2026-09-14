@@ -105,3 +105,41 @@ test('RegexToText replaces only the matched portion', () => {
   const short = [rule('/^drain/', 'drained', 'yellow')];
   assert.equal(displayFor(['drained'], short)('drained').text, 'draineded');
 });
+
+// Trap 3: with thresholds configured (always true here, since module.ts calls
+// useFieldConfig()), a mapping match and a threshold fallback are only
+// distinguishable through `percent`, not through `text` or `color` alone —
+// an unmapped value still gets a colour, from the threshold base colour.
+const displayWithThresholds = (values) =>
+  getDisplayProcessor({
+    field: {
+      name: 'status',
+      type: FieldType.string,
+      values,
+      config: {
+        mappings: DEFAULTS,
+        thresholds: { mode: 'absolute', steps: [{ value: -Infinity, color: 'green' }] },
+      },
+    },
+    theme: createTheme(),
+  });
+
+test('a value matching a mapping leaves percent undefined, even with thresholds configured', () => {
+  const dv = displayWithThresholds(['idle'])('idle');
+  assert.equal(dv.text, 'idle');
+  assert.equal(dv.percent, undefined);
+});
+
+test('a value matching no mapping falls through to the threshold path: percent is set and the colour is the threshold colour, not a mapping colour', () => {
+  const dv = displayWithThresholds(['perfctrs'])('perfctrs');
+  const theme = createTheme();
+  assert.equal(dv.text, 'perfctrs');
+  assert.equal(dv.percent, 0);
+  // Resolved via the theme, the same as Grafana does: the threshold step's
+  // named colour ('green'), not a raw mapping colour.
+  assert.equal(
+    dv.color,
+    theme.visualization.getColorByName('green'),
+    'expected the threshold base colour, not a mapping colour'
+  );
+});
