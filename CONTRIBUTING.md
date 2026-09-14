@@ -2,34 +2,59 @@
 
 ## Toolchain
 
-Node >= 22, pnpm >= 11.0.0. `package.json#engines` enforces the Node floor;
-the pnpm floor is enforced by the `packageManager` pin, which corepack reads
-to install and run the exact pinned version.
+**Docker and make. Nothing else.** No Node, no pnpm, no browser and no
+`node_modules` on your machine. Every command in this repository runs inside
+the image built from [`dev/Dockerfile.toolchain`](dev/Dockerfile.toolchain),
+and a fresh clone is expected to go straight to `make check` on a machine that
+has never seen this project.
 
-The pnpm floor is not arbitrary: `pnpm-workspace.yaml` carries this project's
-supply-chain controls (`strictDepBuilds`, `minimumReleaseAge`,
+That image pins what it uses, each to an exact version:
+
+| | | |
+|---|---|---|
+| Node | `24.21.0` | the active LTS line, and the major `@grafana/create-plugin` scaffolds against |
+| pnpm | `12.4.1` | must equal `package.json#packageManager`, or pnpm refuses to run |
+| Chromium | the build shipped with Playwright `1.63.0` | must equal the `@playwright/test` version `pnpm-lock.yaml` resolves |
+
+The `FROM` line in the Dockerfile is the single source of truth for the Node
+version; `.nvmrc` carries the major for editors and nothing on the host gets a
+say. Bump any of the three deliberately, in its own commit, and say why.
+
+`node_modules` lives in named Docker volumes, one per workspace package, not
+in the checkout. The host stays clean, and on WSL2 the install is an order of
+magnitude faster for not crossing the 9p bridge. The cost is real and worth
+naming: your editor cannot resolve types from a directory that is not there.
+`make shell` opens a shell inside the container when you need one.
+
+The pnpm version is not arbitrary. `pnpm-workspace.yaml` carries this
+project's supply-chain controls (`strictDepBuilds`, `minimumReleaseAge`,
 `blockExoticSubdeps`, `allowBuilds`), and pnpm below 11 silently ignores all
-of them rather than erroring. An install under pnpm 10 succeeds without any
-of the protections it appears to configure. Use `corepack prepare
-pnpm@12.4.1 --activate` (or `npm install -g pnpm@12.4.1` if corepack refuses)
-rather than whatever pnpm your system already has.
+of them rather than erroring: an install under pnpm 10 succeeds without any of
+the protections it appears to configure. Pinning the version in the image is
+what stops that from depending on what a contributor happens to have.
 
 ## Working on it
 
 ```bash
-pnpm install
-pnpm test    # unit + contract tests across every workspace
-pnpm build   # packages/core, then the plugin bundle
-pnpm e2e     # Playwright, against a running dev stack
+make check   # lint, typecheck, every test, build, React 19 scan — what CI runs
+make up      # Grafana on http://localhost:3001 with the panel loaded
+make e2e     # Playwright against that stack
+make watch   # rebuild the panel on change; Grafana picks it up live
+make shell   # a shell inside the toolchain container
+make clean   # drop the stack, the volumes and the build output
 ```
 
-`pnpm e2e` needs the dev stack up first — see [`dev/README.md`](dev/README.md)
-for `docker compose -f dev/docker-compose.yml up -d --build`. CI does this
-for you (`.github/workflows/ci.yml`); locally, run the stack, then `pnpm e2e`
-from the repository root or `pnpm --filter tomzone-slurmnodegrid-panel e2e`.
+`make` with no target lists them all. `make e2e` builds the plugin, starts the
+stack and waits for Grafana to answer before it runs a test, so there is no
+separate setup step and nothing CI does that you do not.
 
-`pnpm lint` and `pnpm typecheck` run across the whole workspace and are part
-of CI; run them before opening a pull request.
+Do not run `pnpm` on the host — not to work around a slow container, not for
+your editor. The moment a command needs a toolchain the image does not have,
+that belongs in the image.
+
+CI (`.github/workflows/ci.yml`) builds the same image and runs the same `make`
+targets. It installs no Node of its own, deliberately: a second toolchain is
+the thing that drifts.
 
 ## Why `packages/core` imports nothing from Grafana
 

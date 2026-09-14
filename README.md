@@ -22,13 +22,26 @@ The value of this panel is the join and the density, not new data.
 |---|---|
 | `plugins/nodegrid-panel` | `tomzone-slurmnodegrid-panel` — one cell per node |
 | `packages/core` | the engine: ingest, state parsing, grouping. No Grafana import |
-| `dev/` | a self-contained Grafana + Prometheus + synthetic exporter stack |
+| `dev/` | the toolchain image, and a self-contained Grafana + Prometheus + synthetic exporter stack |
 
 ## Getting started
 
-See [`dev/README.md`](dev/README.md) to run the panel against a live Grafana.
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) to build and test it, and
-[`docs/value-mappings.md`](docs/value-mappings.md) before touching a Value
+You need **Docker and make**. Nothing else — no Node, no pnpm, no browser.
+
+```bash
+make check   # lint, typecheck, every test, build
+make up      # Grafana on http://localhost:3001, panel loaded
+make e2e     # browser tests against that stack
+```
+
+`make` on its own lists every target. Everything runs inside the image built
+from [`dev/Dockerfile.toolchain`](dev/Dockerfile.toolchain), including the
+browser, and `node_modules` lives in Docker volumes rather than in the
+checkout, so a clone leaves nothing behind on the machine that cloned it.
+
+See [`dev/README.md`](dev/README.md) for the dev stack and its two data
+sources, [`CONTRIBUTING.md`](CONTRIBUTING.md) for how the toolchain is pinned,
+and [`docs/value-mappings.md`](docs/value-mappings.md) before touching a Value
 mapping by hand — the rules that colour a Slurm state fail silently when
 written the obvious way.
 
