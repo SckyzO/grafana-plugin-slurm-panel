@@ -62,9 +62,17 @@ takes, and the engine only builds that list for partitions.
 **Display > Colour by** picks one encoding for the cell fill at a time:
 
 - **State** (default) — the mapped Slurm state, from the panel's own **Value
-  mappings** section. See [`docs/value-mappings.md`](../../../docs/value-mappings.md)
-  in this repository for the shipped mappings and three traps that make a
-  hand-written rule fail silently.
+  mappings** section. The shipped mappings live in
+  `plugins/nodegrid-panel/src/defaults/mappings.ts`. A hand-written rule fails
+  silently in three ways: a bare pattern such as `^idle` compiles to
+  `/^^idle$/` — an exact match, not a prefix — unless delimited with slashes
+  (`/^idle/`); a regex mapping replaces only the matched portion, so
+  `/^drain/ -> drained` renders `drained` as `draineded`, so the pattern must
+  span the whole value (`/^drain.*$/`); and `sinfo`'s backfill suffix glues
+  onto the *full* state name, so `/^alloc-.*$/` matches nothing against
+  `allocated-` — anchor the modifier at the end instead (`/^alloc.*-$/`).
+  Order matters too: a modifier rule must come before the base rule that
+  would otherwise swallow it.
 - **CPU**, **Memory**, **GPU** — a continuous fill driven by that facet's
   allocation, resolved through the panel's **Thresholds** section rather
   than a fixed colour scale.
@@ -108,5 +116,6 @@ A strip above the grid names, rather than hides, anything the panel could
 not fully resolve: a query skipped for carrying no node identity, states
 that matched no value mapping (capped at eight named, then `and N more`),
 and the cell count once it passes the warning threshold above. A state
-matching no mapping keeps its raw text and Grafana's default grey rather
-than a mapped colour.
+matching no mapping keeps its raw text; Grafana would colour it with the
+threshold base colour (green, by default) rather than a mapped one, so the
+cell deliberately refuses that colour and draws a hollow ring instead.
