@@ -21,11 +21,13 @@ const getStyles = (theme: GrafanaTheme2) => ({
       outlineOffset: 1,
     },
   }),
-  // A node with no value for the state query stays distinguishable from one
-  // whose state matched no mapping. Collapsing the two is how a dead node
-  // ends up green. `percent` (see `mapped` below) is what keeps this true:
-  // it is only set when the value fell through to the threshold path.
-  unmapped: css({ background: 'transparent', boxShadow: `inset 0 0 0 1.5px ${theme.colors.text.disabled}` }),
+  // Drawn whenever the cell has no fill to show, whatever the colour mode:
+  // a state that matched no mapping, or a node with no data for the
+  // continuous mode in use. Both mean the same thing to a reader — this cell
+  // has nothing to say — and both must look unmistakably unlike a measured
+  // value. Collapsing "no data" into a colour is how a dead node ends up
+  // green.
+  empty: css({ background: 'transparent', boxShadow: `inset 0 0 0 1.5px ${theme.colors.text.disabled}` }),
 });
 
 export interface NodeCellProps {
@@ -83,18 +85,25 @@ export function NodeCell({
       ? (mapped ? dv.color : undefined)
       : (fraction === undefined ? undefined : valueDisplay(fraction).color);
 
+  // React drops an undefined background, and a <button> with no background of
+  // its own falls back to the browser's ButtonFace: a solid mid-grey that
+  // reads as a measured value. The ring was previously applied only in state
+  // mode, on the reasoning that a state-mapping ring answers the wrong
+  // question in a continuous one. The ring does not mean "unmapped" though,
+  // it means "nothing to show" — which is exactly the case here too. A GPU
+  // occupancy grid on a cluster where most nodes have no GPU was coming out
+  // as a wall of grey blocks indistinguishable from real readings.
+  const filled = background !== undefined;
+
   return (
     <Tooltip content={<NodeTooltip node={node} />} placement="top" interactive>
       <button
         type="button"
-        // The unmapped ring names a state colour mapping cannot find. Scoped
-        // to state mode: in a continuous mode the fill no longer encodes
-        // state at all, so a state-mapping ring there would answer a
-        // question nobody is asking of the colour.
-        className={cx(styles.cell, colorMode === 'state' && !mapped && styles.unmapped)}
+        className={cx(styles.cell, !filled && styles.empty)}
         data-testid={`node-cell-${node.name}`}
         data-state={node.state}
         data-mapped={mapped}
+        data-filled={filled}
         // Meaning never rests on colour alone: the state is spelled out here
         // in every colour mode, including the continuous ones where the fill
         // carries utilisation instead of state.

@@ -95,7 +95,48 @@ describe('NodeCell', () => {
     expect(cell).toHaveAttribute('aria-label', 'node-perfctrs, perfctrs');
   });
 
-  it('leaves the fill empty in a continuous mode when the node has no data for it', () => {
+  it('draws a node with no data for a continuous mode exactly like an unfilled one', () => {
+    // `style.background === ''` on its own does not say this. React drops an
+    // undefined background, and a <button> with no background falls back to
+    // the browser's own ButtonFace — a solid mid-grey that reads as a real
+    // measurement. On a cluster where most nodes have no GPU that was most of
+    // the grid. Compare against the cell already known to be drawn as empty
+    // and require the identical treatment. `cx` merges emotion styles into a
+    // single class, so the class name itself is the comparison.
+    const classNameOf = (element: HTMLElement): string => element.className;
+
+    const state = render(
+      <NodeCell
+        node={nodeWith('perfctrs')}
+        size={14}
+        stateDisplay={displayFor('perfctrs')}
+        valueDisplay={displayFor('perfctrs')}
+        colorMode="state"
+        shapeChannel={false}
+      />
+    );
+    const emptyInStateMode = screen.getByTestId('node-cell-node-perfctrs');
+    expect(emptyInStateMode).toHaveAttribute('data-filled', 'false');
+    const emptyClass = classNameOf(emptyInStateMode);
+    state.unmount();
+
+    const filled = render(
+      <NodeCell
+        node={nodeWith('idle')}
+        size={14}
+        stateDisplay={displayFor('idle')}
+        valueDisplay={displayFor('idle')}
+        colorMode="state"
+        shapeChannel={false}
+      />
+    );
+    const filledClass = classNameOf(screen.getByTestId('node-cell-node-idle'));
+    filled.unmount();
+
+    // Without this the test would pass if every cell shared one class — which
+    // is precisely the bug, every cell left to the browser's default.
+    expect(filledClass).not.toBe(emptyClass);
+
     render(
       <NodeCell
         node={nodeWith('idle')}
@@ -106,7 +147,23 @@ describe('NodeCell', () => {
         shapeChannel={false}
       />
     );
-    const cell = screen.getByTestId('node-cell-node-idle');
-    expect(cell.style.background).toBe('');
+    const noMemoryData = screen.getByTestId('node-cell-node-idle');
+    expect(noMemoryData).toHaveAttribute('data-filled', 'false');
+    expect(noMemoryData.style.background).toBe('');
+    expect(classNameOf(noMemoryData)).toBe(emptyClass);
+  });
+
+  it('marks a filled cell as filled, so data-filled discriminates', () => {
+    render(
+      <NodeCell
+        node={nodeWith('idle')}
+        size={14}
+        stateDisplay={displayFor('idle')}
+        valueDisplay={displayFor('idle')}
+        colorMode="state"
+        shapeChannel={false}
+      />
+    );
+    expect(screen.getByTestId('node-cell-node-idle')).toHaveAttribute('data-filled', 'true');
   });
 });
