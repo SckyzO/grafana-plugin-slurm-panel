@@ -1,0 +1,32 @@
+[
+  { "schema": { "refId": "A", "meta": { "type": "numeric-multi" }, "fields": [
+      { "name": "Time", "type": "time" },
+      { "name": "slurm_node_status", "type": "number",
+        "labels": { "__name__": "slurm_node_status", "node": "c1", "partition": "cpu", "status": "mixed-" } } ] },
+    "data": { "values": [[1789388276915], [1]] } },
+  { "schema": { "refId": "A", "meta": { "type": "numeric-multi" }, "fields": [
+      { "name": "Time", "type": "time" },
+      { "name": "slurm_node_status", "type": "number",
+        "labels": { "__name__": "slurm_node_status", "node": "c1", "partition": "debug", "status": "mixed-" } } ] },
+    "data": { "values": [[1789388276915], [1]] } },
+  { "schema": { "refId": "A", "meta": { "type": "numeric-multi" }, "fields": [
+      { "name": "Time", "type": "time" },
+      { "name": "slurm_node_status", "type": "number",
+        "labels": { "__name__": "slurm_node_status", "node": "c1", "partition": "high", "status": "mixed-" } } ] },
+    "data": { "values": [[1789388276915], [1]] } },
+  { "schema": { "refId": "A", "meta": { "type": "numeric-multi" }, "fields": [
+      { "name": "Time", "type": "time" },
+      { "name": "slurm_node_status", "type": "number",
+        "labels": { "__name__": "slurm_node_status", "node": "c9", "partition": "cpu", "status": "drained" } } ] },
+    "data": { "values": [[1789388276915], [1]] } },
+  { "schema": { "refId": "A", "meta": { "type": "numeric-multi" }, "fields": [
+      { "name": "Time", "type": "time" },
+      { "name": "slurm_node_status", "type": "number",
+        "labels": { "__name__": "slurm_node_status", "node": "c10", "partition": "cpu", "status": "down" } } ] },
+    "data": { "values": [[1789388276915], [1]] } },
+  { "schema": { "refId": "A", "meta": { "type": "numeric-multi" }, "fields": [
+      { "name": "Time", "type": "time" },
+      { "name": "slurm_node_status", "type": "number",
+        "labels": { "__name__": "slurm_node_status", "node": "g1", "partition": "gpu", "status": "idle" } } ] },
+    "data": { "values": [[1789388276915], [1]] } }
+]

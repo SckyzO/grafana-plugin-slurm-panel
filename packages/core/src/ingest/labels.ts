@@ -1,0 +1,45 @@
+import type { MinimalFrame, Sample } from '../model/types.js';
+
+const isValueField = (name: string): boolean => name !== 'Time' && name !== 'time';
+
+/**
+ * Flatten a frame into samples, reading whichever shape Prometheus returned.
+ *
+ * numeric-multi: one frame per series, every label on the value field, one row.
+ * table:         one frame, a string column per label, one row per series.
+ *
+ * A panel that reads only one of the two sees no labels at all on the other,
+ * so both paths are load-bearing rather than defensive.
+ */
+export function toSamples(frame: MinimalFrame): Sample[] {
+  const labelled = frame.fields.find(
+    (f) => isValueField(f.name) && f.labels && Object.keys(f.labels).length > 0
+  );
+
+  if (labelled) {
+    return labelled.values.map((value) => ({ labels: { ...labelled.labels }, value }));
+  }
+
+  const stringFields = frame.fields.filter((f) => f.type === 'string');
+  if (stringFields.length === 0) {
+    return [];
+  }
+
+  const valueField =
+    frame.fields.find((f) => f.name === 'Value') ??
+    frame.fields.find((f) => f.type === 'number' && isValueField(f.name));
+
+  const rowCount = stringFields[0]?.values.length ?? 0;
+  const samples: Sample[] = [];
+  for (let row = 0; row < rowCount; row++) {
+    const labels: Record<string, string> = {};
+    for (const field of stringFields) {
+      const cell = field.values[row];
+      if (typeof cell === 'string') {
+        labels[field.name] = cell;
+      }
+    }
+    samples.push({ labels, value: valueField?.values[row] });
+  }
+  return samples;
+}

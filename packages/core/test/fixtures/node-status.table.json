@@ -1,0 +1,14 @@
+[
+  { "schema": { "refId": "A", "meta": { "type": "table" }, "fields": [
+      { "name": "Time", "type": "time" },
+      { "name": "node", "type": "string" },
+      { "name": "partition", "type": "string" },
+      { "name": "status", "type": "string" },
+      { "name": "Value", "type": "number" } ] },
+    "data": { "values": [
+      [1789388276915, 1789388276915, 1789388276915, 1789388276915, 1789388276915, 1789388276915],
+      ["c1", "c1", "c1", "c9", "c10", "g1"],
+      ["cpu", "debug", "high", "cpu", "cpu", "gpu"],
+      ["mixed-", "mixed-", "mixed-", "drained", "down", "idle"],
+      [1, 1, 1, 1, 1, 1] ] } }
+]
