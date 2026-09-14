@@ -4,8 +4,8 @@
   "name": "Slurmnodegrid",
   "id": "tomzone-slurmnodegrid-panel",
   "info": {
-    "keywords": ["panel"],
-    "description": "",
+    "keywords": ["slurm", "hpc", "cluster", "nodes", "batch scheduler"],
+    "description": "One cell per Slurm node, coloured by state, CPU, memory or GPU utilisation, and grouped to match how the cluster is actually organised.",
     "author": {
       "name": "Tomzone"
     },
