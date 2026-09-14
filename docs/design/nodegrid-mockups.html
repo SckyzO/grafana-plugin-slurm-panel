@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Slurm Node Grid — design review</title>
+    <style>
+      /* ===========================================================================
+         Slurm Views — node grid design review
+
+         A Grafana panel owns neither its background, nor its typeface, nor its
+         theme. Grafana draws the frame, the title and the padding, and hands the
+         panel an inherited font and one of two themes. So nothing below invents a
+         brand surface or a display face. What the panel owns is the cell, the
+         grid, the group, the node card, and the meaning of the colours.
+
+         Every state colour here was produced by the palette validator, not chosen
+         by eye. The numbers are in section 1.
+         =========================================================================== */
+
+      :root {
+        /* Surfaces: Grafana's own, so the mockup sits where the panel will sit. */
+        --surface: #ffffff;
+        --surface-sunk: #f7f8fa;
+        --ink: #1c1f23;
+        --ink-quiet: #62676e;
+        --ink-faint: #8e949c;
+        --rule: #e3e6ea;
+        --rule-strong: #c9ced5;
+
+        /* State. Computed, not picked. See section 1 for the measurements. */
+        --ok: #3f7f96;
+        --warn: #c98500;
+        --crit: #d03b3b;
+        --unknown: #8e949c;
+
+        /* The alternatives section 1 argues against. */
+        --alt-ok: #73bf69;
+        --alt-warn: #ff9830;
+        --alt-crit: #f2495c;
+        --trad-ok: #0ca30c;
+        --trad-warn: #fab219;
+        --trad-crit: #d03b3b;
+
+        --ui: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        /* Monospace is reserved for node identifiers. They are fixed-width tokens
+           that get compared character by character; that is tabular data, not a
+           small-label decoration. */
+        --id: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      :root[data-theme="dark"] {
+        --surface: #181b1f;
+        --surface-sunk: #111316;
+        --ink: #dfe3e8;
+        --ink-quiet: #9aa0a8;
+        --ink-faint: #6b7178;
+        --rule: #2b2f35;
+        --rule-strong: #3d434a;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { margin: 0; }
+      body {
+        background: var(--surface-sunk);
+        color: var(--ink);
+        font-family: var(--ui);
+        font-size: 14px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * { transition: none !important; animation: none !important; }
+      }
+
+      /* --- review page chrome. Not part of the panel design. ------------------ */
+      .page { max-width: 1180px; margin: 0 auto; padding: 40px 24px 120px; }
+      .masthead {
+        display: flex; flex-wrap: wrap; gap: 24px;
+        align-items: flex-end; justify-content: space-between;
+        border-bottom: 1px solid var(--rule-strong);
+        padding-bottom: 18px;
+      }
+      h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.015em; margin: 0; }
+      .standfirst { color: var(--ink-quiet); font-size: 13.5px; margin: 8px 0 0; max-width: 64ch; }
+      .switches { display: flex; gap: 18px; flex-wrap: wrap; }
+      .switch { display: flex; gap: 6px; align-items: center; }
+      .switch > span { font-size: 11px; color: var(--ink-faint); }
+      button.ctl {
+        font: inherit; font-size: 12px; padding: 5px 11px;
+        border-radius: 3px; cursor: pointer;
+        background: var(--surface); color: var(--ink-quiet);
+        border: 1px solid var(--rule-strong);
+        transition: color 160ms, border-color 160ms;
+      }
+      button.ctl:hover { color: var(--ink); }
+      button.ctl[aria-pressed="true"] { border-color: var(--ok); color: var(--ok); }
+      button.ctl:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
+
+      section { margin-top: 64px; }
+      section > h2 {
+        font-size: 17px; font-weight: 600; margin: 0 0 4px;
+        letter-spacing: -0.01em;
+      }
+      .lede { color: var(--ink-quiet); font-size: 13.5px; margin: 0 0 22px; max-width: 76ch; }
+      .lede b { color: var(--ink); font-weight: 600; }
+      .finding {
+        margin: 20px 0 0; padding: 12px 16px;
+        border-left: 2px solid var(--warn);
+        background: var(--surface);
+        font-size: 13px; color: var(--ink-quiet); max-width: 76ch;
+      }
+      .finding b { color: var(--ink); }
+      .caption { font-size: 11.5px; color: var(--ink-faint); margin-top: 10px; font-family: var(--id); }
+      .spread { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
+
+      table.measure {
+        border-collapse: collapse; font-size: 12.5px; margin-top: 4px;
+        font-variant-numeric: tabular-nums;
+      }
+      table.measure th, table.measure td {
+        text-align: left; padding: 7px 16px 7px 0;
+        border-bottom: 1px solid var(--rule);
+      }
+      table.measure th { color: var(--ink-faint); font-weight: 500; }
+      table.measure td.num { font-family: var(--id); }
+      .verdict-pass { color: var(--ok); }
+      .verdict-fail { color: var(--crit); }
+
+      /* --- the panel ---------------------------------------------------------- */
+      /* Grafana draws the frame and the title. This is the content area only. */
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--rule);
+        border-radius: 3px;
+        padding: 10px;
+        overflow: auto;
+      }
+      /* A panel with a fixed height scrolls its content and keeps its warnings
+         pinned — the same arrangement Grafana gives a panel in a dashboard row. */
+      .panel.boxed { display: flex; flex-direction: column; height: 224px; overflow: hidden; }
+      .panel.boxed .viewport { flex: 1; min-height: 0; overflow: auto; }
+      .panel.boxed .warnbar { flex: none; }
+
+      /* Group. One line, 16px tall. A 2px rail carries the rolled-up state, so
+         the group reads without spending vertical space on a card or a badge. */
+      .group { margin-bottom: 12px; }
+      .group:last-child { margin-bottom: 0; }
+      .ghead {
+        display: flex; align-items: baseline; gap: 8px;
+        height: 16px; margin-bottom: 5px;
+        border-left: 2px solid var(--roll, var(--unknown));
+        padding-left: 7px;
+      }
+      .gname { font-size: 11.5px; font-weight: 600; font-family: var(--id); }
+      .gcount { font-size: 10.5px; color: var(--ink-faint); font-family: var(--id); }
+      .assumed {
+        font-size: 9.5px; letter-spacing: 0.02em;
+        color: var(--warn); border: 1px solid var(--warn);
+        border-radius: 2px; padding: 0 4px; line-height: 13px;
+      }
+      .gtally { margin-left: auto; display: flex; gap: 9px; font-family: var(--id); font-size: 10.5px; }
+      .gtally i { font-style: normal; }
+
+      /* Cell. Square. No radius under 10px: rounding eats the colour that carries
+         the meaning. The clip-path is the second channel — see section 2. */
+      .cells { display: flex; flex-wrap: wrap; gap: var(--gap, 3px); }
+      /* A rack slot is wide and short — a 1U sled, not a square. Drawing it that
+         way is what makes a column read as an elevation instead of a list. The
+         frame is the cabinet; the heavier bottom edge is the floor it stands on. */
+      .cells.rack {
+        flex-direction: column-reverse; flex-wrap: nowrap;
+        width: var(--rackw, 52px); gap: 2px;
+        padding: 4px;
+        border: 1px solid var(--rule-strong);
+        border-bottom-width: 3px;
+      }
+      .cells.rack .cell { width: auto; align-self: stretch; height: var(--sled, 7px); }
+      .cell {
+        width: var(--sz, 14px); height: var(--sz, 14px);
+        flex: none; position: relative; cursor: pointer;
+        background: var(--c);
+        border-radius: 0;
+      }
+      .cell[data-sz="lg"] { border-radius: 1px; }
+      .cell[data-s="WARN"] { clip-path: polygon(0 0, 66% 0, 100% 34%, 100% 100%, 0 100%); }
+      .cell[data-s="CRIT"] { clip-path: polygon(0 0, 100% 0, 100% 62%, 62% 100%, 0 100%, 0 38%); }
+      .cell[data-s="UNKNOWN"] {
+        background: transparent;
+        box-shadow: inset 0 0 0 1.5px var(--unknown);
+      }
+      .cell:hover { outline: 1.5px solid var(--ink); outline-offset: 1px; z-index: 3; }
+      .cell:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; z-index: 3; }
+
+      /* The rack floor line: a row of columns should read as standing on a floor. */
+      .racks { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+      .rackcol { display: flex; flex-direction: column; gap: 5px; }
+      .racklabel { font-family: var(--id); font-size: 10.5px; color: var(--ink-faint); text-align: center; }
+
+      /* --- node card (the tooltip) -------------------------------------------- */
+      .card {
+        width: 268px; background: var(--surface);
+        border: 1px solid var(--rule-strong);
+        border-radius: 3px; padding: 0; overflow: hidden;
+        font-size: 12px;
+      }
+      .card-top {
+        display: flex; align-items: baseline; gap: 8px;
+        padding: 9px 11px; border-bottom: 1px solid var(--rule);
+      }
+      .card-id { font-family: var(--id); font-size: 13px; font-weight: 600; }
+      .card-state { font-size: 11.5px; color: var(--ink-quiet); margin-left: auto; }
+      .card-rows { padding: 8px 11px; display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; }
+      .card-rows dt { color: var(--ink-faint); font-size: 11px; }
+      .card-rows dd { margin: 0; font-family: var(--id); font-size: 11.5px; }
+      .meter { display: flex; align-items: center; gap: 7px; }
+      .meter-track { flex: 1; height: 3px; background: var(--rule); position: relative; }
+      .meter-fill { position: absolute; inset: 0 auto 0 0; background: var(--ink-quiet); }
+      .card-note {
+        padding: 8px 11px; border-top: 1px solid var(--rule);
+        background: var(--surface-sunk); font-size: 11.5px; color: var(--ink-quiet);
+      }
+      .card-note b { color: var(--ink); font-weight: 600; }
+
+      .legend { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 11.5px; color: var(--ink-quiet); }
+      .legend .k { display: flex; align-items: center; gap: 6px; }
+
+      .warnbar {
+        display: flex; align-items: center; gap: 7px;
+        font-size: 11.5px; color: var(--warn);
+        border-top: 1px solid var(--rule); margin-top: 9px; padding-top: 7px;
+      }
+
+      /* Vision simulator. Proves the second channel rather than asserting it. */
+      .sim-protan { filter: url(#protan); }
+      .sim-deutan { filter: url(#deutan); }
+      .sim-gray { filter: grayscale(1); }
+
+      @media (max-width: 620px) {
+        .page { padding: 28px 16px 80px; }
+        .masthead { align-items: flex-start; }
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <filter id="protan">
+        <feColorMatrix type="matrix" values="0.567 0.433 0 0 0  0.558 0.442 0 0 0  0 0.242 0.758 0 0  0 0 0 1 0" />
+      </filter>
+      <filter id="deutan">
+        <feColorMatrix type="matrix" values="0.625 0.375 0 0 0  0.70 0.30 0 0 0  0 0.30 0.70 0 0  0 0 0 1 0" />
+      </filter>
+    </svg>
+
+    <div class="page">
+      <header class="masthead">
+        <div>
+          <h1>Slurm node grid</h1>
+          <p class="standfirst">
+            One cell per node, from Prometheus alone. This page is the design review for
+            slice 1 — it exists to be argued with, not admired.
+          </p>
+        </div>
+        <div class="switches">
+          <div class="switch">
+            <span>theme</span>
+            <button class="ctl" id="t-light">light</button>
+            <button class="ctl" id="t-dark">dark</button>
+          </div>
+          <div class="switch">
+            <span>vision</span>
+            <button class="ctl" id="v-normal">normal</button>
+            <button class="ctl" id="v-protan">protan</button>
+            <button class="ctl" id="v-deutan">deutan</button>
+            <button class="ctl" id="v-gray">grey</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- 1 ................................................................. -->
+      <section>
+        <h2>1 &middot; Why the wall is not green</h2>
+        <p class="lede">
+          The obvious palette is a traffic light. Measured against the palette validator,
+          it is the <b>worst</b> of the three options. Flip the vision switch above to
+          protan or deutan and compare the columns: the middle one collapses.
+        </p>
+
+        <div class="spread" id="palettes"></div>
+
+        <table class="measure">
+          <tr>
+            <th>palette</th><th>worst pair, deficient vision</th>
+            <th>contrast on white</th><th>verdict</th>
+          </tr>
+          <tr>
+            <td>green / amber / red</td>
+            <td class="num">ΔE 4.1 deutan</td>
+            <td class="num">amber 1.83:1</td>
+            <td class="verdict-fail">fail</td>
+          </tr>
+          <tr>
+            <td>Grafana defaults</td>
+            <td class="num">ΔE 6.2 protan</td>
+            <td class="num">green 2.24:1 · orange 2.15:1</td>
+            <td class="verdict-fail">fail</td>
+          </tr>
+          <tr>
+            <td>quiet OK</td>
+            <td class="num">ΔE 10.2 deutan · 13.9 tritan</td>
+            <td class="num">all ≥ 3:1</td>
+            <td class="verdict-pass">pass</td>
+          </tr>
+        </table>
+
+        <p class="finding">
+          <b>No hue can fix a traffic light.</b> Red against green measures ΔE 4.1; red
+          against a desaturated slate measures 13.0. The separation comes from dropping
+          chroma on the healthy state, not from picking a better green. It also fixes a
+          second problem: on a healthy cluster 95% of cells are OK, and a loud green wall
+          drowns the three red cells it exists to reveal. Healthy should be quiet.
+        </p>
+        <p class="finding">
+          One check is deliberately failed. The validator flags <code>#3f7f96</code> as
+          below the chroma floor — it &ldquo;reads gray&rdquo;. That floor stops a
+          categorical series from being mistaken for a grid line. Here the quiet is the
+          message, and UNKNOWN is separated by <b>shape</b>, not hue. Documented, not
+          overlooked.
+        </p>
+      </section>
+
+      <!-- 2 ................................................................. -->
+      <section>
+        <h2>2 &middot; The cell carries a second channel</h2>
+        <p class="lede">
+          The validator permits a palette in the ΔE 6–8 band only with a secondary
+          encoding. Rather than treat that as a rule to satisfy, it is the one place this
+          panel spends its boldness: <b>the state changes the shape of the cell</b>, not
+          only its fill. The grid stays readable in greyscale, in print, under
+          <code>forced-colors</code>, and across a room.
+        </p>
+        <div class="spread" id="anatomy"></div>
+        <p class="caption">left to right: OK, WARN, CRIT, UNKNOWN — at 28px, 14px and 8px</p>
+        <div class="legend" id="anatomy-legend"></div>
+        <p class="finding">
+          Below 10px the notch stops being legible and the fill carries alone, which is
+          also where a cell stops being a hover target. That is the honest floor of the
+          density ladder in section 5, and the panel says so rather than shrinking past it.
+        </p>
+      </section>
+
+      <!-- 3 ................................................................. -->
+      <section>
+        <h2>3 &middot; Rack, or wrap</h2>
+        <p class="lede">
+          The same 96 nodes, twice. <b>Wrap</b> fills the width and answers &ldquo;how much
+          of the cluster is broken&rdquo;. <b>Rack</b> gives each group a fixed-width column
+          read bottom-up, standing on a floor line, and answers &ldquo;which cabinet do I
+          walk to&rdquo;. Same cell, same card, same link — only the arrangement differs.
+        </p>
+        <div class="spread">
+          <div>
+            <div class="panel" id="wrap-demo" style="width: 420px"></div>
+            <p class="caption">layout: wrap</p>
+          </div>
+          <div>
+            <div class="panel" id="rack-demo" style="width: 420px"></div>
+            <p class="caption">layout: rack &middot; derived from the node name</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4 ................................................................. -->
+      <section>
+        <h2>4 &middot; The group header is one line</h2>
+        <p class="lede">
+          A rail two pixels wide carries the rolled-up state. No card, no badge, no shadow,
+          no radius — every pixel spent on chrome is a pixel not spent on a node. The header
+          carries what cannot be inferred from the cells: the name, how many nodes,
+          whether the grouping was <b>assumed</b>, and the tally.
+        </p>
+        <div class="panel" id="headers" style="max-width: 560px"></div>
+        <p class="finding">
+          <b>20 nodes &middot; 25 slots.</b> A node in three partitions appears in three
+          groups, so the two counts differ and both are shown. A count that quietly
+          disagrees with <code>sinfo</code> is worse than no count.
+        </p>
+      </section>
+
+      <!-- 5 ................................................................. -->
+      <section>
+        <h2>5 &middot; How far this scales</h2>
+        <p class="lede">
+          Four clusters, same cell size, same panel height. The only thing that changes is how
+          much of the cluster fits on screen at once — which is the whole argument. By the
+          last one a single grid is past the point of being worth reading, and the answer is
+          to split the view by region. That is a product decision, not a rendering one.
+        </p>
+        <div class="spread" id="ladder"></div>
+      </section>
+
+      <!-- 6 ................................................................. -->
+      <section>
+        <h2>6 &middot; The node card</h2>
+        <p class="lede">
+          What a drained node's owner actually needs, in the order they need it. The reason
+          is the headline, not a footnote — it is the single fact no aggregate can reach, and
+          the whole reason this panel exists.
+        </p>
+        <div class="spread" id="cards"></div>
+      </section>
+
+      <!-- 7 ................................................................. -->
+      <section>
+        <h2>7 &middot; When something is off</h2>
+        <p class="lede">
+          Nothing is ever painted healthy for lack of information. A node with no value is a
+          hollow ring; a state the panel has not been taught is counted and named; a grouping
+          the panel invented says so.
+        </p>
+        <div class="panel" id="degraded" style="max-width: 560px"></div>
+      </section>
+    </div>
+
+    <script>
+      'use strict';
+
+      /* ---------------------------------------------------------------- theme */
+      const root = document.documentElement;
+      const themeBtns = { light: t('t-light'), dark: t('t-dark') };
+      const visionBtns = { normal: t('v-normal'), protan: t('v-protan'), deutan: t('v-deutan'), gray: t('v-gray') };
+      function t(id) { return document.getElementById(id); }
+
+      function setTheme(v) {
+        root.dataset.theme = v;
+        for (const [k, b] of Object.entries(themeBtns)) b.setAttribute('aria-pressed', String(k === v));
+      }
+      function setVision(v) {
+        document.body.classList.remove('sim-protan', 'sim-deutan', 'sim-gray');
+        if (v !== 'normal') document.body.classList.add('sim-' + v);
+        for (const [k, b] of Object.entries(visionBtns)) b.setAttribute('aria-pressed', String(k === v));
+      }
+      for (const [k, b] of Object.entries(themeBtns)) b.onclick = () => setTheme(k);
+      for (const [k, b] of Object.entries(visionBtns)) b.onclick = () => setVision(k);
+
+      const params = new URLSearchParams(location.search);
+      setTheme(params.get('theme') === 'dark' ? 'dark' : 'light');
+      setVision(params.get('vision') || 'normal');
+
+      /* ------------------------------------------------------- synthetic data */
+      /* Deterministic, and shaped like the test cluster in scripts/testing:
+         mostly busy, a couple of drained, one unreachable, one planned. */
+      function rng(seed) {
+        let s = seed >>> 0;
+        return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+      }
+      const STATES = [
+        { s: 'OK', w: 0.90 },
+        { s: 'WARN', w: 0.06 },
+        { s: 'CRIT', w: 0.025 },
+        { s: 'UNKNOWN', w: 0.015 },
+      ];
+      function pick(r) {
+        let x = r(), acc = 0;
+        for (const st of STATES) { acc += st.w; if (x < acc) return st.s; }
+        return 'OK';
+      }
+      function cluster(n, seed) {
+        const r = rng(seed);
+        return Array.from({ length: n }, (_, i) => ({ name: 'c' + String(i + 1).padStart(4, '0'), s: pick(r) }));
+      }
+
+      const FILL = { OK: 'var(--ok)', WARN: 'var(--warn)', CRIT: 'var(--crit)', UNKNOWN: 'transparent' };
+      const LABEL = { OK: 'healthy', WARN: 'needs attention', CRIT: 'unusable', UNKNOWN: 'no data' };
+
+      function cell(node, size, vars) {
+        const d = document.createElement('div');
+        d.className = 'cell';
+        d.tabIndex = 0;
+        d.dataset.s = node.s;
+        if (size >= 20) d.dataset.sz = 'lg';
+        d.style.setProperty('--sz', size + 'px');
+        if (vars) d.style.setProperty('--c', vars[node.s] ?? FILL[node.s]);
+        else d.style.setProperty('--c', FILL[node.s]);
+        d.setAttribute('role', 'img');
+        d.setAttribute('aria-label', node.name + ' — ' + LABEL[node.s]);
+        return d;
+      }
+      function grid(nodes, size, gap, vars, rack) {
+        const w = document.createElement('div');
+        w.className = 'cells' + (rack ? ' rack' : '');
+        w.style.setProperty('--gap', gap + 'px');
+        if (rack) { w.style.setProperty('--rackw', '52px'); w.style.setProperty('--sled', '7px'); }
+        for (const n of nodes) w.append(cell(n, size, vars));
+        return w;
+      }
+      function el(tag, cls, text) {
+        const e = document.createElement(tag);
+        if (cls) e.className = cls;
+        if (text != null) e.textContent = text;
+        return e;
+      }
+
+      /* ---------------------------------------------------- 1 · the palettes */
+      const PALETTES = [
+        { title: 'green / amber / red', sub: 'the obvious one', v: { OK: 'var(--trad-ok)', WARN: 'var(--trad-warn)', CRIT: 'var(--trad-crit)', UNKNOWN: 'transparent' } },
+        { title: 'Grafana defaults', sub: 'the familiar one', v: { OK: 'var(--alt-ok)', WARN: 'var(--alt-warn)', CRIT: 'var(--alt-crit)', UNKNOWN: 'transparent' } },
+        { title: 'quiet OK', sub: 'the one that passes', v: FILL },
+      ];
+      {
+        const host = document.getElementById('palettes');
+        const nodes = cluster(160, 7);
+        for (const p of PALETTES) {
+          const box = el('div');
+          const panel = el('div', 'panel');
+          panel.style.width = '332px';
+          panel.append(grid(nodes, 13, 3, p.v, false));
+          box.append(panel);
+          const cap = el('p', 'caption', p.title + '  —  ' + p.sub);
+          box.append(cap);
+          host.append(box);
+        }
+      }
+
+      /* -------------------------------------------------- 2 · cell anatomy */
+      {
+        const host = document.getElementById('anatomy');
+        for (const size of [28, 14, 8]) {
+          const box = el('div');
+          const panel = el('div', 'panel');
+          panel.append(grid(
+            ['OK', 'WARN', 'CRIT', 'UNKNOWN'].map((s, i) => ({ name: 'n' + i, s })),
+            size, size >= 20 ? 6 : 3, FILL, false
+          ));
+          box.append(panel);
+          box.append(el('p', 'caption', size + 'px'));
+          host.append(box);
+        }
+        const legend = document.getElementById('anatomy-legend');
+        legend.style.marginTop = '14px';
+        for (const s of ['OK', 'WARN', 'CRIT', 'UNKNOWN']) {
+          const k = el('div', 'k');
+          k.append(cell({ name: s, s }, 12, FILL));
+          k.append(el('span', null, s.toLowerCase() + ' — ' + LABEL[s]));
+          legend.append(k);
+        }
+      }
+
+      /* --------------------------------------------- 3 · rack versus wrap */
+      const RACKS = [
+        { name: 'r01', seed: 11 }, { name: 'r02', seed: 12 },
+        { name: 'r03', seed: 13 }, { name: 'r04', seed: 14 },
+        { name: 'r05', seed: 15 }, { name: 'r06', seed: 16 },
+      ];
+      {
+        const flat = RACKS.flatMap(r => cluster(16, r.seed));
+        document.getElementById('wrap-demo').append(grid(flat, 15, 3, FILL, false));
+
+        const host = document.getElementById('rack-demo');
+        const row = el('div', 'racks');
+        for (const r of RACKS) {
+          const col = el('div', 'rackcol');
+          col.append(grid(cluster(16, r.seed), 15, 2, FILL, true));
+          col.append(el('div', 'racklabel', r.name));
+          row.append(col);
+        }
+        host.append(row);
+      }
+
+      /* ------------------------------------------- 4 · the group header */
+      const ROLL = { OK: 'var(--ok)', WARN: 'var(--warn)', CRIT: 'var(--crit)', UNKNOWN: 'var(--unknown)' };
+      function header(name, nodes, opts = {}) {
+        const tally = { OK: 0, WARN: 0, CRIT: 0, UNKNOWN: 0 };
+        for (const n of nodes) tally[n.s]++;
+        const worst = tally.CRIT ? 'CRIT' : tally.UNKNOWN ? 'UNKNOWN' : tally.WARN ? 'WARN' : 'OK';
+
+        const g = el('div', 'group');
+        const h = el('div', 'ghead');
+        h.style.setProperty('--roll', ROLL[worst]);
+        h.append(el('span', 'gname', name));
+        h.append(el('span', 'gcount', opts.count ?? nodes.length + ' nodes'));
+        if (opts.assumed) h.append(el('span', 'assumed', 'assumed'));
+        const tl = el('div', 'gtally');
+        for (const s of ['CRIT', 'WARN', 'UNKNOWN', 'OK']) {
+          if (!tally[s]) continue;
+          const i = el('i', null, tally[s] + ' ' + s.toLowerCase());
+          i.style.color = s === 'OK' ? 'var(--ink-faint)' : ROLL[s];
+          tl.append(i);
+        }
+        h.append(tl);
+        g.append(h);
+        g.append(grid(nodes, 14, 3, FILL, false));
+        return g;
+      }
+      {
+        const host = document.getElementById('headers');
+        host.append(header('cpu', cluster(40, 21)));
+        host.append(header('gpu', cluster(24, 22)));
+        host.append(header('rack 11', cluster(32, 23), { assumed: true }));
+        host.append(header('debug', cluster(12, 24), { count: '20 nodes · 25 slots' }));
+      }
+
+      /* ------------------------------------------------ 5 · density ladder */
+      {
+        const host = document.getElementById('ladder');
+        /* Same cell size throughout, so the four panels are honestly comparable:
+           only the area grows. A ladder drawn at four different sizes compares
+           nothing. */
+        for (const [n, note] of [[24, 'homelab'], [240, 'a department'], [1200, 'a site'], [3000, 'past the ceiling']]) {
+          const box = el('div');
+          const panel = el('div', 'panel boxed');
+          panel.style.width = '262px';
+          const vp = el('div', 'viewport');
+          vp.append(grid(cluster(n, 300 + n), 7, 2, FILL, false));
+          panel.append(vp);
+          if (n >= 3000) panel.append(el('div', 'warnbar', '3000 cells — split this view by region'));
+          box.append(panel);
+          box.append(el('p', 'caption', n.toLocaleString('en') + ' nodes — ' + note));
+          host.append(box);
+        }
+      }
+
+      /* --------------------------------------------------- 6 · node cards */
+      function card(o) {
+        const c = el('div', 'card');
+        const top = el('div', 'card-top');
+        top.append(cell({ name: o.id, s: o.s }, 12, FILL));
+        top.append(el('span', 'card-id', o.id));
+        top.append(el('span', 'card-state', o.state));
+        c.append(top);
+
+        const rows = el('dl', 'card-rows');
+        for (const [k, v] of o.rows) {
+          rows.append(el('dt', null, k));
+          if (typeof v === 'string') {
+            rows.append(el('dd', null, v));
+          } else {
+            const dd = el('dd');
+            const m = el('div', 'meter');
+            m.append(el('span', null, v.text));
+            const tr = el('div', 'meter-track');
+            const fi = el('div', 'meter-fill');
+            fi.style.width = v.pct + '%';
+            tr.append(fi);
+            m.append(tr);
+            dd.append(m);
+            rows.append(dd);
+          }
+        }
+        c.append(rows);
+        if (o.note) {
+          const n = el('div', 'card-note');
+          n.innerHTML = o.note;
+          c.append(n);
+        }
+        return c;
+      }
+      {
+        const host = document.getElementById('cards');
+        host.append(card({
+          id: 'c9', s: 'WARN', state: 'drained',
+          rows: [
+            ['partitions', 'cpu, debug, high'],
+            ['cpu', { text: '0/8', pct: 0 }],
+            ['memory', { text: '0/16 Gi', pct: 0 }],
+          ],
+          note: '<b>GPU fell off the bus — RMA pending</b><br>drained 4 h 12 min ago',
+        }));
+        host.append(card({
+          id: 'g9', s: 'OK', state: 'mixed',
+          rows: [
+            ['partitions', 'gpu'],
+            ['cpu', { text: '6/8', pct: 75 }],
+            ['memory', { text: '11/16 Gi', pct: 69 }],
+            ['gpu model_a', { text: '2/2', pct: 100 }],
+            ['gpu model_b', { text: '0/2', pct: 0 }],
+          ],
+          note: 'One model saturated while the other idles — the question <code>slurm_node_gres_*</code> exists to answer.',
+        }));
+        host.append(card({
+          id: 'g1', s: 'WARN', state: 'idle, not responding',
+          rows: [
+            ['partitions', 'gpu'],
+            ['cpu', { text: '0/8', pct: 0 }],
+            ['memory', { text: '0/16 Gi', pct: 0 }],
+          ],
+          note: 'Slurm marks this <b>down</b> after <code>SlurmdTimeout</code>, 300 s by default. Amber, not red — the scheduler has not ruled yet.',
+        }));
+      }
+
+      /* ------------------------------------------------ 7 · degraded states */
+      {
+        const host = document.getElementById('degraded');
+        const nodes = cluster(48, 91);
+        nodes[3].s = 'UNKNOWN'; nodes[17].s = 'UNKNOWN'; nodes[30].s = 'UNKNOWN';
+        host.append(header('cpu', nodes));
+        host.append(header('rack 07', cluster(24, 92), { assumed: true }));
+        const w1 = el('div', 'warnbar', '2 states not classified: blocked, perfctrs');
+        const w2 = el('div', 'warnbar', 'query C returned no node label and was skipped');
+        host.append(w1); host.append(w2);
+      }
+    </script>
+  </body>
+</html>
