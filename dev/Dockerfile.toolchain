@@ -1,0 +1,102 @@
+# The toolchain. Everything this repository needs to install, build, lint,
+# typecheck, test and drive a browser lives in this image, so a contributor
+# installs Docker and make and nothing else. No Node, no pnpm, no browser and
+# no node_modules on the host.
+#
+# Node is pinned to an exact patch, not to `24`, for the same reason the
+# Grafana image is pinned in docker-compose.yml: a floating tag does not move
+# an image that is already built, so it quietly misreports what is running.
+# This line is the single source of truth for the version; .nvmrc carries the
+# major for editors, and nothing else on the machine gets a say. 24 is the
+# active LTS line and the major @grafana/create-plugin's own .nvmrc specifies.
+# Bump it deliberately and say so in the commit.
+FROM node:24.21.0-bookworm-slim
+
+# Microsoft's own Playwright image would have been the shortcut. It is not
+# used because it decides the Node patch on this project's behalf and ships
+# five browsers where the e2e suite drives one; building on node: keeps both
+# choices here, where they can be read.
+#
+# PLAYWRIGHT_VERSION is the version pnpm-lock.yaml resolves @playwright/test
+# to, not the caret range in package.json. Playwright refuses a browser build
+# that does not match the driver, so the two are bumped together or not at
+# all.
+ARG PLAYWRIGHT_VERSION=1.63.0
+ARG PNPM_VERSION=12.4.1
+ARG UID=1000
+ARG GID=1000
+
+# COREPACK_HOME must be set before `corepack prepare` runs and must point
+# somewhere every user can read: corepack defaults to $HOME/.cache, so a
+# prepare done as root during the build caches into /root and the unprivileged
+# user re-downloads pnpm on every single container start.
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+    COREPACK_HOME=/opt/corepack \
+    COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+
+# git: pnpm and several tools shell out to it. jq and zip: the packaging and
+# validation targets in the Makefile run in here too. curl: `make up` waits on
+# Grafana's health endpoint from inside the compose network, so that waiting
+# for the stack is not a thing CI does differently from a laptop.
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends ca-certificates curl git jq zip; \
+    rm -rf /var/lib/apt/lists/*
+
+# The version comes from package.json's `packageManager` field. pnpm refuses
+# to run when the two disagree, which is the check we want: the image cannot
+# drift from the repository without failing loudly.
+RUN set -eux; \
+    corepack enable; \
+    corepack prepare "pnpm@${PNPM_VERSION}" --activate; \
+    chmod -R a+rX /opt/corepack; \
+    pnpm --version
+
+# Only Chromium: it is the only browser the e2e suite drives, and the other
+# three would triple the image for nothing. --with-deps pulls the system
+# libraries it needs, which is the part that cannot be done later as a
+# non-root user.
+RUN set -eux; \
+    npx --yes "playwright@${PLAYWRIGHT_VERSION}" install --with-deps chromium; \
+    chmod -R a+rX /ms-playwright; \
+    npm cache clean --force
+
+# Run as a real user with the host's ids so that the artifacts the container
+# writes into the bind-mounted source tree — dist/, playwright-report/ — come
+# out owned by the person who ran make, not by root.
+#
+# node:24 already ships a `node` user at 1000:1000, so it is renumbered rather
+# than duplicated. -o permits a non-unique id: on a host whose user collides
+# with an id already in the image, failing the build would be worse than
+# sharing the number.
+RUN set -eux; \
+    if [ "${UID}:${GID}" != "1000:1000" ]; then \
+        groupmod -o -g "${GID}" node; \
+        usermod  -o -u "${UID}" -g "${GID}" node; \
+    fi; \
+    mkdir -p /work/node_modules \
+             /work/packages/core/node_modules \
+             /work/plugins/nodegrid-panel/node_modules \
+             /work/tests/contract/node_modules \
+             /pnpm/store; \
+    chown -R "${UID}:${GID}" /work /pnpm; \
+    # The download cache goes in its own volume rather than under /work, where
+    # pnpm defaults it (node_modules/.pnpm-store) and where `make clean` would
+    # throw it away along with everything else, making the next install fetch
+    # the whole dependency graph again.
+    #
+    # pnpm 12 reads neither npm_config_store_dir from the environment nor
+    # store-dir from an .npmrc — both were tried and neither moved the store.
+    # This file is what `pnpm config set --global` writes, and it is written
+    # directly so the image does not depend on running pnpm to configure pnpm.
+    mkdir -p /home/node/.config/pnpm; \
+    printf 'storeDir: /pnpm/store\n' > /home/node/.config/pnpm/config.yaml; \
+    chown -R "${UID}:${GID}" /home/node/.config
+
+# Every path above that a named volume will be mounted on had to exist, and
+# had to be owned by this user, before the volume is created: Docker seeds an
+# empty named volume from the image and carries the ownership across. A path
+# that did not exist here comes up owned by root and the install dies on
+# EACCES.
+USER node
+WORKDIR /work

@@ -1,3 +1,8 @@
+# The project name is set explicitly. Left to Docker it would be taken from
+# this file's parent directory — `dev` — which is neither unique on a machine
+# that hosts more than one repository nor recognisable in `docker compose ls`.
+name: slurm-views
+
 services:
   grafana:
     # Pinned, never floating. `docker compose up -d` does not recreate a
@@ -31,3 +36,44 @@ services:
     environment:
       NODES: ${SYNTH_NODES:-240}
       RACKS: ${SYNTH_RACKS:-6}
+
+  tools:
+    # The toolchain, not a long-running service: `profiles` keeps it out of
+    # `docker compose up`, and `docker compose run` enables its profile on its
+    # own. Driven through the Makefile — see the root README.
+    profiles: ['tools']
+    # Named explicitly rather than left to compose's project-derived default,
+    # so CI can build this image once — with a layer cache — and have every
+    # later `docker compose run` reuse it instead of rebuilding Chromium.
+    image: slurm-views-tools:local
+    build:
+      context: .
+      dockerfile: Dockerfile.toolchain
+      args:
+        # Written by the Makefile from `id -u` / `id -g` so the files the
+        # container leaves in the source tree belong to the caller.
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    init: true
+    environment:
+      # Inside the compose network Grafana answers on its own port. The 3001
+      # mapping exists only for a browser on the host.
+      GRAFANA_URL: ${GRAFANA_URL:-http://grafana:3000}
+    volumes:
+      - ..:/work
+      # node_modules never touches the host. Named volumes rather than bind
+      # mounts: the host stays clean, and pnpm's symlink tree is an order of
+      # magnitude faster off the WSL2 9p bridge. One per workspace package,
+      # because pnpm materialises a node_modules directory in each.
+      - root-node-modules:/work/node_modules
+      - core-node-modules:/work/packages/core/node_modules
+      - panel-node-modules:/work/plugins/nodegrid-panel/node_modules
+      - contract-node-modules:/work/tests/contract/node_modules
+      - pnpm-store:/pnpm
+
+volumes:
+  root-node-modules:
+  core-node-modules:
+  panel-node-modules:
+  contract-node-modules:
+  pnpm-store:
