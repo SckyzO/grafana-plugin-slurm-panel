@@ -30,11 +30,17 @@ hosting several repositories nor recognisable in `docker compose ls`.
 
 **Synthetic** (default) produces any cluster shape on demand, including the
 states a 20-node docker cluster cannot reach — `blocked`, `perfctrs`, and all
-nine state modifiers:
+nine state modifiers. Shape it from whichever end you are thinking in:
 
 ```bash
-SYNTH_NODES=3000 SYNTH_RACKS=75 make up
+SYNTH_RACKS=4  SYNTH_NODES_PER_RACK=80 make up   # 4 racks of 80
+SYNTH_RACKS=75 SYNTH_NODES=3000        make up   # 3000 nodes over 75 racks
+SYNTH_RACKS=3  SYNTH_NODES=100         make up   # 3 racks of 34, 33, 33
 ```
+
+You get exactly `SYNTH_RACKS` racks in every case. `SYNTH_SEED` fixes which
+node lands in which state, so a screenshot or a failing e2e run reproduces
+exactly; `SYNTH_PARTITIONS` renames the partitions.
 
 **Real** points at the `slurm_exporter` test cluster instead. Start it with
 `make -C <slurm_exporter>/scripts/testing setup`, then change the Prometheus

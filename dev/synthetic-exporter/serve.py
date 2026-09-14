@@ -2,18 +2,32 @@
 """Publish a synthetic Slurm cluster in the Prometheus text format.
 
 Shape is set by environment variable, so one image covers a 240-node smoke
-test and a 3000-node scale test:
+test, a 3000-node scale test and a few wide racks:
 
-    NODES=3000 RACKS=75 PARTITIONS=cpu,gpu,debug
+    RACKS=4  NODES_PER_RACK=80          # 4 racks of 80
+    RACKS=75 NODES=3000                 # 75 racks, evenly filled
+    RACKS=3  NODES=100                  # 3 racks of 34, 33, 33
+
+Give RACKS with NODES_PER_RACK when the rack is the thing you care about, or
+RACKS with NODES when the total is. Either way you get exactly the number of
+racks you asked for: an earlier revision computed NODES // RACKS and walked
+the nodes with it, which quietly produced one extra, nearly empty rack
+whenever the division was not exact — 100 nodes over 3 racks came back as
+four racks of 33, 33, 33 and 1.
 """
 import os
 import random
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-NODES = int(os.environ.get("NODES", "240"))
-RACKS = int(os.environ.get("RACKS", "6"))
+RACKS = max(1, int(os.environ.get("RACKS", "6")))
+NODES_PER_RACK = int(os.environ.get("NODES_PER_RACK", "0"))
+NODES = RACKS * NODES_PER_RACK if NODES_PER_RACK > 0 else int(os.environ.get("NODES", "240"))
 PARTITIONS = os.environ.get("PARTITIONS", "cpu,gpu,debug").split(",")
 SEED = int(os.environ.get("SEED", "1"))
+
+# A rack with no nodes in it is not a rack. Asking for more racks than nodes
+# is a typo, not a cluster; take the nodes as the ceiling and say nothing.
+RACKS = min(RACKS, max(1, NODES))
 
 # Weighted so a healthy cluster looks healthy, with every awkward state present.
 BASE_STATES = [
@@ -24,12 +38,26 @@ BASE_STATES = [
 MODIFIERS = ["", "", "", "", "", "*", "~", "#", "!", "%", "$", "@", "^", "-"]
 
 
+def rack_of():
+    """Map each 1-based node index to its rack, filling racks as evenly as the
+    division allows and handing the remainder to the first racks rather than
+    to an extra one on the end."""
+    base, extra = divmod(NODES, RACKS)
+    index = {}
+    node = 1
+    for rack in range(1, RACKS + 1):
+        for _ in range(base + (1 if rack <= extra else 0)):
+            index[node] = rack
+            node += 1
+    return index
+
+
 def cluster():
     rng = random.Random(SEED)
     nodes = []
-    per_rack = max(1, NODES // max(1, RACKS))
+    rack_index = rack_of()
     for i in range(1, NODES + 1):
-        rack = (i - 1) // per_rack + 1
+        rack = rack_index[i]
         state = rng.choice(BASE_STATES) + rng.choice(MODIFIERS)
         parts = [PARTITIONS[i % len(PARTITIONS)]]
         if i % 7 == 0:

@@ -34,8 +34,14 @@ services:
   synthetic-exporter:
     build: ./synthetic-exporter
     environment:
-      NODES: ${SYNTH_NODES:-240}
+      # Give RACKS with SYNTH_NODES_PER_RACK when the rack is the shape you
+      # care about, or with SYNTH_NODES when the total is. Either way the
+      # exporter produces exactly RACKS racks.
       RACKS: ${SYNTH_RACKS:-6}
+      NODES_PER_RACK: ${SYNTH_NODES_PER_RACK:-0}
+      NODES: ${SYNTH_NODES:-240}
+      PARTITIONS: ${SYNTH_PARTITIONS:-cpu,gpu,debug}
+      SEED: ${SYNTH_SEED:-1}
 
   tools:
     # The toolchain, not a long-running service: `profiles` keeps it out of
