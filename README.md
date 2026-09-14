@@ -34,4 +34,4 @@ written the obvious way.
 
 ## Licence
 
-MIT.
+Apache-2.0.

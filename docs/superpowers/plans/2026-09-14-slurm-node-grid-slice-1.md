@@ -116,7 +116,7 @@ If corepack refuses (it signs manifests), fall back to `npm install -g pnpm@12.4
   "name": "slurm-views",
   "version": "0.1.0",
   "private": true,
-  "license": "MIT",
+  "license": "Apache-2.0",
   "packageManager": "pnpm@12.4.1",
   "engines": { "node": ">=22" },
   "scripts": {
@@ -200,7 +200,7 @@ ignore-scripts=true
   "name": "@slurm-views/core",
   "version": "0.1.0",
   "private": true,
-  "license": "MIT",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -3987,7 +3987,7 @@ See [`dev/README.md`](dev/README.md).
 
 ## Licence
 
-MIT.
+Apache-2.0.
 ````
 
 - [ ] **Step 2: Write the value-mappings note**

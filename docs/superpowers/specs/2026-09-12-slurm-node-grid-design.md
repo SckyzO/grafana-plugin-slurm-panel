@@ -503,22 +503,31 @@ label becomes an alternative source and nothing here breaks.
 
 Recorded rather than decided, so they are not rediscovered later.
 
-### Licence — MIT, provisionally
+### Licence — Apache-2.0
 
-Settled as **MIT** for now. It is permissive: commercial use, modification and
-redistribution are all allowed with no obligation to republish anything.
+Settled as **Apache-2.0**. Like MIT it is permissive — commercial use,
+modification and redistribution are all allowed — but it adds two things MIT
+lacks: an explicit patent grant from contributors, and a requirement that anyone
+distributing a modified version state that they changed it and carry the notices
+forward.
 
-That is deliberately looser than the requirement voiced earlier in the design
+That is still looser than the requirement voiced earlier in the design
 conversation — commercial use permitted, modification obliging republication —
 which only GPL-3.0 (strong, whole-work) and MPL-2.0 (weak, file-level) satisfy.
-The choice stands as made; it is recorded here so the gap is visible rather than
-forgotten.
+Apache-2.0 does not oblige anyone to publish their changes, only to say that
+changes were made. The choice stands as made; the gap is recorded here rather
+than forgotten.
 
-One practical consequence, since the decision is marked provisional: the
-copyright holder can relicense their own code at any time, but once outside
-contributions land under MIT, moving to a more restrictive licence needs each
-contributor's agreement. The window to change direction cheaply closes with the
-first accepted pull request, not with the first public commit.
+One practical consequence. The copyright holder can relicense their own code at
+any time, but once outside contributions land under Apache-2.0, moving to a more
+restrictive licence needs each contributor's agreement. The window to change
+direction cheaply closes with the first accepted pull request, not with the first
+public commit.
+
+This replaces an earlier MIT decision. The repository was briefly inconsistent —
+the plugin carried the scaffold's Apache-2.0 while the root declared MIT — which
+mattered because the plugin's `LICENSE` is copied into `dist/` at build time and
+would have shipped inside the published artefact.
 
 ### Slurm state at a node's true U position
 
