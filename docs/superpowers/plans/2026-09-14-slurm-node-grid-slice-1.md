@@ -2642,9 +2642,14 @@ const node = (name: string, state: string): SlurmNode => ({
   name, state, partitions: [], labels: {}, facets: { gres: [] },
 });
 
-// A stand-in for the real processor: maps "idle", passes anything else through.
+// Models Grafana's real shape rather than a convenient one: a matched mapping
+// returns early and never sets `percent`; an unmatched value falls through to
+// the threshold path, which does. `idle` maps to the text "idle" — identical to
+// its input — which is exactly the case a text comparison gets wrong.
 const display = ((value: unknown) =>
-  value === 'idle' ? { text: 'idle', numeric: NaN } : { text: String(value), numeric: NaN }
+  value === 'idle'
+    ? { text: 'idle', numeric: NaN }
+    : { text: String(value), numeric: NaN, percent: 0 }
 ) as unknown as DisplayProcessor;
 
 describe('collectUnmapped', () => {
@@ -2655,6 +2660,13 @@ describe('collectUnmapped', () => {
 
   it('returns nothing when every state is mapped', () => {
     expect(collectUnmapped([node('c1', 'idle')], display)).toEqual([]);
+  });
+
+  it('does not report a state whose mapped text equals its own name', () => {
+    // The regression this guards: `idle` maps to "idle", so a text comparison
+    // calls the commonest healthy state unmapped and the panel warns about it.
+    expect(collectUnmapped([node('c1', 'idle'), node('c2', 'perfctrs')], display))
+      .toEqual(['perfctrs']);
   });
 
   it('ignores a node with no state at all, which is a different problem', () => {
@@ -2724,7 +2736,11 @@ export function collectUnmapped(nodes: SlurmNode[], display: DisplayProcessor): 
     if (node.state === '') {
       continue;
     }
-    if (display(node.state).text === node.state) {
+    // Grafana returns early when a value mapping matches and never computes
+    // `percent`; an unmatched value falls through to the threshold path, which
+    // sets it. Do not compare text: `idle` maps to "idle", a real match that
+    // text comparison reports as a miss. Same signal as NodeCell.
+    if (display(node.state).percent !== undefined) {
       unmapped.add(node.state);
     }
   }
