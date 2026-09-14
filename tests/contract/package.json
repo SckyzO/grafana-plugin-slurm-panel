@@ -6,7 +6,7 @@
     "test": "node --test value-mappings.test.cjs"
   },
   "devDependencies": {
-    "@grafana/data": "^12.3.0",
+    "@grafana/data": "^13.2.1",
     "jsdom": "^26.0.0"
   }
 }
