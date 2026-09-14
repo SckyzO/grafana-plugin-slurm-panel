@@ -105,6 +105,74 @@ test.describe('the panel supplies its own state colours', () => {
   });
 });
 
+test.describe('the continuous colour modes', () => {
+  test('resolves occupancy through thresholds and leaves a node with no data empty', async ({
+    gotoDashboardPage,
+    readProvisionedDashboard,
+    page,
+  }) => {
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-utilisation.json' });
+    await gotoDashboardPage(dashboard);
+
+    const grids = page.locator('[data-testid="slurm-node-grid"]');
+    await expect.poll(() => grids.count(), { timeout: 20_000 }).toBe(4);
+
+    // Panel 2 is CPU occupancy. Every synthetic node reports cpu_alloc and
+    // cpu_total, so every cell has a value and none may be drawn empty — if
+    // the facet slots stopped being read this would be 240, not 0.
+    const cpu = grids.nth(1).locator('[data-testid^="node-cell-"]');
+    await expect.poll(() => cpu.count(), { timeout: 20_000 }).toBeGreaterThan(200);
+    expect(await cpu.locator(':scope[data-filled="false"]').count()).toBe(0);
+
+    // More than one threshold band is reached, which is what says the fill is
+    // coming from Thresholds rather than from a single fallback colour.
+    const bands = await cpu.evaluateAll((nodes) =>
+      Array.from(new Set(nodes.map((n) => getComputedStyle(n).backgroundColor)))
+    );
+    expect(bands.length).toBeGreaterThan(1);
+
+    // Panel 4 is GPU occupancy, where most synthetic nodes have no GPU at all.
+    // Those must be drawn as empty rather than filled: an undefined background
+    // on a <button> falls back to the browser's ButtonFace grey, which reads
+    // as a real measurement and once covered two thirds of this panel.
+    const gpu = grids.nth(3).locator('[data-testid^="node-cell-"]');
+    await expect.poll(() => gpu.locator(':scope[data-filled="false"]').count(), { timeout: 20_000 })
+      .toBeGreaterThan(50);
+    const empty = gpu.locator(':scope[data-filled="false"]').first();
+    expect(await empty.evaluate((n) => getComputedStyle(n).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+  });
+
+  test('groups the same nodes four different ways', async ({
+    gotoDashboardPage,
+    readProvisionedDashboard,
+    page,
+  }) => {
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-grouping.json' });
+    await gotoDashboardPage(dashboard);
+
+    const grids = page.locator('[data-testid="slurm-node-grid"]');
+    await expect.poll(() => grids.count(), { timeout: 20_000 }).toBe(4);
+
+    // All four panels read the same 32-row CSV, so a differing cell count
+    // means a grouping key dropped nodes rather than regrouping them.
+    for (let i = 0; i < 4; i++) {
+      await expect
+        .poll(() => grids.nth(i).locator('[data-testid^="node-cell-"]').count(), { timeout: 20_000 })
+        .toBe(32);
+    }
+
+    // The capture panel splits c* from g* on the node name, which is the only
+    // structure a real slurm_exporter offers: it publishes no rack label.
+    await expect(grids.nth(1).getByText('c', { exact: true })).toBeVisible();
+    await expect(grids.nth(1).getByText('g', { exact: true })).toBeVisible();
+
+    // Chunking is the one key that asserts structure the data never stated,
+    // and the panel has to say so on every group it invents.
+    await expect(grids.nth(2).getByText('chunk 1', { exact: true })).toBeVisible();
+    await expect(grids.nth(2).getByText('assumed', { exact: true }).first()).toBeVisible();
+  });
+});
+
 test.describe('the options editor', () => {
   test('exposes the standard sections, which proves useFieldConfig is wired', async ({
     panelEditPage,

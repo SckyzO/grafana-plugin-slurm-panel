@@ -26,6 +26,30 @@ The compose project is named `slurm-views` explicitly. Left to Docker it would
 be taken from this directory — `dev` — which is neither unique on a machine
 hosting several repositories nor recognisable in `docker compose ls`.
 
+## The dashboards
+
+Four, provisioned into the **Slurm** folder. Two read Prometheus; two carry
+their own data and need nothing running but Grafana.
+
+| Dashboard | Source | What it is for |
+|---|---|---|
+| Slurm node grid | Prometheus | The overview: one panel, every node, grouped by rack |
+| Slurm node grid - utilisation | Prometheus | State beside CPU, memory and GPU occupancy, driven by Thresholds |
+| Slurm node grid - scenarios | CSV | Hand-written situations that render identically every time |
+| Slurm node grid - grouping and layout | CSV | The same nodes grouped four ways, side by side |
+
+The two CSV dashboards use Grafana's built-in TestData source. Each panel
+carries its own rows, so there is no exporter, no Prometheus and no scrape
+timing between the dashboard and what it shows — which is what makes a
+scenario reproducible rather than merely seeded. They are also the honest
+place to demonstrate the grouping a real cluster needs: `slurm_exporter`
+publishes no `rack` label, so structure has to come from a capture on the
+node name.
+
+None of the four configures value mappings. The eleven Slurm state colours
+are the panel's own default, so a panel added to a new dashboard is coloured
+before anything is configured.
+
 ## Two data sources
 
 **Synthetic** (default) produces any cluster shape on demand, including the

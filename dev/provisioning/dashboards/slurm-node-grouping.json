@@ -1,0 +1,234 @@
+{
+  "uid": "slurm-node-grouping",
+  "title": "Slurm node grid - grouping and layout",
+  "description": "One set of nodes, four ways of deciding what a group is. Same CSV in every panel, so the only difference you are looking at is the grouping key and the layout.",
+  "tags": [
+    "slurm",
+    "reference"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "",
+  "time": {
+    "from": "now-5m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "By a label, in rack layout",
+      "description": "The best case: the exporter already publishes the structure. Rack layout stacks each group as a chassis instead of wrapping it.",
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "slurm-views-testdata"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "slurm-views-testdata"
+          },
+          "scenarioId": "csv_content",
+          "csvContent": "node,rack,partition,status,Value\nc001,r001,cpu,idle,1\nc002,r001,cpu,mixed,1\nc003,r001,cpu,allocated,1\nc004,r001,cpu,idle,1\nc005,r001,cpu,drained,1\nc006,r001,cpu,mixed,1\nc007,r001,cpu,idle,1\nc008,r001,cpu,down,1\nc009,r002,cpu,idle,1\nc010,r002,cpu,mixed,1\nc011,r002,cpu,allocated,1\nc012,r002,cpu,idle,1\nc013,r002,cpu,drained,1\nc014,r002,cpu,mixed,1\nc015,r002,cpu,idle,1\nc016,r002,cpu,down,1\nc017,r003,cpu,idle,1\nc018,r003,cpu,mixed,1\nc019,r003,cpu,allocated,1\nc020,r003,cpu,idle,1\nc021,r003,cpu,drained,1\nc022,r003,cpu,mixed,1\nc023,r003,cpu,idle,1\nc024,r003,cpu,down,1\ng001,r004,gpu,idle,1\ng002,r004,gpu,drained,1\ng003,r004,gpu,mixed,1\ng004,r004,gpu,idle,1\ng005,r005,gpu,down,1\ng006,r005,gpu,idle,1\ng007,r005,gpu,mixed,1\ng008,r005,gpu,allocated,1\n"
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A"
+        },
+        "grouping": {
+          "kind": "label",
+          "label": "rack"
+        },
+        "multiValueLabel": false,
+        "layout": "rack",
+        "cellSize": 18,
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "state",
+        "maxCells": 3000
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "By a capture on the node name",
+      "description": "What a real cluster needs. slurm_exporter publishes no rack label - only node, partition, status, instance and job - so the only structure available is the one encoded in the name. '^([a-z]+)' splits c* from g*.",
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "slurm-views-testdata"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "slurm-views-testdata"
+          },
+          "scenarioId": "csv_content",
+          "csvContent": "node,rack,partition,status,Value\nc001,r001,cpu,idle,1\nc002,r001,cpu,mixed,1\nc003,r001,cpu,allocated,1\nc004,r001,cpu,idle,1\nc005,r001,cpu,drained,1\nc006,r001,cpu,mixed,1\nc007,r001,cpu,idle,1\nc008,r001,cpu,down,1\nc009,r002,cpu,idle,1\nc010,r002,cpu,mixed,1\nc011,r002,cpu,allocated,1\nc012,r002,cpu,idle,1\nc013,r002,cpu,drained,1\nc014,r002,cpu,mixed,1\nc015,r002,cpu,idle,1\nc016,r002,cpu,down,1\nc017,r003,cpu,idle,1\nc018,r003,cpu,mixed,1\nc019,r003,cpu,allocated,1\nc020,r003,cpu,idle,1\nc021,r003,cpu,drained,1\nc022,r003,cpu,mixed,1\nc023,r003,cpu,idle,1\nc024,r003,cpu,down,1\ng001,r004,gpu,idle,1\ng002,r004,gpu,drained,1\ng003,r004,gpu,mixed,1\ng004,r004,gpu,idle,1\ng005,r005,gpu,down,1\ng006,r005,gpu,idle,1\ng007,r005,gpu,mixed,1\ng008,r005,gpu,allocated,1\n"
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A"
+        },
+        "grouping": {
+          "kind": "capture",
+          "pattern": "^([a-z]+)"
+        },
+        "multiValueLabel": false,
+        "layout": "wrap",
+        "cellSize": 18,
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "state",
+        "maxCells": 3000
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "By a chunk of the ordinal",
+      "description": "The fallback when the name carries no structure either. This is the one grouping that asserts something the data never said - it assumes the numbering follows the floor - so the panel marks the groups as assumed.",
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "slurm-views-testdata"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "slurm-views-testdata"
+          },
+          "scenarioId": "csv_content",
+          "csvContent": "node,rack,partition,status,Value\nc001,r001,cpu,idle,1\nc002,r001,cpu,mixed,1\nc003,r001,cpu,allocated,1\nc004,r001,cpu,idle,1\nc005,r001,cpu,drained,1\nc006,r001,cpu,mixed,1\nc007,r001,cpu,idle,1\nc008,r001,cpu,down,1\nc009,r002,cpu,idle,1\nc010,r002,cpu,mixed,1\nc011,r002,cpu,allocated,1\nc012,r002,cpu,idle,1\nc013,r002,cpu,drained,1\nc014,r002,cpu,mixed,1\nc015,r002,cpu,idle,1\nc016,r002,cpu,down,1\nc017,r003,cpu,idle,1\nc018,r003,cpu,mixed,1\nc019,r003,cpu,allocated,1\nc020,r003,cpu,idle,1\nc021,r003,cpu,drained,1\nc022,r003,cpu,mixed,1\nc023,r003,cpu,idle,1\nc024,r003,cpu,down,1\ng001,r004,gpu,idle,1\ng002,r004,gpu,drained,1\ng003,r004,gpu,mixed,1\ng004,r004,gpu,idle,1\ng005,r005,gpu,down,1\ng006,r005,gpu,idle,1\ng007,r005,gpu,mixed,1\ng008,r005,gpu,allocated,1\n"
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A"
+        },
+        "grouping": {
+          "kind": "chunk",
+          "size": 8
+        },
+        "multiValueLabel": false,
+        "layout": "wrap",
+        "cellSize": 18,
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "state",
+        "maxCells": 3000
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "Not grouped at all",
+      "description": "One flat grid. Below a few hundred nodes this is often the honest answer: a grouping nobody asked for is structure you invented.",
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "slurm-views-testdata"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "slurm-views-testdata"
+          },
+          "scenarioId": "csv_content",
+          "csvContent": "node,rack,partition,status,Value\nc001,r001,cpu,idle,1\nc002,r001,cpu,mixed,1\nc003,r001,cpu,allocated,1\nc004,r001,cpu,idle,1\nc005,r001,cpu,drained,1\nc006,r001,cpu,mixed,1\nc007,r001,cpu,idle,1\nc008,r001,cpu,down,1\nc009,r002,cpu,idle,1\nc010,r002,cpu,mixed,1\nc011,r002,cpu,allocated,1\nc012,r002,cpu,idle,1\nc013,r002,cpu,drained,1\nc014,r002,cpu,mixed,1\nc015,r002,cpu,idle,1\nc016,r002,cpu,down,1\nc017,r003,cpu,idle,1\nc018,r003,cpu,mixed,1\nc019,r003,cpu,allocated,1\nc020,r003,cpu,idle,1\nc021,r003,cpu,drained,1\nc022,r003,cpu,mixed,1\nc023,r003,cpu,idle,1\nc024,r003,cpu,down,1\ng001,r004,gpu,idle,1\ng002,r004,gpu,drained,1\ng003,r004,gpu,mixed,1\ng004,r004,gpu,idle,1\ng005,r005,gpu,down,1\ng006,r005,gpu,idle,1\ng007,r005,gpu,mixed,1\ng008,r005,gpu,allocated,1\n"
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A"
+        },
+        "grouping": {
+          "kind": "none"
+        },
+        "multiValueLabel": false,
+        "layout": "wrap",
+        "cellSize": 18,
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "state",
+        "maxCells": 3000
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    }
+  ]
+}

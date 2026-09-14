@@ -1,0 +1,333 @@
+{
+  "uid": "slurm-node-utilisation",
+  "title": "Slurm node grid - utilisation",
+  "description": "The same nodes painted four ways. The state grid says what a node is doing; the three occupancy grids say how full it is. Occupancy is driven by the panel's Thresholds, so the bands are yours to move.",
+  "tags": [
+    "slurm",
+    "utilisation"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-5m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "State",
+      "description": "What each node is doing. The reference for the three grids below: a node can be dark blue for full and still be draining.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_node_status",
+          "instant": true
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A"
+        },
+        "grouping": {
+          "kind": "label",
+          "label": "rack"
+        },
+        "multiValueLabel": false,
+        "layout": "rack",
+        "cellSize": 13,
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "state",
+        "maxCells": 3000
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "CPU occupancy",
+      "description": "slurm_node_cpu_alloc over slurm_node_cpu_total. Pale is empty, dark is full. Hover for the exact figures.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_node_status",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "slurm_node_cpu_alloc",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "slurm_node_cpu_total",
+          "instant": true
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A",
+          "cpuAlloc": "B",
+          "cpuTotal": "C"
+        },
+        "grouping": {
+          "kind": "label",
+          "label": "rack"
+        },
+        "multiValueLabel": false,
+        "layout": "rack",
+        "cellSize": 13,
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "cpu",
+        "maxCells": 3000
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "super-light-blue",
+                "value": null
+              },
+              {
+                "color": "light-blue",
+                "value": 20
+              },
+              {
+                "color": "blue",
+                "value": 45
+              },
+              {
+                "color": "semi-dark-blue",
+                "value": 70
+              },
+              {
+                "color": "dark-blue",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "Memory occupancy",
+      "description": "slurm_node_mem_alloc over slurm_node_mem_total. A node pale here and dark on CPU is the classic memory-starved job shape.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 8,
+        "y": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_node_status",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "slurm_node_mem_alloc",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "slurm_node_mem_total",
+          "instant": true
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A",
+          "memAlloc": "B",
+          "memTotal": "C"
+        },
+        "grouping": {
+          "kind": "label",
+          "label": "rack"
+        },
+        "multiValueLabel": false,
+        "layout": "rack",
+        "cellSize": 13,
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "mem",
+        "maxCells": 3000
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "super-light-blue",
+                "value": null
+              },
+              {
+                "color": "light-blue",
+                "value": 20
+              },
+              {
+                "color": "blue",
+                "value": 45
+              },
+              {
+                "color": "semi-dark-blue",
+                "value": 70
+              },
+              {
+                "color": "dark-blue",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "GPU occupancy",
+      "description": "slurm_node_gres_used over slurm_node_gres_total, summed across models: a node with two GPU models has one occupancy, not two. Nodes with no GPU have nothing to say and are drawn empty.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_node_status",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "slurm_node_gres_used",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "slurm_node_gres_total",
+          "instant": true
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A",
+          "gresUsed": "B",
+          "gresTotal": "C"
+        },
+        "grouping": {
+          "kind": "label",
+          "label": "rack"
+        },
+        "multiValueLabel": false,
+        "layout": "rack",
+        "cellSize": 13,
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "gres",
+        "maxCells": 3000
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "super-light-blue",
+                "value": null
+              },
+              {
+                "color": "light-blue",
+                "value": 20
+              },
+              {
+                "color": "blue",
+                "value": 45
+              },
+              {
+                "color": "semi-dark-blue",
+                "value": 70
+              },
+              {
+                "color": "dark-blue",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    }
+  ]
+}
