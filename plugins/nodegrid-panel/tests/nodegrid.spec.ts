@@ -11,7 +11,11 @@ test.describe('the node grid renders against a real Grafana', () => {
 
     await expect(page.getByTestId('slurm-node-grid')).toBeVisible({ timeout: 15_000 });
     const cells = page.locator('[data-testid^="node-cell-"]');
-    await expect.poll(() => cells.count(), { timeout: 15_000 }).toBeGreaterThan(10);
+    // The synthetic exporter publishes 240 nodes across 6 racks. A bound of
+    // 10 would pass even if a frame-shape defect silently dropped 200 of
+    // them; 200 catches a partial ingest failure, not only a total one, and
+    // stays a lower bound so it survives someone changing SYNTH_NODES.
+    await expect.poll(() => cells.count(), { timeout: 15_000 }).toBeGreaterThan(200);
   });
 
   test('paints different states different colours', async ({ gotoDashboardPage, readProvisionedDashboard, page }) => {
@@ -23,7 +27,11 @@ test.describe('the node grid renders against a real Grafana', () => {
     await gotoDashboardPage(dashboard);
 
     const mapped = page.locator('[data-testid^="node-cell-"][data-mapped="true"]');
-    await expect.poll(() => mapped.count(), { timeout: 15_000 }).toBeGreaterThan(10);
+    // 173 of the 240 synthetic nodes match a shipped mapping today. 100 stays
+    // a lower bound (survives a SYNTH_NODES change) while still failing on a
+    // partial render (e.g. one rack's worth, ~29 cells) that a bound of 10
+    // would let through unnoticed.
+    await expect.poll(() => mapped.count(), { timeout: 15_000 }).toBeGreaterThan(100);
 
     const colours = await mapped.evaluateAll((nodes) =>
       Array.from(new Set(nodes.map((n) => getComputedStyle(n).backgroundColor)))

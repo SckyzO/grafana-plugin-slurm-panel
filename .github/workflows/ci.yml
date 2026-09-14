@@ -27,6 +27,13 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - name: Check React 19 compatibility
+        # Runs against plugins/nodegrid-panel/dist, not the repo root: the
+        # tool reads ./src/plugin.json and ./dist relative to its cwd, and
+        # the monorepo root has neither. Needs the build above to already
+        # have produced dist/ with source maps.
+        working-directory: plugins/nodegrid-panel
+        run: npx -y @grafana/react-detect@latest
 
   resolve-versions:
     name: Resolve Grafana e2e versions
