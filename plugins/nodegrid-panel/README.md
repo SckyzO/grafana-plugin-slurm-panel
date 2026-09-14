@@ -46,6 +46,12 @@ Use panel plugins when you want to do things like visualize data returned by dat
    pnpm run server
    ```
 
+   > **Do not run this in this repository.** It publishes Grafana on port 3000,
+   > which collides with the `slurm_exporter` stack this project develops
+   > against. Use this repository's own dev stack instead — see
+   > [`dev/README.md`](../../dev/README.md); it publishes Grafana on 3001 for
+   > exactly this reason.
+
 6. Run the E2E tests (using Playwright)
 
    ```bash
@@ -93,7 +99,13 @@ Before signing a plugin for the first time please consult the Grafana [plugin si
 
 ### Using Github actions release workflow
 
-If the plugin is using the github actions supplied with `@grafana/create-plugin` signing a plugin is included out of the box. The [release workflow](./.github/workflows/release.yml) can prepare everything to make submitting your plugin to Grafana as easy as possible. Before being able to sign the plugin however a secret needs adding to the Github repository.
+`@grafana/create-plugin` scaffolds a signing-and-release workflow, but GitHub
+only reads workflow files from the repository root's `.github/workflows/`,
+and this plugin lives in a subdirectory of a monorepo — a copy placed here
+would never run. There is currently no release workflow wired up for this
+plugin; add one at the repository root's `.github/workflows/` when this
+plugin is ready to be signed and released. Before being able to sign the
+plugin a secret needs adding to the Github repository.
 
 1. Please navigate to "settings > secrets > actions" within your repo to create secrets.
 2. Click "New repository secret"

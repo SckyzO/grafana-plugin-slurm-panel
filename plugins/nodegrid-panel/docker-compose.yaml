@@ -1,3 +1,9 @@
+# Scaffold-provided, kept only as the extension point `.config/docker-compose-base.yaml`
+# expects (see .config/README.md). Not this repo's dev stack: it publishes Grafana on
+# 3000, which collides with the slurm_exporter stack this project develops against.
+# `extends` concatenates port lists rather than replacing them, so overriding the port
+# here would still leave the base file's 3000 binding in place. Run `dev/docker-compose.yml`
+# instead (see dev/README.md); it publishes Grafana on 3001 for exactly this reason.
 services:
   grafana:
     extends:
