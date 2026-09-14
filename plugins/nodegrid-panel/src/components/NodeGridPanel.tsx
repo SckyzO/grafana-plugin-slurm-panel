@@ -39,31 +39,27 @@ export function NodeGridPanel({ data, options, fieldConfig }: PanelProps<PanelOp
   // Colour is never chosen here. The state string goes through the field
   // config's value mappings and comes back with a theme colour attached.
   const stateDisplay = useMemo(() => {
-    const base: Field = stateField ?? ({
+    const base: Field = stateField ?? {
       name: options.labels.state,
       type: FieldType.string,
       values: [],
       config: {},
-    } as unknown as Field);
+    };
     return getDisplayProcessor({ field: { ...base, config: fieldConfig.defaults }, theme });
   }, [stateField, fieldConfig.defaults, options.labels.state, theme]);
 
   // The continuous colour modes resolve a 0-100 utilisation fraction through
   // the same Thresholds the operator already configured, not a scale of our
   // own — this processor is what does that resolution.
-  const valueDisplay = useMemo(
-    () =>
-      getDisplayProcessor({
-        field: {
-          name: options.colorMode,
-          type: FieldType.number,
-          values: [],
-          config: { ...fieldConfig.defaults, unit: 'percent', min: 0, max: 100 },
-        } as unknown as Field,
-        theme,
-      }),
-    [fieldConfig.defaults, options.colorMode, theme]
-  );
+  const valueDisplay = useMemo(() => {
+    const field: Field = {
+      name: options.colorMode,
+      type: FieldType.number,
+      values: [],
+      config: { ...fieldConfig.defaults, unit: 'percent', min: 0, max: 100 },
+    };
+    return getDisplayProcessor({ field, theme });
+  }, [fieldConfig.defaults, options.colorMode, theme]);
 
   // The first data link on the field config, interpolated per node. A link
   // the user cannot address with ${__node} / ${__state} is worse than no
