@@ -241,31 +241,38 @@ test.describe('the primary overview dashboard groups by the rack it now has', ()
 });
 
 test.describe('the three ways to get a topology, proven against the same live data', () => {
-  const groups = ['rack1', 'rack2', 'gpu1'];
+  const racks = ['rack1', 'rack2', 'gpu1'];
 
   test('rung 1 groups by a relabelled Prometheus label', async ({ page }) => {
     await page.goto('/d/slurm-node-grouping/grouping?viewPanel=5');
-    for (const key of groups) {
+    for (const key of racks) {
       await expect(page.getByTestId(`node-group-${key}`)).toBeVisible();
     }
   });
 
   test('rung 2 groups by a column joined onto the frame', async ({ page }) => {
-    // The Grafana-native answer when the data lacks the dimension the view
-    // needs, and the only rung available without Prometheus access. The panel
-    // datasource is -- Mixed --, query A asks Prometheus for Format: Table so
-    // it returns one row per node instead of one frame per series, and Join
-    // by field (byField node, mode outer) merges query B's CSV rack column
-    // onto it.
+    // The Grafana-native answer for anyone whose Prometheus carries no
+    // location dimension at all. The panel datasource is -- Mixed --, query A
+    // asks Prometheus for Format: Table so it returns one row per node
+    // instead of one frame per series, and Join by field (byField node, mode
+    // outer) merges query B's CSV zone column onto it.
+    //
+    // The inventory's dimension is named "zone", not "rack": relabelling
+    // already puts a rack label carrying the same three values on query A, so
+    // asserting rack1/rack2/gpu1 here would pass whether or not the join ever
+    // ran. "zone" and aisleA/aisleB/aisleC exist nowhere else in the stack -
+    // the only way a group by that name can appear is if the join supplied
+    // it.
     await page.goto('/d/slurm-node-grouping/grouping?viewPanel=6');
-    for (const key of groups) {
+    for (const key of ['aisleA', 'aisleB', 'aisleC']) {
       await expect(page.getByTestId(`node-group-${key}`)).toBeVisible();
     }
+    await expect(page.getByTestId('node-group-ungrouped')).toHaveCount(0);
   });
 
   test('rung 3 groups by a range table held in a dashboard variable', async ({ page }) => {
     await page.goto('/d/slurm-node-grouping/grouping?viewPanel=7');
-    for (const key of groups) {
+    for (const key of racks) {
       await expect(page.getByTestId(`node-group-${key}`)).toBeVisible();
     }
     // Interpolation is the part that fails silently: an uninterpolated

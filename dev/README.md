@@ -113,12 +113,12 @@ query on that live cluster, and the panel plugin's own e2e suite
 datasource, `slurm_node_status`, Grouping > Group by > Label, label `rack`.
 Nothing else to configure.
 
-**Rung 2 — join.** The Grafana-native answer for anyone who can query
-Prometheus but cannot touch its scrape config, so `rack` never reaches this
-route through relabelling — it comes from a second query the panel joins on.
-This was designed from Grafana's transformation docs and had never been run
-before this task; two things about it turned out not to match the docs, and
-the working chain is:
+**Rung 2 — join.** The Grafana-native answer for anyone whose Prometheus
+carries no location dimension at all — no relabelling, nothing to group by —
+so the dimension has to come from a second query the panel joins on. This was
+designed from Grafana's transformation docs and had never been run before
+this task; two things about it turned out not to match the docs, and the
+working chain is:
 
 1. **The panel's own datasource must be `-- Mixed --`.** A panel whose
    datasource is Prometheus and that also carries a TestData target simply
@@ -144,6 +144,14 @@ the working chain is:
    that string, not the query's own `A`, or the panel reads zero frames and
    prints "No nodes" with no warning to explain why (ingest only warns about
    a query it can see and cannot read; a query it never receives is silent).
+5. **The inventory's column is `zone`, not `rack`.** The first working version
+   named it `rack` with the same `rack1`/`rack2`/`gpu1` values relabelling
+   already carries on query A — both frames agreed, so the panel rendered
+   identically whichever one Grafana's join happened to keep, and nothing
+   short of reading `joinByField`'s source said which that was. The CSV now
+   carries a `zone` (`aisleA`/`aisleB`/`aisleC`) that appears nowhere else in
+   the stack: it can only have reached the panel through the join, which is
+   what makes the demonstration provable rather than merely plausible.
 
 Written as the panel JSON actually carries it:
 
@@ -154,14 +162,14 @@ Written as the panel JSON actually carries it:
     { "refId": "A", "datasource": { "type": "prometheus", "uid": "..." },
       "expr": "slurm_node_status{...}", "instant": true, "format": "table" },
     { "refId": "B", "datasource": { "type": "grafana-testdata-datasource", "uid": "..." },
-      "scenarioId": "csv_content", "csvContent": "node,rack\n..." }
+      "scenarioId": "csv_content", "csvContent": "node,zone\n..." }
   ],
   "transformations": [
     { "id": "joinByField", "options": { "byField": "node", "mode": "outer" } }
   ],
   "options": {
     "slots": { "state": "joinByField-A-B" },
-    "grouping": { "kind": "label", "label": "rack" }
+    "grouping": { "kind": "label", "label": "zone" }
   }
 }
 ```

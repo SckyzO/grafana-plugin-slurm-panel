@@ -8,7 +8,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 11,
+  "version": 12,
   "refresh": "",
   "time": {
     "from": "now-5m",
@@ -282,8 +282,8 @@
     {
       "id": 6,
       "type": "tomzone-slurmnodegrid-panel",
-      "title": "Rung 2 -- join, against live Prometheus",
-      "description": "Rung 2 of three routes to the same topology, and the one available to anyone who can query Prometheus but cannot touch its scrape config: query A reads slurm_node_status live with Format set to Table, so Prometheus hands back one row per node instead of one frame per series; query B is a hand-maintained CSV inventory (node,rack) against the TestData source. The panel's own datasource is set to -- Mixed --, which is what makes Grafana actually run a query-B target when the panel datasource is Prometheus. Join by field (byField node, mode outer) merges the two into one frame, whose refId becomes \"joinByField-A-B\" -- not \"A\" -- which is why Grouping > Slots > State points at that name rather than the query's own refId.",
+      "title": "Rung 2 -- join, against an inventory the metrics do not carry",
+      "description": "Rung 2 of three routes to a topology, and the one available to anyone whose Prometheus carries no location dimension at all: query A reads slurm_node_status live with Format set to Table, so Prometheus hands back one row per node instead of one frame per series; query B is a hand-maintained CSV inventory (node,zone) against the TestData source, naming a zone that exists nowhere in the scraped metrics. The panel's own datasource is set to -- Mixed --, which is what makes Grafana actually run a query-B target when the panel datasource is Prometheus. Join by field (byField node, mode outer) merges the two into one frame, whose refId becomes \"joinByField-A-B\" -- not \"A\" -- which is why Grouping > Slots > State points at that name rather than the query's own refId. Grouping by \"zone\" rather than \"rack\" is deliberate: a value that only the join could have supplied is proof the join ran, not an assertion resting on which of two agreeing columns Grafana happened to keep.",
       "datasource": {
         "type": "datasource",
         "uid": "-- Mixed --"
@@ -312,7 +312,7 @@
             "uid": "slurm-views-testdata"
           },
           "scenarioId": "csv_content",
-          "csvContent": "node,rack\nc1,rack1\nc2,rack1\nc3,rack1\nc4,rack1\nc5,rack1\nc41,rack2\nc42,rack2\nc43,rack2\nc44,rack2\nc45,rack2\ng1,gpu1\ng2,gpu1\ng3,gpu1\ng4,gpu1\ng5,gpu1\n"
+          "csvContent": "node,zone\nc1,aisleA\nc2,aisleA\nc3,aisleA\nc4,aisleA\nc5,aisleA\nc41,aisleB\nc42,aisleB\nc43,aisleB\nc44,aisleB\nc45,aisleB\ng1,aisleC\ng2,aisleC\ng3,aisleC\ng4,aisleC\ng5,aisleC\n"
         }
       ],
       "options": {
@@ -328,7 +328,7 @@
         },
         "grouping": {
           "kind": "label",
-          "label": "rack"
+          "label": "zone"
         },
         "multiValueLabel": false,
         "layout": "wrap",
