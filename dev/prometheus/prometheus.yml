@@ -1,7 +1,10 @@
 global:
   scrape_interval: 15s
 
-scrape_configs:
-  - job_name: slurm_exporter
-    static_configs:
-      - targets: ['synthetic-exporter:9341']
+# The node scrape lives in a generated file so the dev stack can demonstrate
+# rung 1 at all. The synthetic exporter publishes no rack label by design,
+# because the real slurm_exporter cannot: sinfo has no concept of one.
+# dev/relabel/generate.mjs turns dev/relabel/racks.txt into that file, and the
+# Makefile regenerates it before every `make up`.
+scrape_config_files:
+  - /etc/prometheus/scrape/*.yml

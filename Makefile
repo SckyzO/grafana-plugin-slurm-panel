@@ -15,7 +15,7 @@ RUN := $(COMPOSE) run --rm tools
 
 .DEFAULT_GOAL := help
 .PHONY: help image deps install lock build watch test lint typecheck react-detect \
-        check e2e up down restart logs logs-once shell validate clean
+        check scrape e2e up down restart logs logs-once shell validate clean
 
 help: ## Show this help
 	@awk 'BEGIN { FS = ":.*## "; print "Targets:\n" } \
@@ -47,7 +47,10 @@ build: deps ## Build every workspace package
 watch: deps ## Rebuild the panel on change (Grafana picks it up live)
 	$(RUN) pnpm --filter tomzone-slurmnodegrid-panel dev
 
-test: deps ## Run the unit and contract tests
+test: build ## Run the unit and contract tests
+	@# A contract test that asserts the behaviour of a built artifact needs the
+	@# artifact: depending on `build` rather than `deps` is what stops this
+	@# target from passing quietly against yesterday's dist/.
 	$(RUN) pnpm test
 
 lint: deps ## Lint
@@ -70,7 +73,15 @@ react-detect: build ## Check the panel for React 19 incompatibilities
 
 check: lint typecheck test build react-detect ## Everything CI runs before e2e
 
-up: build ## Start Grafana, Prometheus and the synthetic exporter
+scrape: build ## Generate the Prometheus scrape config from dev/relabel/racks.txt
+	@# Running the generator here is what keeps it from being dead code: it is
+	@# exercised on every `make up` rather than illustrated in a README, and it
+	@# is what lets the dev stack demonstrate the rung it recommends first.
+	@mkdir -p dev/prometheus/scrape
+	$(RUN) node dev/relabel/generate.mjs dev/relabel/racks.txt slurm_exporter synthetic-exporter:9341 \
+	  > dev/prometheus/scrape/nodes.yml
+
+up: scrape ## Start Grafana, Prometheus and the synthetic exporter
 	$(COMPOSE) up -d --build grafana prometheus synthetic-exporter
 	@# Grafana answers on the network well before it answers on HTTP. Waiting
 	@# here, rather than in the e2e target or in CI, is what makes `make e2e`

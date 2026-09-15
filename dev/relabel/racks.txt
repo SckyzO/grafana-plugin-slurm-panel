@@ -1,0 +1,11 @@
+# The dev cluster's floor plan.
+#
+# This file is the input to two rungs at once: dev/relabel/generate.mjs turns
+# it into the Prometheus relabelling that gives the stack a real rack label,
+# and the same text pastes into the panel's Grouping > Ranges option. That is
+# the whole claim, one table and two destinations, and
+# tests/contract/relabel.test.cjs is what keeps it true.
+
+rack1: c[1-5]
+rack2: c[6-10]
+gpu:   g[1-10]
