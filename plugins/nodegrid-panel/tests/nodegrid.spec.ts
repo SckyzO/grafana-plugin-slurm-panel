@@ -71,6 +71,13 @@ test.describe('the node grid renders against a real Grafana', () => {
     await expect(strip).toContainText('1 state matched no value mapping');
     await expect(strip).toContainText('a_state_slurm_adds_tomorrow');
 
+    // Naming the state says what is wrong. The panel also has to say what to
+    // do about it, with a rule that is correct as printed: delimited, so
+    // Grafana does not wrap it into an exact match, and spanning the whole
+    // value, so the replacement does not glue itself onto the remainder.
+    await expect(strip).toContainText('condition Regex');
+    await expect(strip).toContainText('/^a_state_slurm_adds_tomorrow.*$/');
+
     // And it is drawn as having nothing to say rather than coloured — the
     // whole point of naming it. With thresholds configured, the alternative is
     // that Grafana paints it with the threshold base colour and an unknown

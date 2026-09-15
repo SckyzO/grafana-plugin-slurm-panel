@@ -155,6 +155,28 @@ test('a state matching no mapping keeps its raw text', () => {
   }
 });
 
+// Trap 3: a state name is not always a safe regex. Slurm prints `allocated+`
+// for a node allocated with jobs still completing. The panel prints a rule for
+// an operator to paste, so what Grafana does with an escaped and an unescaped
+// name is a contract rather than an implementation detail.
+test('an unescaped state name makes a rule that matches more than the state', () => {
+  const unescaped = [rule('/^allocated+.*$/', 'allocated', 'dark-blue')];
+  const escaped = [rule('/^allocated\\+.*$/', 'allocated', 'dark-blue')];
+
+  // The unescaped rule does still match the state it was written for — the
+  // trailing `.*` absorbs the literal `+`, which is why this is easy to ship
+  // without noticing.
+  assert.equal(displayFor(['allocated+'], unescaped)('allocated+').text, 'allocated');
+
+  // What it also does is match a state that does not exist: `d+` is one or
+  // more `d`, so anything spelled `allocatedd...` is reported as allocated.
+  assert.equal(displayFor(['allocatedd'], unescaped)('allocatedd').text, 'allocated');
+
+  // The escaped form matches the state and nothing else.
+  assert.equal(displayFor(['allocated+'], escaped)('allocated+').text, 'allocated');
+  assert.equal(displayFor(['allocatedd'], escaped)('allocatedd').text, 'allocatedd');
+});
+
 // Trap 1: a bare pattern is anchored at both ends, so a prefix rule silently
 // becomes an exact match and idle* falls straight through it.
 test('Grafana wraps an undelimited pattern in ^...$', () => {

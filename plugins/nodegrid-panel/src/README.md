@@ -64,20 +64,12 @@ takes, and the engine only builds that list for partitions.
 
 **Display > Colour by** picks one encoding for the cell fill at a time:
 
-- **State** (default) — the mapped Slurm state, from the panel's own **Value
-  mappings** section. Twenty-one rules covering every state in the sinfo man page and its
-  modifiers are applied by default, so the grid is coloured out of the box;
-  they can be edited or removed like any other field config. A hand-written
-  rule fails
-  silently in three ways: a bare pattern such as `^idle` compiles to
-  `/^^idle$/` — an exact match, not a prefix — unless delimited with slashes
-  (`/^idle/`); a regex mapping replaces only the matched portion, so
-  `/^drain/ -> drained` renders `drained` as `draineded`, so the pattern must
-  span the whole value (`/^drain.*$/`); and `sinfo`'s backfill suffix glues
-  onto the *full* state name, so `/^alloc-.*$/` matches nothing against
-  `allocated-` — anchor the modifier at the end instead (`/^alloc.*-$/`).
-  Order matters too: a modifier rule must come before the base rule that
-  would otherwise swallow it.
+- **State** (default) — the Slurm state, coloured by the panel's own **Value
+  mappings** section. Twenty-one rules are applied by default, covering every
+  state in the `sinfo` man page in both its long and abbreviated spellings, so
+  the grid is coloured before anything is configured. They are a default and
+  not a lock: the rules appear in **Value mappings** and can be edited,
+  reordered, duplicated or deleted like any other field config.
 - **CPU**, **Memory**, **GPU** — a continuous fill driven by that facet's
   allocation, resolved through the panel's **Thresholds** section rather
   than a fixed colour scale.
@@ -93,6 +85,81 @@ or a diagonal cut into the cell for the states that most need to stay
 visible without colour. With it on, the grid stays readable in greyscale, in
 print, under `forced-colors`, and for a red-green colour deficiency,
 whatever palette the site chose.
+
+### The states, and the colour each one gets
+
+Colour encodes what an operator can do with a node, not which of the
+twenty-one states it is in — no palette separates that many at a glance. The
+exact state is always spelled out in the cell's tooltip and in its accessible
+label, in every colour mode.
+
+| Rule | Shown as | Colour |
+|---|---|---|
+| `/^.*\*$/` | not responding | `semi-dark-orange` |
+| `/^.*~$/` | powered down | `text` |
+| `/^idle.*-$/` | idle, backfill | `semi-dark-green` |
+| `/^idle.*$/` | idle | `green` |
+| `/^(planned\|plnd).*$/` | planned | `light-green` |
+| `/^comp.*$/` | completing | `super-light-blue` |
+| `/^mix.*-$/` | mixed, backfill | `light-blue` |
+| `/^mix.*$/` | mixed | `blue` |
+| `/^alloc.*-$/` | allocated, backfill | `semi-dark-blue` |
+| `/^alloc.*$/` | allocated | `dark-blue` |
+| `/^(drain\|drng).*$/` | drained | `yellow` |
+| `/^maint.*$/` | maintenance | `purple` |
+| `/^res.*$/` | reserved | `semi-dark-purple` |
+| `/^(npc\|perfctrs).*$/` | perf counters | `light-purple` |
+| `/^(down\|fail).*$/` | down | `red` |
+| `/^unk.*$/` | unknown | `semi-dark-red` |
+| `/^inval.*$/` | invalid registration | `semi-dark-red` |
+| `/^block.*$/` | blocked | `orange` |
+| `/^reboot.*$/` | reboot | `light-orange` |
+| `/^pow.*$/` | power management | `text` |
+| `/^fut.*$/` | future | `text` |
+
+`sinfo` appends one of nine flags to a state: `*` not responding, `~` powered
+off, `#` powering up, `!` pending power down, `%` powering down, `$`
+reservation maintenance, `@` pending reboot, `^` reboot issued, and `-`
+planned by the backfill scheduler. The two that mean the node cannot run work
+at all — `*` and `~` — are matched first and override the state. The other
+seven leave the state readable and are absorbed by the trailing `.*`, which is
+why one rule covers `idle`, `idle#` and `idle@` together.
+
+### Adding or changing a state
+
+Everything lives in Grafana's standard **Value mappings** editor — the same one
+every other panel uses, with drag handles to reorder, a colour picker per row,
+duplicate and delete, and **Add a new mapping**. Nothing about state colour is
+configured in this panel's own options, deliberately: value mappings are where
+Grafana puts this, and a second mechanism would be invisible to field
+overrides, to provisioning, and to anything else reading the dashboard JSON.
+
+The editor offers four condition types. Two matter here:
+
+- **Value** — an exact match. Enough when you do not care about flags:
+  `blocked` → your text and colour.
+- **Regex** — needed to cover a state together with its flags. Write it
+  delimited and spanning the whole value: `/^blocked.*$/`.
+
+Order matters: a rule for a state with a flag must come above the rule that
+would otherwise swallow it, which is why `/^idle.*-$/` sits above `/^idle.*$/`.
+
+Two ways of writing a regex rule fail silently, and neither is visible from the
+editor. A bare pattern such as `^idle` is wrapped in `^...$` by Grafana and
+becomes an exact match, so `idle*` falls straight through it — delimit it with
+slashes. And a regex mapping replaces the matched portion rather than labelling
+the value, so `/^drain/ → drained` renders `drained` as `draineded` — make the
+pattern span the whole value with a trailing `.*$`.
+
+You do not have to remember any of that. When the panel meets a state no rule
+covers, it names the state in its warnings strip **and prints the rule to
+paste**, correctly delimited, spanning the value, and escaped:
+
+```
+2 states matched no value mapping: blocked, completing (11 with flags)
+Add one per state under Value mappings — condition Regex, e.g.
+/^blocked.*$/ — then set its text and colour.
+```
 
 ## Data links
 

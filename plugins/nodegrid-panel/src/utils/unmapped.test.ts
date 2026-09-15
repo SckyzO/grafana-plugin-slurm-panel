@@ -1,4 +1,4 @@
-import { collectUnmapped, summarise } from './unmapped';
+import { collectUnmapped, summarise, ruleFor } from './unmapped';
 import type { DisplayProcessor } from '@grafana/data';
 import type { GroupedModel, SlurmNode } from '@slurm-views/core';
 
@@ -92,6 +92,45 @@ describe('summarise', () => {
     expect(line).toContain('12 states matched no value mapping:');
     expect(line).toContain('and 4 more');
     expect(line).not.toContain('state8');
+  });
+
+  it('prints a rule that can be pasted, for the state it just named', () => {
+    const lines = summarise(model(1, 1), [], ['blocked', 'blocked!'], 3000);
+    expect(lines[0]).toContain('1 state matched no value mapping: blocked');
+    expect(lines[1]).toContain('condition Regex');
+    expect(lines[1]).toContain('/^blocked.*$/');
+  });
+
+  it('offers the rule as an example when several states need one', () => {
+    const lines = summarise(model(1, 1), [], ['blocked', 'completing'], 3000);
+    expect(lines[1]).toContain('one per state');
+    expect(lines[1]).toContain('e.g. /^blocked.*$/');
+  });
+
+  it('says nothing about rules when nothing is unmapped', () => {
+    expect(summarise(model(2, 2), [], [], 3000).join(' ')).not.toContain('Value mappings');
+  });
+
+  it('escapes a state that would otherwise be a different regex', () => {
+    // Slurm prints `allocated+` for a node allocated with jobs completing.
+    // Unescaped, /^allocated+.*$/ reads as one-or-more `d`, so it also claims
+    // `allocatedd`. It still matches the real state — the trailing `.*` eats
+    // the literal `+` — which is why the mistake survives a quick look.
+    expect(ruleFor('allocated+')).toBe('/^allocated\\+.*$/');
+    expect(new RegExp('^allocated\\+.*$').test('allocated+')).toBe(true);
+    expect(new RegExp('^allocated\\+.*$').test('allocatedd')).toBe(false);
+    expect(new RegExp('^allocated+.*$').test('allocatedd')).toBe(true);
+  });
+
+  it('delimits and spans the whole value, which is what makes the rule work', () => {
+    // Undelimited, Grafana wraps the pattern in ^...$ and it becomes an exact
+    // match; stopping short of the end makes RegexToText glue the result onto
+    // the remainder. Both are silent. Pinned here because this string is
+    // handed to an operator to paste.
+    const rule = ruleFor('blocked');
+    expect(rule.startsWith('/')).toBe(true);
+    expect(rule.endsWith('/')).toBe(true);
+    expect(rule).toContain('.*$');
   });
 
   it('passes an ingest warning through with its refId', () => {

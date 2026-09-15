@@ -51,6 +51,28 @@ const baseStateOf = (state: string): string => {
   return state.length > 1 && STATE_FLAGS.includes(flag) ? state.slice(0, -1) : state;
 };
 
+/**
+ * A state name, made safe to drop into a regular expression. Slurm prints
+ * `allocated+` for a node that is allocated with jobs still completing, and
+ * `/^allocated+.*$/` does not mean what it looks like: `d+` is one or more
+ * `d`, so the rule also claims anything spelled `allocatedd`. It still matches
+ * the real state, because the trailing `.*` absorbs the literal `+` — which is
+ * exactly why a rule like that ships without anyone noticing. A name carrying
+ * a bracket would not compile at all. Handing someone a rule that is quietly
+ * wrong is worse than handing them none.
+ */
+const escapeForRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+
+/**
+ * The rule that would map a state, written the way it has to be written:
+ * delimited, so Grafana does not wrap it in ^...$ and turn it into an exact
+ * match, and spanning the whole value, so RegexToText replaces all of it
+ * rather than gluing the result onto the remainder. Both traps are silent.
+ * The trailing `.*` is what absorbs the nine sinfo flags, so one rule covers
+ * `blocked`, `blocked*`, `blocked-` and the rest.
+ */
+export const ruleFor = (state: string): string => `/^${escapeForRegex(state)}.*$/`;
+
 export function summarise(
   model: GroupedModel,
   warnings: IngestWarning[],
@@ -78,6 +100,20 @@ export function summarise(
     // is the difference between one unknown state and eight of them.
     const variants = unmapped.length > bases.length ? ` (${unmapped.length} with flags)` : '';
     lines.push(`${bases.length} ${noun} matched no value mapping: ${named}${variants}`);
+
+    // Naming the state says what is wrong; this says what to do about it, at
+    // the moment it is wrong rather than in a document. The rule is correct as
+    // printed — delimited, whole-value, escaped — because the two ways of
+    // getting it wrong both fail silently and neither is visible from the
+    // Value mappings UI.
+    const example = shown[0];
+    if (example !== undefined) {
+      lines.push(
+        bases.length === 1
+          ? `Add one under Value mappings — condition Regex, ${ruleFor(example)} — then set its text and colour.`
+          : `Add one per state under Value mappings — condition Regex, e.g. ${ruleFor(example)} — then set its text and colour.`
+      );
+    }
   }
 
   for (const warning of warnings) {
