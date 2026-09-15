@@ -8,7 +8,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 12,
+  "version": 13,
   "refresh": "",
   "time": {
     "from": "now-5m",
@@ -408,7 +408,7 @@
       "id": 8,
       "type": "tomzone-slurmnodegrid-panel",
       "title": "Deliberately incomplete -- a range table covering one rack of six",
-      "description": "Not a bug: this panel's range table names only rack1: c[1-40], against the full 240-node cluster. 200 nodes match no range and are drawn under \"ungrouped\", dashed and marked unplaced, and the warnings strip both names them and reports that the rack label would cover all 240 -- the coverage signal the other panels never trigger, because every source they use already covers every node.",
+      "description": "Not a bug: this panel's range table names only rack1: c[1-40], against the full 240-node cluster. 200 nodes match no range and are drawn under \"ungrouped\", dashed and marked unplaced, and the warnings strip both names them and reports that the rack label would cover all 240 -- the coverage signal the other panels never trigger, because every source they use already covers every node. Its warnings strip is deliberate too, not a defect: a reader could otherwise mistake the coverage line for something broken, which is why the title already says \"Deliberately incomplete\".",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"

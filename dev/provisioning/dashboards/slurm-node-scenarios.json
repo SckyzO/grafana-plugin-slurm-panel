@@ -19,7 +19,7 @@
       "id": 1,
       "type": "tomzone-slurmnodegrid-panel",
       "title": "Every state, and the colour it gets",
-      "description": "Every node state in the sinfo man page, long form and abbreviation both, grouped by the raw state so the group header is the input and the cell is the output. All of them are coloured by the rules the panel ships. The last one is not a Slurm state at all: it is what a state introduced by a future Slurm looks like \u2014 drawn hollow rather than coloured, and named in the strip above, so it cannot be mistaken for a healthy node.",
+      "description": "Every node state in the sinfo man page, long form and abbreviation both, grouped by the raw state so the group header is the input and the cell is the output. All of them are coloured by the rules the panel ships. The last one is not a Slurm state at all: it is what a state introduced by a future Slurm looks like \u2014 drawn hollow rather than coloured, and named in the strip above, so it cannot be mistaken for a healthy node. The warnings strip this panel shows is deliberate, not a defect: it demonstrates that a_state_slurm_adds_tomorrow gets named instead of quietly passing for healthy.",
       "datasource": {
         "type": "grafana-testdata-datasource",
         "uid": "slurm-views-testdata"
