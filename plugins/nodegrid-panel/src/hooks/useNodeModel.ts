@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { FieldType } from '@grafana/data';
 import type { DataFrame, Field, InterpolateFunction, PanelData } from '@grafana/data';
-import { buildGroups, declaredKeys, ingest, parseRangeTable, suggestLabel, UNGROUPED } from '@slurm-views/core';
+import { buildGroups, declaredKeys, ingest, parseRangeTable } from '@slurm-views/core';
 import type { GroupedModel, IngestWarning, KeySource, MinimalFrame } from '@slurm-views/core';
+import { groupingNotes } from '../utils/warnings';
 import type { GroupingNotes } from '../utils/warnings';
 import type { PanelOptions } from '../types';
 
@@ -49,22 +50,15 @@ export function useNodeModel(
     });
 
     const table = source.kind === 'ranges' ? parseRangeTable(source.table) : undefined;
-    const claimed = new Map((table?.groups ?? []).map((g) => [g.name, g.members]));
 
-    const grouping: GroupingNotes = {
+    const grouping = groupingNotes({
+      model,
+      nodes,
       source,
-      orphans: model.groups.find((g) => g.key === UNGROUPED)?.nodes.map((n) => n.name) ?? [],
-      emptyGroups: model.groups
-        .filter((g) => g.nodes.length === 0)
-        .map((g) => ({ name: g.key, members: claimed.get(g.key) ?? [] })),
-      problems: (table?.problems ?? []).map((p) => p.detail),
-      suggestion: suggestLabel({
-        nodes,
-        source,
-        nodeLabel: options.labels.node,
-        stateLabel: options.labels.state,
-      }),
-    };
+      table,
+      nodeLabel: options.labels.node,
+      stateLabel: options.labels.state,
+    });
 
     const stateFrame = data.series.find((f) => f.refId === options.slots.state);
     const stateField =

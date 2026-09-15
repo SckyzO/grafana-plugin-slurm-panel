@@ -1,6 +1,6 @@
 import type { DisplayProcessor } from '@grafana/data';
-import { collapseHostlist, UNGROUPED } from '@slurm-views/core';
-import type { CoverageSuggestion, GroupedModel, IngestWarning, KeySource, SlurmNode } from '@slurm-views/core';
+import { collapseHostlist, suggestLabel, UNGROUPED } from '@slurm-views/core';
+import type { CoverageSuggestion, GroupedModel, IngestWarning, KeySource, RangeTable, SlurmNode } from '@slurm-views/core';
 
 /**
  * A state matched no value mapping when `display()` falls through to the
@@ -92,6 +92,45 @@ export interface GroupingNotes {
   problems: string[];
   /** A label that would group more nodes than the active source does. */
   suggestion?: CoverageSuggestion;
+}
+
+export interface GroupingNotesInput {
+  model: GroupedModel;
+  nodes: SlurmNode[];
+  source: KeySource;
+  /** Present only when grouping by a range table. */
+  table?: RangeTable;
+  nodeLabel: string;
+  stateLabel: string;
+}
+
+/**
+ * Everything the grouping stage could not resolve, read off the built model.
+ *
+ * A pure function rather than three expressions inside the hook, because this
+ * is the part that can be wrong in a way nothing notices: mistype the
+ * UNGROUPED lookup and every orphan and empty-group warning vanishes from the
+ * panel while the suite stays green — the exact failure these warnings exist
+ * to catch. A hook needs a renderer to test; this does not.
+ */
+export function groupingNotes({
+  model,
+  nodes,
+  source,
+  table,
+  nodeLabel,
+  stateLabel,
+}: GroupingNotesInput): GroupingNotes {
+  const claimed = new Map((table?.groups ?? []).map((g) => [g.name, g.members]));
+  return {
+    source,
+    orphans: model.groups.find((g) => g.key === UNGROUPED)?.nodes.map((n) => n.name) ?? [],
+    emptyGroups: model.groups
+      .filter((g) => g.nodes.length === 0)
+      .map((g) => ({ name: g.key, members: claimed.get(g.key) ?? [] })),
+    problems: (table?.problems ?? []).map((p) => p.detail),
+    suggestion: suggestLabel({ nodes, source, nodeLabel, stateLabel }),
+  };
 }
 
 /** Node names as hostlist items, capped: 240 orphans must still fit on a line. */

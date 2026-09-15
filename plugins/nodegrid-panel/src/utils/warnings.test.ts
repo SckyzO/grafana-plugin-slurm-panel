@@ -1,5 +1,6 @@
-import { collectUnmapped, summarise, ruleFor } from './warnings';
+import { collectUnmapped, summarise, ruleFor, groupingNotes } from './warnings';
 import type { DisplayProcessor } from '@grafana/data';
+import { parseRangeTable, UNGROUPED } from '@slurm-views/core';
 import type { GroupedModel, SlurmNode } from '@slurm-views/core';
 import type { GroupingNotes } from './warnings';
 
@@ -213,5 +214,72 @@ describe('grouping warnings', () => {
       source: { kind: 'ranges', table: 'x: c[1-1]' }, orphans,
     }))[0];
     expect(line).toContain('and 12 more');
+  });
+});
+
+describe('groupingNotes', () => {
+  const mkNode = (name: string): SlurmNode => ({
+    name, state: 'idle', partitions: [], labels: {}, facets: { gres: [] },
+  });
+  const ranges = { kind: 'ranges', table: 'rack1: c[1-2]\nrack7: c[90-91]' } as const;
+  const args = { nodeLabel: 'node', stateLabel: 'status' };
+
+  it('reads orphans off the ungrouped bucket', () => {
+    // The regression this guards: mistype the UNGROUPED lookup and every
+    // orphan warning leaves the panel while the suite stays green.
+    const model: GroupedModel = {
+      groups: [
+        { key: 'rack1', nodes: [mkNode('c1')], assumed: false },
+        { key: UNGROUPED, nodes: [mkNode('c9')], assumed: false },
+      ],
+      nodeCount: 2, slotCount: 2, duplicated: false,
+    };
+    const notes = groupingNotes({ model, nodes: [mkNode('c1'), mkNode('c9')], source: ranges, ...args });
+    expect(notes.orphans).toEqual(['c9']);
+  });
+
+  it('reports no orphans when nothing landed in the ungrouped bucket', () => {
+    const model: GroupedModel = {
+      groups: [{ key: 'rack1', nodes: [mkNode('c1')], assumed: false }],
+      nodeCount: 1, slotCount: 1, duplicated: false,
+    };
+    expect(groupingNotes({ model, nodes: [mkNode('c1')], source: ranges, ...args }).orphans).toEqual([]);
+  });
+
+  it('reports a declared group that matched no node, with what it claimed', () => {
+    const model: GroupedModel = {
+      groups: [
+        { key: 'rack1', nodes: [mkNode('c1')], assumed: false },
+        { key: 'rack7', nodes: [], assumed: false },
+      ],
+      nodeCount: 1, slotCount: 1, duplicated: false,
+    };
+    const notes = groupingNotes({
+      model, nodes: [mkNode('c1')], source: ranges,
+      table: parseRangeTable(ranges.table), ...args,
+    });
+    expect(notes.emptyGroups).toEqual([{ name: 'rack7', members: ['c90', 'c91'] }]);
+  });
+
+  it('carries the table problems through', () => {
+    const model: GroupedModel = { groups: [], nodeCount: 0, slotCount: 0, duplicated: false };
+    const notes = groupingNotes({
+      model, nodes: [], source: { kind: 'ranges', table: 'broken line' },
+      table: parseRangeTable('broken line'), ...args,
+    });
+    expect(notes.problems).toHaveLength(1);
+    expect(notes.problems[0]).toContain('separator');
+  });
+
+  it('has no problems and no empty groups when there is no table', () => {
+    const model: GroupedModel = {
+      groups: [{ key: 'p1', nodes: [mkNode('c1')], assumed: false }],
+      nodeCount: 1, slotCount: 1, duplicated: false,
+    };
+    const notes = groupingNotes({
+      model, nodes: [mkNode('c1')], source: { kind: 'label', label: 'partition' }, ...args,
+    });
+    expect(notes.problems).toEqual([]);
+    expect(notes.emptyGroups).toEqual([]);
   });
 });
