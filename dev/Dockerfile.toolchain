@@ -10,7 +10,7 @@
 # major for editors, and nothing else on the machine gets a say. 24 is the
 # active LTS line and the major @grafana/create-plugin's own .nvmrc specifies.
 # Bump it deliberately and say so in the commit.
-FROM node:24.21.0-bookworm-slim
+FROM node:26.8-bookworm-slim
 
 # Microsoft's own Playwright image would have been the shortcut. It is not
 # used because it decides the Node patch on this project's behalf and ships
