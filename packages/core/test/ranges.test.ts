@@ -57,6 +57,17 @@ describe('parseRangeTable', () => {
     expect(groups).toHaveLength(1);
     expect(problems[0]!.detail).toContain('again');
   });
+
+  it('refuses a group named "ungrouped", which is reserved for what the panel could not place', () => {
+    // A table declaring `ungrouped: c[1-3]` would otherwise place those nodes
+    // exactly as asked, and the panel would then mark them unplaced in red —
+    // naming as unplaceable the very nodes the operator explicitly placed.
+    const { groups, index, problems } = parseRangeTable('ungrouped: c[1-3]');
+    expect(groups).toHaveLength(0);
+    expect(index.size).toBe(0);
+    expect(problems[0]!.detail).toContain('ungrouped');
+    expect(problems[0]!.detail).toContain('reserved');
+  });
 });
 
 describe('the ranges key source', () => {

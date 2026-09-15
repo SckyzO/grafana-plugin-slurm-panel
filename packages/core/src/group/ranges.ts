@@ -1,4 +1,5 @@
 import { expandHostlist } from './hostlist.js';
+import { UNGROUPED } from './keys.js';
 
 export interface RangeGroup {
   name: string;
@@ -55,6 +56,16 @@ export function parseRangeTable(table: string): RangeTable {
     }
     if (groups.some((g) => g.name === name)) {
       problems.push({ line, detail: `Line ${line} declares "${name}" again; the first declaration keeps its nodes.` });
+      return;
+    }
+    if (name === UNGROUPED) {
+      // The panel draws a node with no group under this exact name. A
+      // declared group by that name would place its nodes as asked and then
+      // have the panel report them right back as unplaced.
+      problems.push({
+        line,
+        detail: `Line ${line}: "${UNGROUPED}" is reserved for nodes the panel could not place.`,
+      });
       return;
     }
 
