@@ -5,7 +5,15 @@
 # and the same text pastes into the panel's Grouping > Ranges option. That is
 # the whole claim, one table and two destinations, and
 # tests/contract/relabel.test.cjs is what keeps it true.
+#
+# It describes the exporter's default shape. Run the stack with a different
+# RACKS or NODES and some nodes will fall outside every range — which is not a
+# bug to hide but the orphan path working: the panel draws them under
+# "ungrouped" and names them in its warnings strip.
 
-rack1: c[1-5]
-rack2: c[6-10]
-gpu:   g[1-10]
+rack1: c[1-40]
+rack2: c[41-80]
+rack3: c[81-120]
+rack4: c[121-160]
+gpu1:  g[1-40]
+gpu2:  g[41-80]

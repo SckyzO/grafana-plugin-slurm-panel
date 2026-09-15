@@ -2,18 +2,24 @@
 """Publish a synthetic Slurm cluster in the Prometheus text format.
 
 Shape is set by environment variable, so one image covers a 240-node smoke
-test, a 3000-node scale test and a few wide racks:
+test, a 3000-node scale test, and everything between:
 
-    RACKS=4  NODES_PER_RACK=80          # 4 racks of 80
-    RACKS=75 NODES=3000                 # 75 racks, evenly filled
-    RACKS=3  NODES=100                  # 3 racks of 34, 33, 33
+    RACKS=4  NODES_PER_RACK=80          # 320 nodes
+    RACKS=75 NODES=3000                 # 3000 nodes
+    RACKS=3  NODES=100                  # 100 nodes
 
-Give RACKS with NODES_PER_RACK when the rack is the thing you care about, or
-RACKS with NODES when the total is. Either way you get exactly the number of
-racks you asked for: an earlier revision computed NODES // RACKS and walked
-the nodes with it, which quietly produced one extra, nearly empty rack
-whenever the division was not exact — 100 nodes over 3 racks came back as
-four racks of 33, 33, 33 and 1.
+Give RACKS with NODES_PER_RACK when the total you want is a multiple of some
+group size, or NODES directly when it is not. RACKS no longer shapes a node's
+name — it exists so dev/relabel/racks.txt, the range table
+dev/relabel/generate.mjs turns into Prometheus relabelling, can describe the
+same number of groups this cluster is meant to have.
+
+Node names deliberately carry no location: every node is `c<n>` or `g<n>`,
+flat, counting within its own family, the same shape the real slurm_exporter
+publishes. It reads sinfo, and sinfo has no concept of a rack, so a node name
+here that encoded one would hand the panel a location it never had to work
+for — the invented rack label this project already removed once, in a
+different costume.
 """
 import os
 import random
@@ -25,10 +31,6 @@ NODES = RACKS * NODES_PER_RACK if NODES_PER_RACK > 0 else int(os.environ.get("NO
 PARTITIONS = os.environ.get("PARTITIONS", "cpu,gpu,debug").split(",")
 SEED = int(os.environ.get("SEED", "1"))
 
-# A rack with no nodes in it is not a rack. Asking for more racks than nodes
-# is a typo, not a cluster; take the nodes as the ceiling and say nothing.
-RACKS = min(RACKS, max(1, NODES))
-
 # Weighted so a healthy cluster looks healthy, with every awkward state present.
 BASE_STATES = [
     "idle", "idle", "idle", "idle", "mixed", "mixed", "allocated",
@@ -38,40 +40,36 @@ BASE_STATES = [
 MODIFIERS = ["", "", "", "", "", "*", "~", "#", "!", "%", "$", "@", "^", "-"]
 
 
-def rack_of():
-    """Map each 1-based node index to its rack, filling racks as evenly as the
-    division allows and handing the remainder to the first racks rather than
-    to an extra one on the end."""
-    base, extra = divmod(NODES, RACKS)
-    index = {}
-    node = 1
-    for rack in range(1, RACKS + 1):
-        for _ in range(base + (1 if rack <= extra else 0)):
-            index[node] = rack
-            node += 1
-    return index
-
-
 def cluster():
     rng = random.Random(SEED)
     nodes = []
-    rack_index = rack_of()
+    cpu_count = 0
+    gpu_count = 0
     for i in range(1, NODES + 1):
-        rack = rack_index[i]
         state = rng.choice(BASE_STATES) + rng.choice(MODIFIERS)
         parts = [PARTITIONS[i % len(PARTITIONS)]]
         if i % 7 == 0:
             parts.append("debug")
+        is_gpu = "gpu" in parts
+        # Named by family, not by index: c1..cN and g1..gN, counting within
+        # each family in generation order. A rack index fed only the name, so
+        # once the name no longer needs one there is nothing left to compute.
+        if is_gpu:
+            gpu_count += 1
+            name = "g%d" % gpu_count
+        else:
+            cpu_count += 1
+            name = "c%d" % cpu_count
         nodes.append({
-            "name": "r%03dn%04d" % (rack, i),
+            "name": name,
             "state": state,
             "partitions": sorted(set(parts)),
             "cpus": 128,
             "cpu_alloc": rng.choice([0, 16, 64, 128]),
             "mem": 512000,
             "mem_alloc": rng.choice([0, 64000, 256000]),
-            "gpus": 8 if "gpu" in parts else 0,
-            "gpu_used": rng.choice([0, 2, 8]) if "gpu" in parts else 0,
+            "gpus": 8 if is_gpu else 0,
+            "gpu_used": rng.choice([0, 2, 8]) if is_gpu else 0,
             "drained": state.startswith("drain"),
         })
     return nodes
