@@ -238,7 +238,7 @@ test.describe('the options editor', () => {
   }) => {
     const ds = await readProvisionedDataSource({ fileName: 'prometheus.yml' });
     await panelEditPage.datasource.set(ds.name);
-    await panelEditPage.setVisualization('Slurmnodegrid');
+    await panelEditPage.setVisualization('Slurm Node Grid');
 
     // A bare `getByRole('button', { name: /Value mappings/i })` is ambiguous:
     // once the group is expanded it also matches the "Add value mappings"

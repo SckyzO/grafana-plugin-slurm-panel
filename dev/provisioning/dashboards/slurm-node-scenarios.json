@@ -17,7 +17,7 @@
   "panels": [
     {
       "id": 1,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "Every state, and the colour it gets",
       "description": "Every node state in the sinfo man page, long form and abbreviation both, grouped by the raw state so the group header is the input and the cell is the output. All of them are coloured by the rules the panel ships. The last one is not a Slurm state at all: it is what a state introduced by a future Slurm looks like \u2014 drawn hollow rather than coloured, and named in the strip above, so it cannot be mistaken for a healthy node. The warnings strip this panel shows is deliberate, not a defect: it demonstrates that a_state_slurm_adds_tomorrow gets named instead of quietly passing for healthy.",
       "datasource": {
@@ -70,7 +70,7 @@
     },
     {
       "id": 2,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "A rack on the floor",
       "description": "Four racks of twenty; r003 has lost power. Rack layout, grouped by the rack label. The rack column in this CSV is hand-written: slurm_exporter publishes no such label, and there is nowhere for one to come from because it reads sinfo. Grouping by a label is only available if you add the label yourself, through Prometheus relabelling or a join against an inventory.",
       "datasource": {
@@ -123,7 +123,7 @@
     },
     {
       "id": 3,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "The same rack, read without colour",
       "description": "Identical data to the panel on the left with the shape channel switched on. State is carried by a notch as well as a fill, so the grid survives greyscale, print and colour-vision deficiency \u2014 where four blues and a green do not. The rack column in this CSV is hand-written: slurm_exporter publishes no such label, and there is nowhere for one to come from because it reads sinfo. Grouping by a label is only available if you add the label yourself, through Prometheus relabelling or a join against an inventory.",
       "datasource": {
@@ -176,7 +176,7 @@
     },
     {
       "id": 4,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "A drain storm, with the reasons attached",
       "description": "The join this panel exists for. slurm_node_drain_reason_info carries no partition label, so no stock panel can put the reason next to the state. Query B supplies it here; hover a yellow cell.",
       "datasource": {
@@ -239,7 +239,7 @@
     },
     {
       "id": 5,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "A production cluster on an ordinary day",
       "description": "Not staged, unlike the panels above: this one reads slurm_node_status and the CPU, GPU and drain facets from this dev cluster's live Prometheus, grouped by the rack label make scrape relabels in, against the synthetic exporter's default PROFILE=production shape \u2014 a cluster that is mostly allocated and mixed, with real idle capacity behind it, and only a sliver of drained, down, maintenance and failed nodes. This panel carries no warnings on purpose: it is what the grid looks like when nothing is wrong, so the reader can learn what normal looks like before trying to spot what is not.",
       "datasource": {

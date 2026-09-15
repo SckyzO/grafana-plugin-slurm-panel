@@ -17,7 +17,7 @@
   "panels": [
     {
       "id": 1,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "State",
       "description": "What each node is doing. The reference for the three grids below: a node can be dark blue for full and still be draining.",
       "datasource": {
@@ -66,7 +66,7 @@
     },
     {
       "id": 2,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "CPU occupancy",
       "description": "slurm_node_cpu_alloc over slurm_node_cpu_total. Pale is empty, dark is full. Hover for the exact figures.",
       "datasource": {
@@ -153,7 +153,7 @@
     },
     {
       "id": 3,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "Memory occupancy",
       "description": "slurm_node_mem_alloc over slurm_node_mem_total. A node pale here and dark on CPU is the classic memory-starved job shape.",
       "datasource": {
@@ -240,7 +240,7 @@
     },
     {
       "id": 4,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "GPU occupancy",
       "description": "slurm_node_gres_used over slurm_node_gres_total, summed across models: a node with two GPU models has one occupancy, not two. Nodes with no GPU have nothing to say and are drawn empty.",
       "datasource": {

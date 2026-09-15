@@ -17,9 +17,9 @@ services:
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
       GF_AUTH_BASIC_ENABLED: 'true'
       GF_DEFAULT_APP_MODE: development
-      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: tomzone-slurmnodegrid-panel
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: tomzone-slurm-panel
     volumes:
-      - ../plugins/nodegrid-panel/dist:/var/lib/grafana/plugins/tomzone-slurmnodegrid-panel
+      - ../plugins/nodegrid-panel/dist:/var/lib/grafana/plugins/tomzone-slurm-panel
       - ./provisioning:/etc/grafana/provisioning
     depends_on:
       - prometheus

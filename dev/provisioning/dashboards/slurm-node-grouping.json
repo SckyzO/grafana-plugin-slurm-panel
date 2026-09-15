@@ -17,7 +17,7 @@
   "panels": [
     {
       "id": 1,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "By a label, in rack layout",
       "description": "The best case: the exporter already publishes the structure. Rack layout stacks each group as a chassis instead of wrapping it. The rack column in this CSV is hand-written: slurm_exporter publishes no such label, and there is nowhere for one to come from because it reads sinfo. Grouping by a label is only available if you add the label yourself, through Prometheus relabelling or a join against an inventory.",
       "datasource": {
@@ -70,7 +70,7 @@
     },
     {
       "id": 2,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "By a capture, splitting compute from GPU",
       "description": "Not a location grouping, and it no longer pretends to be one: the dev cluster's node names are flat (c1..c160, g1..g80) with nothing encoding a rack, so '^([a-z]+)' recovers only the node's class - compute or GPU - not its position on the floor. That is genuinely useful on its own, which is why the panel stays, but do not read it as the realistic answer for topology; the live-Prometheus panels below (label, join, ranges) are that answer, because they read from something outside the node name.",
       "datasource": {
@@ -123,7 +123,7 @@
     },
     {
       "id": 3,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "By a chunk of the ordinal",
       "description": "The fallback when the name carries no structure either. This is the one grouping that asserts something the data never said - it assumes the numbering follows the floor - so the panel marks the groups as assumed.",
       "datasource": {
@@ -176,7 +176,7 @@
     },
     {
       "id": 4,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "Not grouped at all",
       "description": "One flat grid. Below a few hundred nodes this is often the honest answer: a grouping nobody asked for is structure you invented.",
       "datasource": {
@@ -228,7 +228,7 @@
     },
     {
       "id": 5,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "Rung 1 -- label, against live Prometheus",
       "description": "Rung 1 of three routes to the same topology: slurm_node_status carries a real rack label because dev/relabel/racks.txt was turned into Prometheus relabelling by make scrape. Grouping > Group by > Label needs nothing else. Same 15-node slice as the join and ranges panels beside it, so all three can be compared directly.",
       "datasource": {
@@ -281,7 +281,7 @@
     },
     {
       "id": 6,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "Rung 2 -- join, against an inventory the metrics do not carry",
       "description": "Rung 2 of three routes to a topology, and the one available to anyone whose Prometheus carries no location dimension at all: query A reads slurm_node_status live with Format set to Table, so Prometheus hands back one row per node instead of one frame per series; query B is a hand-maintained CSV inventory (node,zone) against the TestData source, naming a zone that exists nowhere in the scraped metrics. The panel's own datasource is set to -- Mixed --, which is what makes Grafana actually run a query-B target when the panel datasource is Prometheus. Join by field (byField node, mode outer) merges the two into one frame, whose refId becomes \"joinByField-A-B\" -- not \"A\" -- which is why Grouping > Slots > State points at that name rather than the query's own refId. Grouping by \"zone\" rather than \"rack\" is deliberate: a value that only the join could have supplied is proof the join ran, not an assertion resting on which of two agreeing columns Grafana happened to keep.",
       "datasource": {
@@ -353,7 +353,7 @@
     },
     {
       "id": 7,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "Rung 3 -- ranges, against live Prometheus",
       "description": "Rung 3 of three routes to the same topology: no rack label and no join, just a range table typed into the panel and held in the $racks dashboard variable. Same 15-node slice as the label and join panels beside it.",
       "datasource": {
@@ -406,7 +406,7 @@
     },
     {
       "id": 8,
-      "type": "tomzone-slurmnodegrid-panel",
+      "type": "tomzone-slurm-panel",
       "title": "Deliberately incomplete -- a range table covering one rack of six",
       "description": "Not a bug: this panel's range table names only rack1: c[1-40], against the full 240-node cluster. 200 nodes match no range and are drawn under \"ungrouped\", dashed and marked unplaced, and the warnings strip both names them and reports that the rack label would cover all 240 -- the coverage signal the other panels never trigger, because every source they use already covers every node. Its warnings strip is deliberate too, not a defect: a reader could otherwise mistake the coverage line for something broken, which is why the title already says \"Deliberately incomplete\".",
       "datasource": {

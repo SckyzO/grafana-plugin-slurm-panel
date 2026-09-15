@@ -12,7 +12,7 @@
     "test": "pnpm -r test",
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck",
-    "e2e": "pnpm --filter tomzone-slurmnodegrid-panel e2e"
+    "e2e": "pnpm --filter tomzone-slurm-panel e2e"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",

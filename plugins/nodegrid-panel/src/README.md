@@ -1,4 +1,4 @@
-# Slurmnodegrid
+# Slurm Node Grid
 
 One cell per Slurm node, coloured by state — or by CPU, memory or GPU
 utilisation — grouped and laid out to match how the cluster is actually

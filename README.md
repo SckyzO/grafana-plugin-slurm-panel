@@ -20,7 +20,7 @@ The value of this panel is the join and the density, not new data.
 
 | | |
 |---|---|
-| `plugins/nodegrid-panel` | `tomzone-slurmnodegrid-panel` — one cell per node |
+| `plugins/nodegrid-panel` | `tomzone-slurm-panel` — one cell per node |
 | `packages/core` | the engine: ingest, state parsing, grouping. No Grafana import |
 | `dev/` | the toolchain image, and a self-contained Grafana + Prometheus + synthetic exporter stack |
 

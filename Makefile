@@ -45,7 +45,7 @@ build: deps ## Build every workspace package
 	$(RUN) pnpm build
 
 watch: deps ## Rebuild the panel on change (Grafana picks it up live)
-	$(RUN) pnpm --filter tomzone-slurmnodegrid-panel dev
+	$(RUN) pnpm --filter tomzone-slurm-panel dev
 
 test: build ## Run the unit and contract tests
 	@# A contract test that asserts the behaviour of a built artifact needs the
@@ -134,11 +134,11 @@ shell: deps ## Open a shell in the toolchain container
 
 validate: build ## Run Grafana's official plugin validator
 	$(RUN) sh -c 'cd plugins/nodegrid-panel \
-	  && rm -rf .artifacts tomzone-slurmnodegrid-panel \
+	  && rm -rf .artifacts tomzone-slurm-panel \
 	  && mkdir -p .artifacts \
-	  && cp -r dist tomzone-slurmnodegrid-panel \
-	  && zip -qr .artifacts/plugin.zip tomzone-slurmnodegrid-panel \
-	  && rm -rf tomzone-slurmnodegrid-panel'
+	  && cp -r dist tomzone-slurm-panel \
+	  && zip -qr .artifacts/plugin.zip tomzone-slurm-panel \
+	  && rm -rf tomzone-slurm-panel'
 	$(COMPOSE) run --rm validator /archive/plugin.zip
 
 clean: ## Remove the stack, the node_modules volumes and the build output

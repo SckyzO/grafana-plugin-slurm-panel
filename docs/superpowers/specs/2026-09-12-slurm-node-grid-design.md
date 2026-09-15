@@ -117,7 +117,7 @@ slurm-views/
 │   ├── state/parse.ts        "idle*" -> { base, modifiers } — for display text
 │   ├── group/keys.ts         label | capture | chunk -> a grouping key
 │   └── group/build.ts        grouping, overlap allowed
-├── plugins/nodegrid-panel/   tomzone-slurmnodegrid-panel
+├── plugins/nodegrid-panel/   tomzone-slurm-panel
 │   ├── src/module.ts         panel registration, useFieldConfig, options
 │   ├── src/components/       grid, cell, tooltip, group header
 │   └── src/editor/           grouping key editor with live preview

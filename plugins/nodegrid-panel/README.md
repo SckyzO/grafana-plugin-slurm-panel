@@ -1,4 +1,4 @@
-# tomzone-slurmnodegrid-panel
+# tomzone-slurm-panel
 
 One cell per Slurm node. The panel's own documentation — what it draws, the
 options it takes, and the data it expects — is [`src/README.md`](src/README.md),
