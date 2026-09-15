@@ -20,7 +20,7 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
       // StandardEditorContext, which has no onFieldConfigChange, so it can
       // never write fieldConfig.defaults. `standardOptions` is the supported
       // route, and it is a default rather than a lock — the Value mappings
-      // section still shows all eleven rules, and editing or deleting them
+      // section still lists every rule, and editing, reordering or deleting them
       // works exactly as it would on any other panel.
       //
       // These rules are not obvious and do not survive being retyped from

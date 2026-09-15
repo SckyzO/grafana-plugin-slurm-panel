@@ -46,7 +46,7 @@ place to demonstrate the grouping a real cluster needs: `slurm_exporter`
 publishes no `rack` label, so structure has to come from a capture on the
 node name.
 
-None of the four configures value mappings. The eleven Slurm state colours
+None of the four configures value mappings. The Slurm state colours
 are the panel's own default, so a panel added to a new dashboard is coloured
 before anything is configured.
 

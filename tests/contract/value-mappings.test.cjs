@@ -38,13 +38,23 @@ const DEFAULTS = [
   rule('/^.*~$/', 'powered down', 'text'),
   rule('/^idle.*-$/', 'idle, backfill', 'semi-dark-green'),
   rule('/^idle.*$/', 'idle', 'green'),
-  rule('/^mixed.*-$/', 'mixed, backfill', 'semi-dark-blue'),
-  rule('/^mixed.*$/', 'mixed', 'blue'),
+  rule('/^(planned|plnd).*$/', 'planned', 'light-green'),
+  rule('/^comp.*$/', 'completing', 'super-light-blue'),
+  rule('/^mix.*-$/', 'mixed, backfill', 'light-blue'),
+  rule('/^mix.*$/', 'mixed', 'blue'),
   rule('/^alloc.*-$/', 'allocated, backfill', 'semi-dark-blue'),
   rule('/^alloc.*$/', 'allocated', 'dark-blue'),
-  rule('/^drain.*$/', 'drained', 'yellow'),
-  rule('/^(down|fail).*$/', 'down', 'red'),
+  rule('/^(drain|drng).*$/', 'drained', 'yellow'),
   rule('/^maint.*$/', 'maintenance', 'purple'),
+  rule('/^res.*$/', 'reserved', 'semi-dark-purple'),
+  rule('/^(npc|perfctrs).*$/', 'perf counters', 'light-purple'),
+  rule('/^(down|fail).*$/', 'down', 'red'),
+  rule('/^unk.*$/', 'unknown', 'semi-dark-red'),
+  rule('/^inval.*$/', 'invalid registration', 'semi-dark-red'),
+  rule('/^block.*$/', 'blocked', 'orange'),
+  rule('/^reboot.*$/', 'reboot', 'light-orange'),
+  rule('/^pow.*$/', 'power management', 'text'),
+  rule('/^fut.*$/', 'future', 'text'),
 ];
 
 const displayFor = (values, mappings = DEFAULTS) =>
@@ -61,31 +71,86 @@ test('value mappings resolve on a string field at all', () => {
 });
 
 test('every shipped default maps its state to the intended text', () => {
+  // Every state in the sinfo man page's NODE STATE CODES section, in both the
+  // long form (what slurm_exporter asks sinfo for, via StateLong:) and the
+  // abbreviation (what %t prints). A rule that covered only one of the two
+  // would leave half a cluster uncoloured and is the reason this list is
+  // exhaustive rather than representative.
   const cases = [
     ['idle', 'idle'],
     ['idle*', 'not responding'],
     ['idle~', 'powered down'],
     ['idle-', 'idle, backfill'],
     ['mixed', 'mixed'],
+    ['mix', 'mixed'],
     ['mixed-', 'mixed, backfill'],
+    ['mix-', 'mixed, backfill'],
     ['mixed*', 'not responding'],
     ['allocated', 'allocated'],
+    ['alloc', 'allocated'],
+    ['allocated+', 'allocated'],
     ['allocated-', 'allocated, backfill'],
     ['drained', 'drained'],
+    ['drain', 'drained'],
     ['draining', 'drained'],
+    ['drng', 'drained'],
     ['down', 'down'],
     ['down*', 'not responding'],
     ['fail', 'down'],
     ['failing', 'down'],
+    ['failg', 'down'],
     ['maint', 'maintenance'],
+    ['completing', 'completing'],
+    ['comp', 'completing'],
+    ['planned', 'planned'],
+    ['plnd', 'planned'],
+    ['reserved', 'reserved'],
+    ['resv', 'reserved'],
+    ['perfctrs', 'perf counters'],
+    ['npc', 'perf counters'],
+    ['blocked', 'blocked'],
+    ['block', 'blocked'],
+    ['unknown', 'unknown'],
+    ['unk', 'unknown'],
+    ['inval', 'invalid registration'],
+    ['reboot_issued', 'reboot'],
+    ['reboot_requested', 'reboot'],
+    ['power_down', 'power management'],
+    ['powered_down', 'power management'],
+    ['powering_down', 'power management'],
+    ['powering_up', 'power management'],
+    ['pow_dn', 'power management'],
+    ['pow_up', 'power management'],
+    ['future', 'future'],
+    ['futr', 'future'],
   ];
   for (const [value, expected] of cases) {
     assert.equal(displayFor([value])(value).text, expected, `mapping ${value}`);
   }
 });
 
+test('every state in that list also resolves a colour, and the set discriminates', () => {
+  // A rule naming a colour the theme does not know still "maps": it returns
+  // text and a falsy or fallback colour, and the grid comes out uniform. Check
+  // the colours land, and that they are not all the same one.
+  const colours = new Set();
+  for (const value of ['idle', 'mixed', 'allocated', 'drained', 'down', 'maint',
+                       'reserved', 'perfctrs', 'blocked', 'completing', 'planned',
+                       'unknown', 'reboot_issued', 'power_down', 'future']) {
+    const dv = displayFor([value])(value);
+    assert.ok(dv.color, `expected a colour for ${value}`);
+    assert.match(dv.color, /^(#|rgb)/, `${value} resolved to a non-colour: ${dv.color}`);
+    colours.add(dv.color);
+  }
+  assert.ok(colours.size >= 10, `expected the palette to discriminate, got ${colours.size} colours`);
+});
+
 test('a state matching no mapping keeps its raw text', () => {
-  for (const value of ['perfctrs', 'blocked', 'inval']) {
+  // These were real Slurm states until the rule set was completed against the
+  // sinfo man page, which is exactly why they are no longer usable here: a
+  // test for unmapped behaviour has to use a value that will not quietly
+  // become mapped. Stand-ins for whatever a future Slurm adds.
+  for (const value of ['plasma', 'entangled', 'zzz_not_a_state']) {
     assert.equal(displayFor([value])(value).text, value);
   }
 });
@@ -131,9 +196,13 @@ test('a value matching a mapping leaves percent undefined, even with thresholds 
 });
 
 test('a value matching no mapping falls through to the threshold path: percent is set and the colour is the threshold colour, not a mapping colour', () => {
-  const dv = displayWithThresholds(['perfctrs'])('perfctrs');
+  // Not a real Slurm state: every one of those is mapped now, and this test
+  // needs a value that misses on purpose. That is also the danger being
+  // pinned — the day Slurm adds a state, it arrives here, unmapped, and must
+  // not be painted with the threshold base colour as though it were healthy.
+  const dv = displayWithThresholds(['zzz_not_a_state'])('zzz_not_a_state');
   const theme = createTheme();
-  assert.equal(dv.text, 'perfctrs');
+  assert.equal(dv.text, 'zzz_not_a_state');
   assert.equal(dv.percent, 0);
   // Resolved via the theme, the same as Grafana does: the threshold step's
   // named colour ('green'), not a raw mapping colour.

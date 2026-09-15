@@ -52,47 +52,54 @@ describe('NodeCell', () => {
     expect(cell).toHaveAttribute('aria-label', 'node-idle, idle');
   });
 
-  it('renders perfctrs (a real, unmapped Slurm base state) as unmapped: ring, no fill', () => {
+  // Not a Slurm state. It used to be `perfctrs`, until the shipped rules were
+  // completed against the sinfo man page and perfctrs became mapped — which is
+  // the trap: a test for unmapped behaviour must not be written against a
+  // value that can quietly become mapped. This stands in for whatever a future
+  // Slurm introduces.
+  const UNKNOWN_STATE = 'a_state_slurm_adds_tomorrow';
+
+  it('renders a state the rules have never seen as unmapped: ring, no fill', () => {
     render(
       <NodeCell
-        node={nodeWith('perfctrs')}
+        node={nodeWith(UNKNOWN_STATE)}
         size={14}
-        stateDisplay={displayFor('perfctrs')}
-        valueDisplay={displayFor('perfctrs')}
+        stateDisplay={displayFor(UNKNOWN_STATE)}
+        valueDisplay={displayFor(UNKNOWN_STATE)}
         colorMode="state"
         shapeChannel={false}
       />
     );
-    const cell = screen.getByTestId('node-cell-node-perfctrs');
+    const cell = screen.getByTestId(`node-cell-node-${UNKNOWN_STATE}`);
     expect(cell).toHaveAttribute('data-mapped', 'false');
     expect(cell.style.background).toBe('');
-    expect(cell).toHaveAttribute('aria-label', 'node-perfctrs, perfctrs');
+    expect(cell).toHaveAttribute('aria-label', `node-${UNKNOWN_STATE}, ${UNKNOWN_STATE}`);
   });
 
   it('drives the fill from utilisation, via Thresholds, when colour mode is not state', () => {
     const node: SlurmNode = {
-      ...nodeWith('perfctrs'),
+      ...nodeWith(UNKNOWN_STATE),
       facets: { gres: [], cpuAlloc: 64, cpuTotal: 128 },
     };
     render(
       <NodeCell
         node={node}
         size={14}
-        stateDisplay={displayFor('perfctrs')}
-        valueDisplay={displayFor('perfctrs')}
+        stateDisplay={displayFor(UNKNOWN_STATE)}
+        valueDisplay={displayFor(UNKNOWN_STATE)}
         colorMode="cpu"
         shapeChannel={false}
       />
     );
-    const cell = screen.getByTestId('node-cell-node-perfctrs');
-    // The state is unmapped (perfctrs has no shipped mapping), but in a
+    const cell = screen.getByTestId(`node-cell-node-${UNKNOWN_STATE}`);
+    // The state is unmapped, but in a
     // continuous mode the ring must not appear: the fill no longer encodes
     // state, so a state-mapping ring would answer a question nobody asked of
     // the colour here.
     expect(cell).toHaveAttribute('data-mapped', 'false');
     expect(cell.style.background).not.toBe('');
     // The state stays named in words regardless of colour mode.
-    expect(cell).toHaveAttribute('aria-label', 'node-perfctrs, perfctrs');
+    expect(cell).toHaveAttribute('aria-label', `node-${UNKNOWN_STATE}, ${UNKNOWN_STATE}`);
   });
 
   it('draws a node with no data for a continuous mode exactly like an unfilled one', () => {
@@ -107,15 +114,15 @@ describe('NodeCell', () => {
 
     const state = render(
       <NodeCell
-        node={nodeWith('perfctrs')}
+        node={nodeWith(UNKNOWN_STATE)}
         size={14}
-        stateDisplay={displayFor('perfctrs')}
-        valueDisplay={displayFor('perfctrs')}
+        stateDisplay={displayFor(UNKNOWN_STATE)}
+        valueDisplay={displayFor(UNKNOWN_STATE)}
         colorMode="state"
         shapeChannel={false}
       />
     );
-    const emptyInStateMode = screen.getByTestId('node-cell-node-perfctrs');
+    const emptyInStateMode = screen.getByTestId(`node-cell-node-${UNKNOWN_STATE}`);
     expect(emptyInStateMode).toHaveAttribute('data-filled', 'false');
     const emptyClass = classNameOf(emptyInStateMode);
     state.unmount();

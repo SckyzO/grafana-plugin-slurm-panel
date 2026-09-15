@@ -52,21 +52,31 @@ test.describe('the node grid renders against a real Grafana', () => {
     await expect(tooltip.getByText('State', { exact: true })).toBeVisible();
   });
 
-  test('names the states that matched no mapping', async ({ gotoDashboardPage, readProvisionedDashboard, page }) => {
-    // The synthetic exporter emits states such as perfctrs, blocked and
-    // inval, none of which the shipped mappings cover. They must be named in
-    // the panel, not quietly painted grey.
-    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-grid.json' });
+  test('names a state the shipped rules have never seen', async ({
+    gotoDashboardPage,
+    readProvisionedDashboard,
+    page,
+  }) => {
+    // Against the synthetic exporter this used to fire on perfctrs, blocked
+    // and inval — all real Slurm states the rules did not cover, and all
+    // covered now. Pointing it back at the exporter would make it a test of
+    // which states happen to be unmapped this week. The scenarios dashboard
+    // carries one state that is not a Slurm state at all and never will be,
+    // standing in for whatever a future Slurm introduces.
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-scenarios.json' });
     await gotoDashboardPage(dashboard);
 
-    const strip = page.getByTestId('panel-warnings');
-    await expect(strip).toBeVisible({ timeout: 15_000 });
-    await expect(strip).toContainText('matched no value mapping');
-    // The list is capped at eight named states followed by "and N more" -
-    // asserting the full list here would break the moment the cap does its
-    // job, so only the cap marker itself is covered.
-    await expect(strip).toContainText('and ');
-    await expect(strip).toContainText('more');
+    const strip = page.getByTestId('panel-warnings').first();
+    await expect(strip).toBeVisible({ timeout: 20_000 });
+    await expect(strip).toContainText('1 state matched no value mapping');
+    await expect(strip).toContainText('a_state_slurm_adds_tomorrow');
+
+    // And it is drawn as having nothing to say rather than coloured — the
+    // whole point of naming it. With thresholds configured, the alternative is
+    // that Grafana paints it with the threshold base colour and an unknown
+    // state reads as a healthy one.
+    const hollow = page.locator('[data-testid^="node-cell-"][data-filled="false"]');
+    await expect.poll(() => hollow.count(), { timeout: 20_000 }).toBe(1);
   });
 });
 

@@ -62,7 +62,7 @@ takes, and the engine only builds that list for partitions.
 **Display > Colour by** picks one encoding for the cell fill at a time:
 
 - **State** (default) — the mapped Slurm state, from the panel's own **Value
-  mappings** section. Eleven rules covering the Slurm states and their
+  mappings** section. Twenty-one rules covering every state in the sinfo man page and its
   modifiers are applied by default, so the grid is coloured out of the box;
   they can be edited or removed like any other field config. A hand-written
   rule fails

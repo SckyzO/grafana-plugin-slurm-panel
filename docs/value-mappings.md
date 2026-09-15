@@ -4,7 +4,7 @@ The panel ships a starting set of mappings and then gets out of the way: state
 colour is Grafana's **Value mappings**, edited in the panel like any other
 field config.
 
-**You do not have to write these.** The panel ships all eleven as the default
+**You do not have to write these.** The panel ships all twenty-one as the default
 value of the standard **Value mappings** option, so a panel dropped on a new
 dashboard is coloured before anything is configured, and none of the
 provisioned dashboards carries a mappings block. They are a default and not a
@@ -96,13 +96,23 @@ if the two ever disagree, the source file is right and this table is stale.
 | 2 | `/^.*~$/` | powered down | `text` |
 | 3 | `/^idle.*-$/` | idle, backfill | `semi-dark-green` |
 | 4 | `/^idle.*$/` | idle | `green` |
-| 5 | `/^mixed.*-$/` | mixed, backfill | `semi-dark-blue` |
-| 6 | `/^mixed.*$/` | mixed | `blue` |
-| 7 | `/^alloc.*-$/` | allocated, backfill | `semi-dark-blue` |
-| 8 | `/^alloc.*$/` | allocated | `dark-blue` |
-| 9 | `/^drain.*$/` | drained | `yellow` |
-| 10 | `/^(down\|fail).*$/` | down | `red` |
-| 11 | `/^maint.*$/` | maintenance | `purple` |
+| 5 | `/^(planned\|plnd).*$/` | planned | `light-green` |
+| 6 | `/^comp.*$/` | completing | `super-light-blue` |
+| 7 | `/^mix.*-$/` | mixed, backfill | `light-blue` |
+| 8 | `/^mix.*$/` | mixed | `blue` |
+| 9 | `/^alloc.*-$/` | allocated, backfill | `semi-dark-blue` |
+| 10 | `/^alloc.*$/` | allocated | `dark-blue` |
+| 11 | `/^(drain\|drng).*$/` | drained | `yellow` |
+| 12 | `/^maint.*$/` | maintenance | `purple` |
+| 13 | `/^res.*$/` | reserved | `semi-dark-purple` |
+| 14 | `/^(npc\|perfctrs).*$/` | perf counters | `light-purple` |
+| 15 | `/^(down\|fail).*$/` | down | `red` |
+| 16 | `/^unk.*$/` | unknown | `semi-dark-red` |
+| 17 | `/^inval.*$/` | invalid registration | `semi-dark-red` |
+| 18 | `/^block.*$/` | blocked | `orange` |
+| 19 | `/^reboot.*$/` | reboot | `light-orange` |
+| 20 | `/^pow.*$/` | power management | `text` |
+| 21 | `/^fut.*$/` | future | `text` |
 
 Colours are theme colour names, resolved by the active theme — no hex, so the
 defaults stay legible in both the light and dark Grafana surfaces.
