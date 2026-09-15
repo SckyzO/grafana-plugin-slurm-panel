@@ -31,6 +31,26 @@ export function collectUnmapped(nodes: SlurmNode[], display: DisplayProcessor): 
  */
 const UNMAPPED_NAME_LIMIT = 8;
 
+/**
+ * The nine flag characters sinfo can append to a state: not responding,
+ * powered off, powering up, pending power down, powering down, reservation
+ * maintenance, pending reboot, reboot issued, and planned by the backfill
+ * scheduler. Source: the NODE STATE CODES section of the sinfo man page.
+ */
+const STATE_FLAGS = '*~#!%$@^-';
+
+/**
+ * The state without its flag, when it carries one. One unknown state reaches
+ * the panel as up to eight distinct strings — `blocked`, `blocked#`,
+ * `blocked!`, `blocked%` and so on — and naming each of them turns a single
+ * actionable fact into a wall of text that says the same thing eight times.
+ * The operator has one thing to do either way: write a rule for the state.
+ */
+const baseStateOf = (state: string): string => {
+  const flag = state.slice(-1);
+  return state.length > 1 && STATE_FLAGS.includes(flag) ? state.slice(0, -1) : state;
+};
+
 export function summarise(
   model: GroupedModel,
   warnings: IngestWarning[],
@@ -45,16 +65,19 @@ export function summarise(
   }
 
   if (unmapped.length > 0) {
-    const noun = unmapped.length === 1 ? 'state' : 'states';
-    // Name them rather than only counting, so a state introduced by a Slurm
-    // upgrade is actionable — but cap the list. The panel's container is
-    // overflow:hidden, and an unbounded line eats the grid it annotates. A real
-    // cluster shows two or three unknown states and never reaches the cap; a
-    // pathological one shows thirty and must not push the wall off screen.
-    const shown = unmapped.slice(0, UNMAPPED_NAME_LIMIT);
-    const rest = unmapped.length - shown.length;
+    // Count and name states, not state-and-flag combinations. Name them rather
+    // than only counting, so a state introduced by a Slurm upgrade is
+    // actionable — but cap the list. The panel's container is overflow:hidden,
+    // and an unbounded line eats the grid it annotates.
+    const bases = [...new Set(unmapped.map(baseStateOf))].sort();
+    const noun = bases.length === 1 ? 'state' : 'states';
+    const shown = bases.slice(0, UNMAPPED_NAME_LIMIT);
+    const rest = bases.length - shown.length;
     const named = rest > 0 ? `${shown.join(', ')}, and ${rest} more` : shown.join(', ');
-    lines.push(`${unmapped.length} ${noun} matched no value mapping: ${named}`);
+    // The raw count still gets a mention when it differs, because "8 variants"
+    // is the difference between one unknown state and eight of them.
+    const variants = unmapped.length > bases.length ? ` (${unmapped.length} with flags)` : '';
+    lines.push(`${bases.length} ${noun} matched no value mapping: ${named}${variants}`);
   }
 
   for (const warning of warnings) {

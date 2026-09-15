@@ -61,6 +61,30 @@ describe('summarise', () => {
       .toContain('2 states matched no value mapping: blocked, perfctrs');
   });
 
+  it('counts states, not state-and-flag combinations', () => {
+    // What a real panel was showing: one unknown state reaching the strip as
+    // five strings, reported as five states to write rules for.
+    const line = summarise(
+      model(5, 5),
+      [],
+      ['blocked', 'blocked!', 'blocked#', 'blocked%', 'blocked-'],
+      3000
+    )[0];
+    expect(line).toContain('1 state matched no value mapping: blocked');
+    expect(line).toContain('(5 with flags)');
+    expect(line).not.toContain('blocked!');
+  });
+
+  it('does not mention flag variants when there are none', () => {
+    expect(summarise(model(2, 2), [], ['blocked', 'zzz'], 3000)[0]).not.toContain('with flags');
+  });
+
+  it('does not mistake a state that merely ends in a flag character for a flagged one', () => {
+    // Guard against stripping a character off a one-character state and
+    // reporting an empty name.
+    expect(summarise(model(1, 1), [], ['-'], 3000)[0]).toContain('1 state matched no value mapping: -');
+  });
+
   it('caps the named list and says how many it held back', () => {
     // The panel clips its overflow, so an unbounded list eats the grid.
     const many = Array.from({ length: 12 }, (_, i) => `state${i}`);
