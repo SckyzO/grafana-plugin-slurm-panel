@@ -3,18 +3,12 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FieldType } from '@grafana/data';
 import type { DataFrame, RegistryItem, StandardEditorContext } from '@grafana/data';
+import { setTemplateSrv } from '@grafana/runtime';
 import type { KeySource } from '@slurm-views/core';
 import { GroupingEditor } from './GroupingEditor';
 import { DEFAULT_OPTIONS } from '../types';
 import type { PanelOptions } from '../types';
-
-// An options editor reaches the template service directly (see
-// GroupingEditor's preview memo), and jsdom never runs inside a Grafana app
-// that would call setTemplateSrv() first. Without this, getTemplateSrv()
-// returns undefined and the Ranges preview throws on `.replace`.
-jest.mock('@grafana/runtime', () => ({
-  getTemplateSrv: () => ({ replace: (value: string) => value }),
-}));
+import { fakeTemplateSrv } from '../testing/templateSrv';
 
 // Table-format frame: one string column per label, one row per node — the
 // same shape `toSamples` reads when a query returns node/status/partition as
@@ -113,6 +107,10 @@ describe('GroupingEditor preview', () => {
 });
 
 describe('the Ranges source', () => {
+  beforeEach(() => {
+    setTemplateSrv(fakeTemplateSrv({ racks: 'rack1: r1n[01-02]' }));
+  });
+
   it('offers Ranges and seeds a table that shows the syntax', async () => {
     const onChange = jest.fn();
     renderEditor({ kind: 'none' }, onChange);
@@ -134,6 +132,16 @@ describe('the Ranges source', () => {
   it('previews the placement the table would produce', () => {
     // The fixtures in this file name their nodes r1n01/r1n02/r2n01, not c1/c2.
     renderEditor({ kind: 'ranges', table: 'rack1: r1n[01-02]' }, jest.fn());
+    expect(screen.getByTestId('grouping-preview')).toHaveTextContent('rack1');
+  });
+
+  it('resolves a dashboard variable before deciding what the table matches', () => {
+    // Without the interpolation the preview parses the literal "$racks" as one
+    // malformed line, places nothing, and tells the operator their table
+    // matches nothing. Delete the interpolation from GroupingEditor and this
+    // test goes red; the other Ranges tests do not, because they use literal
+    // tables.
+    renderEditor({ kind: 'ranges', table: '$racks' }, jest.fn());
     expect(screen.getByTestId('grouping-preview')).toHaveTextContent('rack1');
   });
 });

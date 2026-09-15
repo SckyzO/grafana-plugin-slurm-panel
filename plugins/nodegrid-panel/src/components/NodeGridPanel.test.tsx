@@ -10,34 +10,11 @@ import {
 } from '@grafana/data';
 import type { FieldConfigSource, PanelData, PanelProps } from '@grafana/data';
 import { setTemplateSrv } from '@grafana/runtime';
-import type { TemplateSrv } from '@grafana/runtime';
 import { NodeGridPanel } from './NodeGridPanel';
 import { DEFAULT_MAPPINGS } from '../defaults/mappings';
 import { DEFAULT_OPTIONS } from '../types';
 import type { PanelOptions } from '../types';
-
-/**
- * A minimal stand-in for Grafana's real TemplateSrv, which the plugin never
- * bundles itself (it is provided by the Grafana application at runtime).
- * Interpolates `${name}` against the scopedVars NodeGridPanel passes, the
- * same shape `getTemplateSrv().replace` receives in production.
- */
-function fakeTemplateSrv(): TemplateSrv {
-  return {
-    getVariables: () => [],
-    containsTemplate: (target) => /\$\{\w+\}/.test(target ?? ''),
-    updateTimeRange: () => {},
-    replace: (target, scopedVars) => {
-      if (target === undefined) {
-        return '';
-      }
-      return target.replace(/\$\{(\w+)\}/g, (match, name: string) => {
-        const scoped = scopedVars?.[name];
-        return scoped ? String(scoped.value) : match;
-      });
-    },
-  };
-}
+import { fakeTemplateSrv } from '../testing/templateSrv';
 
 const baseProps: Omit<PanelProps<PanelOptions>, 'data' | 'options' | 'fieldConfig'> = {
   id: 1,
