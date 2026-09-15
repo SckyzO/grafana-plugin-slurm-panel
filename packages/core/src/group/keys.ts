@@ -1,9 +1,11 @@
 import type { SlurmNode } from '../model/types.js';
+import { parseRangeTable } from './ranges.js';
 
 export type KeySource =
   | { kind: 'label'; label: string }
   | { kind: 'capture'; pattern: string }
   | { kind: 'chunk'; size: number }
+  | { kind: 'ranges'; table: string }
   | { kind: 'none' };
 
 export interface KeyResult {
@@ -50,6 +52,17 @@ export function makeKeyFn(source: KeySource): (node: SlurmNode) => KeyResult {
       };
     }
 
+    case 'ranges': {
+      // Parsed once per key function, not once per node.
+      const { index } = parseRangeTable(source.table);
+      return (node) => {
+        const key = index.get(node.name);
+        // A range table is an explicit human assertion, not an inference, so
+        // it is never `assumed`. Chunking remains the only source that invents.
+        return key === undefined ? NO_KEY : { key, assumed: false };
+      };
+    }
+
     case 'chunk':
       return (node) => {
         if (!Number.isInteger(source.size) || source.size <= 0) {
@@ -69,4 +82,19 @@ export function makeKeyFn(source: KeySource): (node: SlurmNode) => KeyResult {
     default:
       return () => NO_KEY;
   }
+}
+
+/**
+ * The group keys a source states up front, in the order it stated them.
+ *
+ * Only a range table does. A label or a capture discovers its groups by
+ * reading nodes, so it can neither choose their order nor name one that turned
+ * out to be empty — and rack order on a machine room floor is not alphabetical.
+ *
+ * This parses the table a second time, and that is deliberate: it is a pure
+ * function over a string of at most a few kilobytes, and caching it would put
+ * mutable module state into a package whose whole value is being pure.
+ */
+export function declaredKeys(source: KeySource): string[] {
+  return source.kind === 'ranges' ? parseRangeTable(source.table).groups.map((g) => g.name) : [];
 }
