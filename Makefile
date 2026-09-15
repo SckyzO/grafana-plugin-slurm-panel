@@ -102,6 +102,17 @@ up: scrape ## Start Grafana, Prometheus and the synthetic exporter
 	    curl -sf http://grafana:3000/api/health >/dev/null && exit 0; \
 	    sleep 1; \
 	  done; echo "Grafana never became healthy" >&2; exit 1'
+	@# Grafana being healthy does not mean there is anything to draw. These
+	@# dashboards set no auto-refresh, so a panel whose first query runs before
+	@# Prometheus has scraped stays empty for good: no assertion timeout
+	@# rescues it, because nothing ever re-queries. That is what made the
+	@# live-data tests flake, and it is the same argument as the wait above —
+	@# the stack is ready when it has data, not when it answers.
+	@$(RUN) sh -c 'for _ in $$(seq 1 90); do \
+	    curl -sf "http://prometheus:9090/api/v1/query?query=count(slurm_node_status)" \
+	      | grep -q "\"value\"" && exit 0; \
+	    sleep 1; \
+	  done; echo "Prometheus never returned any node data" >&2; exit 1'
 	@echo "Grafana is up on http://localhost:3001"
 
 down: ## Stop the stack, keeping the volumes

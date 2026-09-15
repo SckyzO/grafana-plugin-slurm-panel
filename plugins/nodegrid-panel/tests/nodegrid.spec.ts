@@ -1,4 +1,40 @@
 import { expect, test } from '@grafana/plugin-e2e';
+import type { Page } from '@playwright/test';
+
+/**
+ * Open a panel of the grouping dashboard and wait until it has live data.
+ *
+ * `make up` already waits for Prometheus to return node data before handing
+ * the stack over, so this should succeed on the first attempt. It reloads
+ * anyway, because the failure it guards cannot be waited out: these dashboards
+ * set no auto-refresh, so a panel whose first query runs against an
+ * unscraped Prometheus renders empty and stays empty. Nothing re-queries, so a
+ * longer assertion timeout buys nothing — only a reload does. That is what
+ * made this suite flake roughly one run in ten.
+ *
+ * The anchor is a group that must exist once the data is there; it is the
+ * cheapest proof that the panel drew something rather than nothing.
+ */
+async function gotoPanelWithData(page: Page, viewPanel: number, anchor: string): Promise<void> {
+  const url = `/d/slurm-node-grouping/grouping?viewPanel=${viewPanel}`;
+  const group = page.getByTestId(`node-group-${anchor}`);
+  const deadline = Date.now() + 60_000;
+
+  for (;;) {
+    await page.goto(url);
+    try {
+      await group.waitFor({ state: 'visible', timeout: 10_000 });
+      return;
+    } catch {
+      if (Date.now() > deadline) {
+        // Out of patience: assert so the failure names the panel and the
+        // group rather than reporting a bare timeout from the helper.
+        await expect(group).toBeVisible({ timeout: 10_000 });
+        return;
+      }
+    }
+  }
+}
 
 test.describe('the node grid renders against a real Grafana', () => {
   test('draws one cell per node from the provisioned dashboard', async ({
@@ -278,7 +314,7 @@ test.describe('the three ways to get a topology, proven against the same live da
   const racks = ['rack1', 'rack2', 'gpu1'];
 
   test('rung 1 groups by a relabelled Prometheus label', async ({ page }) => {
-    await page.goto('/d/slurm-node-grouping/grouping?viewPanel=5');
+    await gotoPanelWithData(page, 5, 'rack1');
     for (const key of racks) {
       await expect(page.getByTestId(`node-group-${key}`)).toBeVisible();
     }
@@ -297,7 +333,7 @@ test.describe('the three ways to get a topology, proven against the same live da
     // ran. "zone" and aisleA/aisleB/aisleC exist nowhere else in the stack -
     // the only way a group by that name can appear is if the join supplied
     // it.
-    await page.goto('/d/slurm-node-grouping/grouping?viewPanel=6');
+    await gotoPanelWithData(page, 6, 'aisleA');
     for (const key of ['aisleA', 'aisleB', 'aisleC']) {
       await expect(page.getByTestId(`node-group-${key}`)).toBeVisible();
     }
@@ -305,7 +341,7 @@ test.describe('the three ways to get a topology, proven against the same live da
   });
 
   test('rung 3 groups by a range table held in a dashboard variable', async ({ page }) => {
-    await page.goto('/d/slurm-node-grouping/grouping?viewPanel=7');
+    await gotoPanelWithData(page, 7, 'rack1');
     for (const key of racks) {
       await expect(page.getByTestId(`node-group-${key}`)).toBeVisible();
     }
@@ -317,7 +353,7 @@ test.describe('the three ways to get a topology, proven against the same live da
 
 test.describe('the coverage signal, proven by a source that deliberately covers less', () => {
   test('an incomplete range table draws the orphans as unplaced and names a wider label', async ({ page }) => {
-    await page.goto('/d/slurm-node-grouping/grouping?viewPanel=8');
+    await gotoPanelWithData(page, 8, 'rack1');
 
     // The table names only rack1: c[1-40] against the full 240-node cluster,
     // so 40 nodes are placed and the other 200 fall outside every range.
