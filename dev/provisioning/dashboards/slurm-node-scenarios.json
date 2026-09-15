@@ -8,7 +8,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 3,
   "refresh": "",
   "time": {
     "from": "now-5m",
@@ -73,7 +73,7 @@
       "id": 2,
       "type": "tomzone-slurmnodegrid-panel",
       "title": "A rack on the floor",
-      "description": "Four racks of twenty; r003 has lost power. Rack layout, grouped by the rack label, which is what the synthetic exporter publishes and the real one does not.",
+      "description": "Four racks of twenty; r003 has lost power. Rack layout, grouped by the rack label. The rack column in this CSV is hand-written: slurm_exporter publishes no such label, and there is nowhere for one to come from because it reads sinfo. Grouping by a label is only available if you add the label yourself, through Prometheus relabelling or a join against an inventory.",
       "datasource": {
         "type": "grafana-testdata-datasource",
         "uid": "slurm-views-testdata"
@@ -127,7 +127,7 @@
       "id": 3,
       "type": "tomzone-slurmnodegrid-panel",
       "title": "The same rack, read without colour",
-      "description": "Identical data to the panel on the left with the shape channel switched on. State is carried by a notch as well as a fill, so the grid survives greyscale, print and colour-vision deficiency \u2014 where four blues and a green do not.",
+      "description": "Identical data to the panel on the left with the shape channel switched on. State is carried by a notch as well as a fill, so the grid survives greyscale, print and colour-vision deficiency \u2014 where four blues and a green do not. The rack column in this CSV is hand-written: slurm_exporter publishes no such label, and there is nowhere for one to come from because it reads sinfo. Grouping by a label is only available if you add the label yourself, through Prometheus relabelling or a join against an inventory.",
       "datasource": {
         "type": "grafana-testdata-datasource",
         "uid": "slurm-views-testdata"

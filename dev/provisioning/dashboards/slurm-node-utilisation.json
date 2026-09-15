@@ -8,7 +8,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 3,
+  "version": 4,
   "refresh": "30s",
   "time": {
     "from": "now-5m",
@@ -49,8 +49,8 @@
           "state": "A"
         },
         "grouping": {
-          "kind": "label",
-          "label": "rack"
+          "kind": "capture",
+          "pattern": "^(r\\d+)"
         },
         "multiValueLabel": false,
         "layout": "rack",
@@ -111,8 +111,8 @@
           "cpuTotal": "C"
         },
         "grouping": {
-          "kind": "label",
-          "label": "rack"
+          "kind": "capture",
+          "pattern": "^(r\\d+)"
         },
         "multiValueLabel": false,
         "layout": "rack",
@@ -199,8 +199,8 @@
           "memTotal": "C"
         },
         "grouping": {
-          "kind": "label",
-          "label": "rack"
+          "kind": "capture",
+          "pattern": "^(r\\d+)"
         },
         "multiValueLabel": false,
         "layout": "rack",
@@ -287,8 +287,8 @@
           "gresTotal": "C"
         },
         "grouping": {
-          "kind": "label",
-          "label": "rack"
+          "kind": "capture",
+          "pattern": "^(r\\d+)"
         },
         "multiValueLabel": false,
         "layout": "rack",

@@ -33,7 +33,7 @@ their own data and need nothing running but Grafana.
 
 | Dashboard | Source | What it is for |
 |---|---|---|
-| Slurm node grid | Prometheus | The overview: one panel, every node, grouped by rack |
+| Slurm node grid | Prometheus | The overview: one panel, every node, grouped by a capture on the node name |
 | Slurm node grid - utilisation | Prometheus | State beside CPU, memory and GPU occupancy, driven by Thresholds |
 | Slurm node grid - scenarios | CSV | Hand-written situations that render identically every time |
 | Slurm node grid - grouping and layout | CSV | The same nodes grouped four ways, side by side |
@@ -72,9 +72,31 @@ scrape target to that cluster's exporter. Drive it with the targets that repo
 already ships: `workload N=`, `node-fail`, `node-restore`, `cancel-all`,
 `gpu-workers`. Neither path modifies the `slurm_exporter` repository.
 
-Note that the real exporter publishes no `rack` label — only `node`,
-`partition`, `status`, `instance` and `job` — so a dashboard built for it
-groups by a capture on the node name rather than by rack.
+## There is no rack label, and nowhere for one to come from
+
+slurm_exporter reads `sinfo`, and sinfo has no concept of a rack. Checked
+against the exporter's own `docs/metrics.md` and against a running instance,
+the node metrics carry exactly this and nothing else:
+
+| Metric | Labels |
+|---|---|
+| `slurm_node_status` | `node`, `status`, `partition` |
+| `slurm_node_cpu_alloc` / `cpu_idle` / `cpu_other` / `cpu_total` | `node`, `status`, `partition` |
+| `slurm_node_mem_alloc` / `mem_total` | `node`, `status`, `partition` |
+| `slurm_node_gres_used` / `gres_total` | `node`, `status`, `partition`, `gres_type` |
+| `slurm_node_drain_reason_info` | `node`, `reason` |
+| `slurm_node_drain_since_timestamp_seconds` | `node` |
+
+So physical structure has to be recovered from the node name, which is where
+a real cluster encodes it: `^(r\d+)` against `r001n0042`, `^([a-z]+)` against
+a cluster named `c1..c10` and `g1..g10`. Grouping by a label is available only
+if you put the label there yourself — Prometheus relabelling, a recording rule,
+or a join against an inventory — and that is a decision about your scrape
+config, not something the panel can do for you.
+
+The synthetic exporter reproduces those label sets exactly, `rack` included in
+the sense that it does not have one. An earlier revision invented a `rack`
+label, which made every dashboard here work and none of them portable.
 
 ## Browser tests
 

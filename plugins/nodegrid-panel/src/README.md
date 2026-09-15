@@ -40,7 +40,10 @@ plugin's repository is a complete worked example — its panel's
 
 **Grouping > Group by** groups nodes from one of three sources:
 
-- **Label** — a label the data already carries, e.g. `rack` or `partition`.
+- **Label** — a label the data already carries, e.g. `partition`. Note that
+  `slurm_exporter` publishes no rack or location label of any kind: it reads
+  `sinfo`, which has no concept of one. Unless you add such a label yourself
+  through relabelling or an inventory join, use a capture instead.
 - **Capture** — the first capture group of a regular expression run against
   the node name (`^(r\d+)` groups `r012n03` under `r012`).
 - **Chunk** — slices nodes by ordinal into fixed-size groups.

@@ -64,7 +64,6 @@ def cluster():
             parts.append("debug")
         nodes.append({
             "name": "r%03dn%04d" % (rack, i),
-            "rack": "r%03d" % rack,
             "state": state,
             "partitions": sorted(set(parts)),
             "cpus": 128,
@@ -82,6 +81,24 @@ NODES_CACHE = cluster()
 
 
 def render():
+    """Render the exact label sets slurm_exporter publishes.
+
+    Checked against docs/metrics.md in the slurm_exporter repository and
+    against a running instance, because a stand-in that invents a label
+    teaches a shape no real cluster can produce:
+
+        slurm_node_status                         node, status, partition
+        slurm_node_cpu_alloc / cpu_total          node, status, partition
+        slurm_node_mem_alloc / mem_total          node, status, partition
+        slurm_node_gres_used / gres_total         node, status, partition, gres_type
+        slurm_node_drain_reason_info              node, reason
+        slurm_node_drain_since_timestamp_seconds  node
+
+    In particular there is no `rack` label, and there is nowhere for one to
+    come from: the exporter reads sinfo, and sinfo has no concept of a rack.
+    Rack structure lives in the node name here, the same way it does on a real
+    cluster, and is recovered by grouping on a capture.
+    """
     out = [
         "# HELP slurm_node_status Node state, one series per (node, partition).",
         "# TYPE slurm_node_status gauge",
@@ -89,9 +106,13 @@ def render():
     for n in NODES_CACHE:
         for p in n["partitions"]:
             out.append(
-                'slurm_node_status{node="%s",partition="%s",status="%s",rack="%s"} 1'
-                % (n["name"], p, n["state"], n["rack"])
+                'slurm_node_status{node="%s",status="%s",partition="%s"} 1'
+                % (n["name"], n["state"], p)
             )
+
+    # These carry `status` as well, which matters: a node changing state
+    # changes these series' identity, and a panel that assumed otherwise would
+    # look correct here and break on a real cluster.
     for metric, key in (
         ("slurm_node_cpu_alloc", "cpu_alloc"),
         ("slurm_node_cpu_total", "cpus"),
@@ -101,16 +122,28 @@ def render():
         out.append("# TYPE %s gauge" % metric)
         for n in NODES_CACHE:
             for p in n["partitions"]:
-                out.append('%s{node="%s",partition="%s"} %d' % (metric, n["name"], p, n[key]))
+                out.append(
+                    '%s{node="%s",status="%s",partition="%s"} %d'
+                    % (metric, n["name"], n["state"], p, n[key])
+                )
 
     out.append("# TYPE slurm_node_gres_used gauge")
     out.append("# TYPE slurm_node_gres_total gauge")
     for n in NODES_CACHE:
-        if n["gpus"]:
-            out.append('slurm_node_gres_used{node="%s",gres_type="gpu:model_a"} %d' % (n["name"], n["gpu_used"]))
-            out.append('slurm_node_gres_total{node="%s",gres_type="gpu:model_a"} %d' % (n["name"], n["gpus"]))
+        if not n["gpus"]:
+            continue
+        for p in n["partitions"]:
+            for metric, value in (
+                ("slurm_node_gres_used", n["gpu_used"]),
+                ("slurm_node_gres_total", n["gpus"]),
+            ):
+                out.append(
+                    '%s{node="%s",status="%s",partition="%s",gres_type="gpu:model_a"} %d'
+                    % (metric, n["name"], n["state"], p, value)
+                )
 
-    # No partition label on these two, which is the join the panel exists to do.
+    # The two that carry no partition label, which is the join the panel exists
+    # to do: no stock panel can put a drain reason next to a node's state.
     out.append("# TYPE slurm_node_drain_reason_info gauge")
     out.append("# TYPE slurm_node_drain_since_timestamp_seconds gauge")
     for n in NODES_CACHE:

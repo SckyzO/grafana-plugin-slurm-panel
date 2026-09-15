@@ -8,7 +8,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "",
   "time": {
     "from": "now-5m",
@@ -19,7 +19,7 @@
       "id": 1,
       "type": "tomzone-slurmnodegrid-panel",
       "title": "By a label, in rack layout",
-      "description": "The best case: the exporter already publishes the structure. Rack layout stacks each group as a chassis instead of wrapping it.",
+      "description": "The best case: the exporter already publishes the structure. Rack layout stacks each group as a chassis instead of wrapping it. The rack column in this CSV is hand-written: slurm_exporter publishes no such label, and there is nowhere for one to come from because it reads sinfo. Grouping by a label is only available if you add the label yourself, through Prometheus relabelling or a join against an inventory.",
       "datasource": {
         "type": "grafana-testdata-datasource",
         "uid": "slurm-views-testdata"
