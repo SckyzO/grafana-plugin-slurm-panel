@@ -4,9 +4,11 @@ import { FieldType, ThresholdsMode, createTheme, getDisplayProcessor } from '@gr
 import type { DisplayProcessor } from '@grafana/data';
 import type { NodeGroup as NodeGroupModel, SlurmNode } from '@slurm-views/core';
 import { NodeGroup } from './NodeGroup';
+import type { NodeGroupProps } from './NodeGroup';
 import { rackWidthFor } from './rackGeometry';
 import { DEFAULT_MAPPINGS } from '../defaults/mappings';
 import { DEFAULT_OPTIONS } from '../types';
+import type { PanelOptions } from '../types';
 
 const theme = createTheme();
 
@@ -25,7 +27,7 @@ const display: DisplayProcessor = getDisplayProcessor({
 
 const noLink = () => undefined;
 
-const nodeWith = (name: string): SlurmNode => ({
+const mkNode = (name: string): SlurmNode => ({
   name,
   state: 'idle',
   partitions: [],
@@ -33,24 +35,32 @@ const nodeWith = (name: string): SlurmNode => ({
   facets: { gres: [] },
 });
 
+const renderGroup = (
+  group: NodeGroupModel,
+  options: PanelOptions,
+  overrides: Partial<NodeGroupProps> = {}
+) =>
+  render(
+    <NodeGroup
+      group={group}
+      stateDisplay={display}
+      valueDisplay={display}
+      colorMode="state"
+      hrefFor={noLink}
+      options={options}
+      {...overrides}
+    />
+  );
+
 const group: NodeGroupModel = {
   key: 'rack-1',
-  nodes: [nodeWith('node-a'), nodeWith('node-b')],
+  nodes: [mkNode('node-a'), mkNode('node-b')],
   assumed: false,
 };
 
 describe('NodeGroup', () => {
   it('draws a rack frame of sleds when layout is rack', () => {
-    render(
-      <NodeGroup
-        group={group}
-        stateDisplay={display}
-        valueDisplay={display}
-        colorMode="state"
-        hrefFor={noLink}
-        options={{ ...DEFAULT_OPTIONS, layout: 'rack' }}
-      />
-    );
+    renderGroup(group, { ...DEFAULT_OPTIONS, layout: 'rack' });
 
     expect(screen.getByTestId('node-group-rack-1')).toHaveAttribute('data-layout', 'rack');
     const rack = screen.getByTestId('rack-frame');
@@ -66,16 +76,7 @@ describe('NodeGroup', () => {
   });
 
   it('lays cells out in a wrapping row, with no rack frame, when layout is wrap', () => {
-    render(
-      <NodeGroup
-        group={group}
-        stateDisplay={display}
-        valueDisplay={display}
-        colorMode="state"
-        hrefFor={noLink}
-        options={{ ...DEFAULT_OPTIONS, layout: 'wrap' }}
-      />
-    );
+    renderGroup(group, { ...DEFAULT_OPTIONS, layout: 'wrap' });
 
     expect(screen.getByTestId('node-group-rack-1')).toHaveAttribute('data-layout', 'wrap');
     expect(screen.queryByTestId('rack-frame')).not.toBeInTheDocument();
@@ -88,16 +89,7 @@ describe('NodeGroup', () => {
     const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
     const hrefFor = (node: SlurmNode) => `/d/some-dash?var-node=${node.name}`;
 
-    render(
-      <NodeGroup
-        group={group}
-        stateDisplay={display}
-        valueDisplay={display}
-        colorMode="state"
-        hrefFor={hrefFor}
-        options={{ ...DEFAULT_OPTIONS, layout: 'wrap' }}
-      />
-    );
+    renderGroup(group, { ...DEFAULT_OPTIONS, layout: 'wrap' }, { hrefFor });
 
     screen.getByTestId('node-cell-node-a').click();
     expect(openSpy).toHaveBeenCalledWith('/d/some-dash?var-node=node-a', '_self');
