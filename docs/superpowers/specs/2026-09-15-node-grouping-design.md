@@ -231,8 +231,12 @@ agrees across every series for that node — **minus** four exclusions:
 - the node label itself, which has a distinct value per node;
 - the state label, which changes between scrapes: that is a measurement, not a
   topology;
-- any label whose distinct-value count equals the node count — an identity in
-  disguise, not a group;
+- any label whose distinct-value count equals the number of nodes it *reaches* —
+  an identity in disguise, not a group. The comparison is against the nodes
+  carrying the label, not against the whole model, because `slurm_exporter`
+  ships a label only some nodes carry: `reason` lands on drained nodes alone,
+  so three distinct reasons among 240 nodes would otherwise read as a grouping
+  worth adopting;
 - any label with a single distinct value, such as `cluster="prod"`. It would
   cover every node and put them all in one group, so it would win the coverage
   comparison while being useless advice.
