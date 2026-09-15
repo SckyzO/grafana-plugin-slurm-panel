@@ -1,4 +1,5 @@
 import { buildGroups } from '../src/group/build.js';
+import { UNGROUPED } from '../src/group/keys.js';
 import type { SlurmNode } from '../src/model/types.js';
 
 const node = (name: string, partitions: string[] = [], labels: Record<string, string> = {}): SlurmNode => ({
@@ -62,5 +63,57 @@ describe('buildGroups', () => {
     expect(buildGroups([], { kind: 'none' })).toEqual({
       groups: [], nodeCount: 0, slotCount: 0, duplicated: false,
     });
+  });
+});
+
+describe('declared order', () => {
+  const rackNode = (name: string, rack: string): SlurmNode => ({
+    name, state: 'idle', partitions: [], labels: { rack }, facets: { gres: [] },
+  });
+
+  const source = { kind: 'label', label: 'rack' } as const;
+
+  it('emits declared groups in the order they were declared, not alphabetically', () => {
+    // A machine room floor is not in alphabetical order, and the table is the
+    // only place the operator can say what order it is in.
+    const nodes = [rackNode('c1', 'zulu'), rackNode('c2', 'alpha')];
+    const model = buildGroups(nodes, source, { order: ['zulu', 'alpha'] });
+    expect(model.groups.map((g) => g.key)).toEqual(['zulu', 'alpha']);
+  });
+
+  it('emits a declared group that matched no node, empty, in its declared place', () => {
+    const nodes = [rackNode('c1', 'rack1'), rackNode('c2', 'rack3')];
+    const model = buildGroups(nodes, source, { order: ['rack1', 'rack2', 'rack3'] });
+    expect(model.groups.map((g) => g.key)).toEqual(['rack1', 'rack2', 'rack3']);
+    expect(model.groups[1]!.nodes).toEqual([]);
+  });
+
+  it('does not count an empty group as nodes or as cells', () => {
+    const nodes = [rackNode('c1', 'rack1')];
+    const model = buildGroups(nodes, source, { order: ['rack1', 'rack2'] });
+    expect(model.nodeCount).toBe(1);
+    expect(model.slotCount).toBe(1);
+  });
+
+  it('sorts an undeclared group naturally, after every declared one', () => {
+    const nodes = [rackNode('c1', 'rack9'), rackNode('c2', 'aaa'), rackNode('c3', 'rack1')];
+    const model = buildGroups(nodes, source, { order: ['rack9'] });
+    expect(model.groups.map((g) => g.key)).toEqual(['rack9', 'aaa', 'rack1']);
+  });
+
+  it('keeps ungrouped last whatever the declared order says', () => {
+    const nodes = [rackNode('c1', 'rack1'), { ...rackNode('c2', ''), labels: {} }];
+    const model = buildGroups(nodes, source, { order: ['ungrouped', 'rack1'] });
+    expect(model.groups.at(-1)!.key).toBe(UNGROUPED);
+  });
+
+  it('changes nothing for a source that declares nothing', () => {
+    const nodes = [rackNode('c1', 'zulu'), rackNode('c2', 'alpha')];
+    expect(buildGroups(nodes, source).groups.map((g) => g.key)).toEqual(['alpha', 'zulu']);
+  });
+
+  it('draws no empty group when there is no data at all', () => {
+    // Nothing to say about a floor plan when no node reported anything.
+    expect(buildGroups([], source, { order: ['rack1'] }).groups).toEqual([]);
   });
 });

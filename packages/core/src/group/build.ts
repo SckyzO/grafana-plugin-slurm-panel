@@ -24,6 +24,13 @@ export interface BuildOptions {
    * partition case. The node is then drawn in each of its groups.
    */
   multiValueLabel?: boolean;
+  /**
+   * Group keys the source declared, in declaration order. Keys named here are
+   * emitted in this order and emitted even when no node matched them, so an
+   * empty rack stays visible in its place on the floor. Keys not named here
+   * keep the natural sort, after them.
+   */
+  order?: string[];
 }
 
 const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
@@ -51,6 +58,14 @@ export function buildGroups(
   const buckets = new Map<string, { nodes: SlurmNode[]; assumed: boolean }>();
   let slotCount = 0;
 
+  // Seeded before the node loop so a declared group that matched nothing is
+  // still emitted: an empty rack is information, not an absence.
+  for (const key of opts.order ?? []) {
+    if (!buckets.has(key)) {
+      buckets.set(key, { nodes: [], assumed: false });
+    }
+  }
+
   const place = (node: SlurmNode, key: string, assumed: boolean): void => {
     const bucket = buckets.get(key) ?? { nodes: [], assumed: false };
     bucket.nodes.push(node);
@@ -73,12 +88,21 @@ export function buildGroups(
     place(node, key, assumed);
   }
 
+  const rank = new Map((opts.order ?? []).map((key, i): [string, number] => [key, i]));
+
   const groups: NodeGroup[] = [...buckets.entries()]
     .map(([key, bucket]) => ({ key, nodes: [...bucket.nodes].sort(compareNodes), assumed: bucket.assumed }))
     .sort((a, b) => {
-      // "ungrouped" is a fallback, not a rack; it belongs last.
+      // "ungrouped" is a fallback, not a rack; it belongs last even when a
+      // table happens to declare a group by that name.
       if (a.key === UNGROUPED) { return b.key === UNGROUPED ? 0 : 1; }
       if (b.key === UNGROUPED) { return -1; }
+      const ra = rank.get(a.key);
+      const rb = rank.get(b.key);
+      if (ra !== undefined && rb !== undefined) { return ra - rb; }
+      // A declared group outranks one that was merely discovered.
+      if (ra !== undefined) { return -1; }
+      if (rb !== undefined) { return 1; }
       return collator.compare(a.key, b.key);
     });
 
