@@ -221,6 +221,25 @@ test.describe('the options editor', () => {
   });
 });
 
+test.describe('the primary overview dashboard groups by the rack it now has', () => {
+  test('renders a named rack group and leaves nothing ungrouped', async ({
+    gotoDashboardPage,
+    readProvisionedDashboard,
+    page,
+  }) => {
+    // Regression coverage for a stale capture pattern ('^(r\\d+)') that once
+    // matched rack-encoded synthetic node names and matches nothing now that
+    // names are flat (c1..c160, g1..g80): every node on this dashboard's one
+    // panel rendered as ungrouped until the grouping was switched to the
+    // relabelled `rack` label.
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-grid.json' });
+    await gotoDashboardPage(dashboard);
+
+    await expect(page.getByTestId('node-group-rack1')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('node-group-ungrouped')).toHaveCount(0);
+  });
+});
+
 test.describe('the three ways to get a topology, proven against the same live data', () => {
   const groups = ['rack1', 'rack2', 'gpu1'];
 

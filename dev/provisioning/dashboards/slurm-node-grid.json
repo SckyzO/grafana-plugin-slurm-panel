@@ -6,7 +6,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 5,
+  "version": 6,
   "refresh": "30s",
   "time": {
     "from": "now-5m",
@@ -16,7 +16,7 @@
     {
       "id": 1,
       "type": "tomzone-slurmnodegrid-panel",
-      "title": "Nodes, grouped by the rack in their name",
+      "title": "Nodes, grouped by rack",
       "gridPos": {
         "h": 14,
         "w": 24,
@@ -82,8 +82,8 @@
           "drainSince": "G"
         },
         "grouping": {
-          "kind": "capture",
-          "pattern": "^(r\\d+)"
+          "kind": "label",
+          "label": "rack"
         },
         "multiValueLabel": false,
         "layout": "rack",
@@ -96,7 +96,7 @@
         "defaults": {},
         "overrides": []
       },
-      "description": "slurm_exporter publishes node, status and partition, and nothing else that describes where a node sits: it reads sinfo, and sinfo has no concept of a rack. The only structure available is the one encoded in the node name, so the grouping is a capture \u2014 '^(r\\\\d+)' here, '^([a-z]+)' on a cluster named c1..c10 / g1..g10. Grouping by a label works only if you put that label there yourself, through Prometheus relabelling or an inventory join."
+      "description": "slurm_exporter publishes node, status and partition, and nothing that describes where a node sits: it reads sinfo, and sinfo has no concept of a rack. This dashboard's rack label does not come from the exporter or from the node name \u2014 dev/relabel/racks.txt is turned into Prometheus relabelling by make scrape, and Grouping > Group by > Label reads that label directly. Point this panel at a Prometheus without that relabelling and there is no rack label to read; the fallback is then a capture on the node name, a join against an inventory, or a range table."
     }
   ]
 }
