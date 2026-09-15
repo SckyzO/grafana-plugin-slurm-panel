@@ -256,7 +256,7 @@ behaviour:
 | relabelling done, grouping by that label | active source covers as much — silent |
 | `ranges` with a complete table | silent, even though a label exists |
 | `ranges`, 12 orphans, a label covers them | **speaks** |
-| `chunk`, which invents, while a label exists | **speaks** |
+| `chunk`, while a label exists | silent (chunking places every node whose name ends in a digit, which on a real cluster is all of them, so it rarely covers less than a label would) |
 
 This is the strip's existing philosophy: the panel speaks when it is unsure and
 stays quiet when it is not.
