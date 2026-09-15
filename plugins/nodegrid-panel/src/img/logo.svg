@@ -1,31 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Slurm Node Grid">
   <title>Slurm Node Grid</title>
   <!--
-    Three cabinets, three sleds each, one of them alive.
+    Sixteen nodes, coloured the way the panel colours them.
 
-    Drawn for 16px first, which is the size the plugin catalogue actually
-    lists it at: nine marks, none thinner than a tenth of the canvas, no
-    gradient and no hairline. Mid-tone colours on purpose so it holds on both
-    the light and the dark Grafana surface without a second file — the
-    plugin.json logo entry points small and large at this one image.
+    Drawn for 16px first, which is the size the plugin catalogue lists it at:
+    no outline, no gradient, no hairline — all of which close up and turn to
+    mud at that size. Sixteen flat cells stay legible as texture.
+
+    The mix is the exporter's own `production` profile rather than a pretty
+    spread: mostly allocated, some mixed, a little idle, one drained and one
+    down. A logo full of grey would say the cluster is empty, and a logo full
+    of red would say it is broken.
+
+    Colours are the panel's state palette. Mid-tone throughout, so one file
+    holds on both the light and the dark Grafana surface — which is what lets
+    plugin.json point small and large at the same image.
   -->
-  <g fill="#6e7a8a">
-    <rect x="4"  y="12" width="16" height="9" rx="1.5"/>
-    <rect x="4"  y="27" width="16" height="9" rx="1.5"/>
-    <rect x="4"  y="42" width="16" height="9" rx="1.5"/>
-
-    <rect x="24" y="12" width="16" height="9" rx="1.5"/>
-    <rect x="24" y="42" width="16" height="9" rx="1.5"/>
-
-    <rect x="44" y="12" width="16" height="9" rx="1.5"/>
-    <rect x="44" y="27" width="16" height="9" rx="1.5"/>
-    <rect x="44" y="42" width="16" height="9" rx="1.5"/>
+  <g>
+    <!-- row 1 -->
+    <rect x="2"  y="2"  width="12" height="12" rx="1.5" fill="#3274d9"/>
+    <rect x="18" y="2"  width="12" height="12" rx="1.5" fill="#3274d9"/>
+    <rect x="34" y="2"  width="12" height="12" rx="1.5" fill="#5794f2"/>
+    <rect x="50" y="2"  width="12" height="12" rx="1.5" fill="#3274d9"/>
+    <!-- row 2 -->
+    <rect x="2"  y="18" width="12" height="12" rx="1.5" fill="#3274d9"/>
+    <rect x="18" y="18" width="12" height="12" rx="1.5" fill="#56a64b"/>
+    <rect x="34" y="18" width="12" height="12" rx="1.5" fill="#3274d9"/>
+    <rect x="50" y="18" width="12" height="12" rx="1.5" fill="#5794f2"/>
+    <!-- row 3 -->
+    <rect x="2"  y="34" width="12" height="12" rx="1.5" fill="#3274d9"/>
+    <rect x="18" y="34" width="12" height="12" rx="1.5" fill="#3274d9"/>
+    <rect x="34" y="34" width="12" height="12" rx="1.5" fill="#e02f44"/>
+    <rect x="50" y="34" width="12" height="12" rx="1.5" fill="#56a64b"/>
+    <!-- row 4 -->
+    <rect x="2"  y="50" width="12" height="12" rx="1.5" fill="#5794f2"/>
+    <rect x="18" y="50" width="12" height="12" rx="1.5" fill="#3274d9"/>
+    <rect x="34" y="50" width="12" height="12" rx="1.5" fill="#f2cc0c"/>
+    <rect x="50" y="50" width="12" height="12" rx="1.5" fill="#3274d9"/>
   </g>
-
-  <!--
-    The one node carrying a state. It sits in the middle cabinet and in the
-    middle row so it reads as "one cell among many" rather than as a corner
-    accent, which is the whole claim of the panel.
-  -->
-  <rect x="24" y="27" width="16" height="9" rx="1.5" fill="#56a64b"/>
 </svg>
