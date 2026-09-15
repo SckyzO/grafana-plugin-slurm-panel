@@ -17,9 +17,10 @@ const getStyles = (theme: GrafanaTheme2) => ({
   name: css({ fontFamily: theme.typography.fontFamilyMonospace, color: theme.colors.text.primary }),
   count: css({ color: theme.colors.text.secondary }),
   assumed: css({ color: theme.colors.warning.text, fontStyle: 'italic' }),
+  unplaced: css({ color: theme.colors.error.text, fontStyle: 'italic' }),
 });
 
-export function GroupHeader({ group }: { group: NodeGroupModel }) {
+export function GroupHeader({ group, unplaced }: { group: NodeGroupModel; unplaced: boolean }) {
   const theme = useTheme2();
   const styles = getStyles(theme);
   return (
@@ -29,6 +30,9 @@ export function GroupHeader({ group }: { group: NodeGroupModel }) {
       {/* Chunking invents structure. The claim stays visible in the panel,
           not only in the editor. */}
       {group.assumed && <span className={styles.assumed}>assumed</span>}
+      {/* A different admission, and so a different word: `assumed` means the
+          group was invented, `unplaced` means these nodes found no group. */}
+      {unplaced && <span className={styles.unplaced}>unplaced</span>}
     </div>
   );
 }

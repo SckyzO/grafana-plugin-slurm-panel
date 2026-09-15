@@ -14,7 +14,7 @@ import { rackWidthFor } from './rackGeometry';
 describe('RackFrame', () => {
   it('stacks slots bottom-up, gives the cabinet a heavier foot, and sizes it from the cell size', () => {
     render(
-      <RackFrame cellSize={14}>
+      <RackFrame cellWidth={14}>
         <button type="button">slot</button>
       </RackFrame>
     );
@@ -28,7 +28,7 @@ describe('RackFrame', () => {
 
   it('tracks a different cell size, rather than a value fixed at build time', () => {
     render(
-      <RackFrame cellSize={20}>
+      <RackFrame cellWidth={20}>
         <button type="button">slot</button>
       </RackFrame>
     );

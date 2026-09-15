@@ -4,7 +4,7 @@ import type { GrafanaTheme2 } from '@grafana/data';
 import { useTheme2 } from '@grafana/ui';
 import { rackWidthFor } from './rackGeometry';
 
-const getStyles = (theme: GrafanaTheme2, width: number) => ({
+const getStyles = (theme: GrafanaTheme2, width: number, dashed: boolean) => ({
   // column-reverse so slot 1 sits at the bottom, the way a rack is read.
   rack: css({
     display: 'flex',
@@ -13,22 +13,27 @@ const getStyles = (theme: GrafanaTheme2, width: number) => ({
     width,
     gap: 2,
     padding: theme.spacing(0.5),
-    // A cabinet frame, heavier at the foot.
-    border: `1px solid ${theme.colors.border.medium}`,
-    borderBottomWidth: 3,
+    minHeight: theme.spacing(3),
+    // A cabinet frame, heavier at the foot, unless the panel could not resolve
+    // what belongs in it: it refuses to draw a solid cabinet around a claim it
+    // did not resolve.
+    border: `1px ${dashed ? 'dashed' : 'solid'} ${theme.colors.border.medium}`,
+    borderBottomWidth: dashed ? 1 : 3,
   }),
 });
 
 export interface RackFrameProps {
   children: React.ReactNode;
-  cellSize: number;
+  /** The cell width the cabinet is sized from. */
+  cellWidth: number;
+  dashed?: boolean;
 }
 
-export function RackFrame({ children, cellSize }: RackFrameProps) {
+export function RackFrame({ children, cellWidth, dashed = false }: RackFrameProps) {
   const theme = useTheme2();
-  const styles = getStyles(theme, rackWidthFor(cellSize));
+  const styles = getStyles(theme, rackWidthFor(cellWidth), dashed);
   return (
-    <div className={styles.rack} data-testid="rack-frame">
+    <div className={styles.rack} data-testid="rack-frame" data-dashed={dashed}>
       {children}
     </div>
   );

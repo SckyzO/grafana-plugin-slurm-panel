@@ -97,3 +97,35 @@ describe('NodeGroup', () => {
     openSpy.mockRestore();
   });
 });
+
+describe('groups the panel could not resolve', () => {
+  const ungrouped = { key: 'ungrouped', nodes: [mkNode('c1')], assumed: false };
+  const empty = { key: 'rack7', nodes: [], assumed: false };
+  const ranges = { kind: 'ranges', table: 'rack7: c[99-99]' } as const;
+
+  it('marks an ungrouped group as unplaced when a source was chosen', () => {
+    renderGroup(ungrouped, { ...DEFAULT_OPTIONS, grouping: ranges });
+    expect(screen.getByTestId('node-group-ungrouped')).toHaveAttribute('data-unplaced', 'true');
+    expect(screen.getByText('unplaced')).toBeInTheDocument();
+  });
+
+  it('does not mark it when grouping is switched off', () => {
+    // Everything is ungrouped on purpose; admitting to it would be noise.
+    renderGroup(ungrouped, { ...DEFAULT_OPTIONS, grouping: { kind: 'none' } });
+    expect(screen.getByTestId('node-group-ungrouped')).toHaveAttribute('data-unplaced', 'false');
+    expect(screen.queryByText('unplaced')).not.toBeInTheDocument();
+  });
+
+  it('keeps unplaced distinct from assumed, because they admit different things', () => {
+    renderGroup({ key: 'chunk 1', nodes: [mkNode('c1')], assumed: true }, DEFAULT_OPTIONS);
+    expect(screen.getByText('assumed')).toBeInTheDocument();
+    expect(screen.queryByText('unplaced')).not.toBeInTheDocument();
+  });
+
+  it('draws a declared group that matched no node, rather than dropping it', () => {
+    renderGroup(empty, { ...DEFAULT_OPTIONS, grouping: ranges });
+    const group = screen.getByTestId('node-group-rack7');
+    expect(group).toHaveAttribute('data-empty', 'true');
+    expect(screen.getByText('0 nodes')).toBeInTheDocument();
+  });
+});
