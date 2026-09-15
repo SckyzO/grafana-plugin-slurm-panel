@@ -13,3 +13,5 @@ export { parseRangeTable } from './group/ranges.js';
 export type { RangeTable, RangeGroup, RangeProblem } from './group/ranges.js';
 export { buildGroups } from './group/build.js';
 export type { NodeGroup, GroupedModel, BuildOptions } from './group/build.js';
+export { suggestLabel } from './group/coverage.js';
+export type { CoverageInput, CoverageSuggestion } from './group/coverage.js';
