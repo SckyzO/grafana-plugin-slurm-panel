@@ -91,7 +91,9 @@ export function makeKeyFn(source: KeySource): (node: SlurmNode) => KeyResult {
  * reading nodes, so it can neither choose their order nor name one that turned
  * out to be empty — and rack order on a machine room floor is not alphabetical.
  *
- * This parses the table a second time, and that is deliberate: it is a pure
+ * This parses the table again — a render calls it here, once more inside
+ * `buildGroups`'s own key function, and once more for the table the warning
+ * strip reads, three parses in total — and that is deliberate: it is a pure
  * function over a string of at most a few kilobytes, and caching it would put
  * mutable module state into a package whose whole value is being pure.
  */

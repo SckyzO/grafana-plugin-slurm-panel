@@ -1,6 +1,6 @@
 import { collectUnmapped, summarise, ruleFor, groupingNotes } from './warnings';
 import type { DisplayProcessor } from '@grafana/data';
-import { parseRangeTable, UNGROUPED } from '@slurm-views/core';
+import { buildGroups, parseRangeTable, UNGROUPED } from '@slurm-views/core';
 import type { GroupedModel, SlurmNode } from '@slurm-views/core';
 import type { GroupingNotes } from './warnings';
 
@@ -304,5 +304,30 @@ describe('groupingNotes', () => {
     });
     expect(notes.problems).toEqual([]);
     expect(notes.emptyGroups).toEqual([]);
+  });
+
+  it('stays quiet about coverage when the multi-value partition fan-out placed every node', () => {
+    // buildGroups does not run every node through the key function: the
+    // fan-out for a multi-value label places nodes straight from
+    // node.partitions. A coverage check that re-derived "how many did the
+    // active source place" with makeKeyFn over `label: partition` found
+    // nothing placed — node.labels never carries `partition` — and
+    // recommended `rack` even though the panel had already drawn every node.
+    // This model reproduces that fan-out through buildGroups itself, not by
+    // hand-asserting the count.
+    const withRackAndPartitions = (name: string, rack: string): SlurmNode => ({
+      name, state: 'idle', partitions: ['cpu', 'debug'], labels: { rack }, facets: { gres: [] },
+    });
+    const nodes = [
+      withRackAndPartitions('c1', 'r1'), withRackAndPartitions('c2', 'r1'),
+      withRackAndPartitions('c3', 'r2'), withRackAndPartitions('c4', 'r2'),
+      withRackAndPartitions('c5', 'r3'), withRackAndPartitions('c6', 'r3'),
+    ];
+    const source = { kind: 'label', label: 'partition' } as const;
+    const model = buildGroups(nodes, source, { multiValueLabel: true });
+
+    const notes = groupingNotes({ model, nodes, source, ...args });
+    expect(notes.orphans).toEqual([]);
+    expect(notes.suggestion).toBeUndefined();
   });
 });

@@ -1,4 +1,3 @@
-import { makeKeyFn, UNGROUPED } from './keys.js';
 import type { KeySource } from './keys.js';
 import type { SlurmNode } from '../model/types.js';
 
@@ -13,6 +12,15 @@ export interface CoverageSuggestion {
 export interface CoverageInput {
   nodes: SlurmNode[];
   source: KeySource;
+  /**
+   * Nodes the active source actually placed, read off the built model rather
+   * than recomputed. buildGroups does not place every node through the key
+   * function — the multi-value partition fan-out places from node.partitions —
+   * so re-running the key function here answered a different question than the
+   * one the panel drew, and the signal spoke about a panel that had grouped
+   * everything.
+   */
+  placed: number;
   /** The panel's configured node label. Excluded: one group per node. */
   nodeLabel: string;
   /** The panel's configured state label. Excluded: it changes between scrapes. */
@@ -32,14 +40,11 @@ export interface CoverageInput {
  * the scrape would change a panel's behaviour with nothing in its JSON to
  * explain it.
  */
-export function suggestLabel({ nodes, source, nodeLabel, stateLabel }: CoverageInput): CoverageSuggestion | undefined {
+export function suggestLabel({ nodes, source, placed, nodeLabel, stateLabel }: CoverageInput): CoverageSuggestion | undefined {
   // `none` is a choice, not a failure to group.
   if (source.kind === 'none' || nodes.length === 0) {
     return undefined;
   }
-
-  const keyFn = makeKeyFn(source);
-  const active = nodes.filter((node) => keyFn(node).key !== UNGROUPED).length;
 
   const counts = new Map<string, Map<string, number>>();
   for (const node of nodes) {
@@ -69,7 +74,7 @@ export function suggestLabel({ nodes, source, nodeLabel, stateLabel }: CoverageI
     if (distinct === covered || distinct < 2) {
       continue;
     }
-    if (covered <= active) {
+    if (covered <= placed) {
       continue;
     }
     if (best === undefined || covered > best.covered) {

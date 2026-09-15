@@ -136,14 +136,19 @@ export function groupingNotes({
   stateLabel,
 }: GroupingNotesInput): GroupingNotes {
   const claimed = new Map((table?.groups ?? []).map((g) => [g.name, g.members]));
+  const orphans = model.groups.find((g) => g.key === UNGROUPED)?.nodes.map((n) => n.name) ?? [];
   return {
     source,
-    orphans: model.groups.find((g) => g.key === UNGROUPED)?.nodes.map((n) => n.name) ?? [],
+    orphans,
     emptyGroups: model.groups
       .filter((g) => g.nodes.length === 0)
       .map((g) => ({ name: g.key, members: claimed.get(g.key) ?? [] })),
     problems: (table?.problems ?? []).map((p) => p.detail),
-    suggestion: suggestLabel({ nodes, source, nodeLabel, stateLabel }),
+    // Read off the built model, not re-derived with makeKeyFn: buildGroups
+    // does not place every node through the key function (the multi-value
+    // partition fan-out places from node.partitions), so re-running it here
+    // would answer a different question than the one the panel drew.
+    suggestion: suggestLabel({ nodes, source, placed: model.nodeCount - orphans.length, nodeLabel, stateLabel }),
   };
 }
 
