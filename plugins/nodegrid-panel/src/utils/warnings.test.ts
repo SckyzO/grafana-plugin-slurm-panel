@@ -1,6 +1,7 @@
-import { collectUnmapped, summarise, ruleFor } from './unmapped';
+import { collectUnmapped, summarise, ruleFor } from './warnings';
 import type { DisplayProcessor } from '@grafana/data';
 import type { GroupedModel, SlurmNode } from '@slurm-views/core';
+import type { GroupingNotes } from './warnings';
 
 const node = (name: string, state: string): SlurmNode => ({
   name, state, partitions: [], labels: {}, facets: { gres: [] },
@@ -44,20 +45,20 @@ describe('summarise', () => {
   });
 
   it('reports both counts when grouping duplicated nodes', () => {
-    expect(summarise(model(20, 25), [], [], 3000)).toContain('20 nodes drawn in 25 slots');
+    expect(summarise(model(20, 25), [], [], notes())).toContain('20 nodes drawn in 25 slots');
   });
 
   it('says nothing about counts when they agree', () => {
-    expect(summarise(model(20, 20), [], [], 3000)).toEqual([]);
+    expect(summarise(model(20, 20), [], [], notes())).toEqual([]);
   });
 
   it('names an unmapped state rather than only counting it', () => {
-    expect(summarise(model(2, 2), [], ['perfctrs'], 3000))
+    expect(summarise(model(2, 2), [], ['perfctrs'], notes()))
       .toContain('1 state matched no value mapping: perfctrs');
   });
 
   it('pluralises several unmapped states', () => {
-    expect(summarise(model(2, 2), [], ['blocked', 'perfctrs'], 3000))
+    expect(summarise(model(2, 2), [], ['blocked', 'perfctrs'], notes()))
       .toContain('2 states matched no value mapping: blocked, perfctrs');
   });
 
@@ -68,7 +69,7 @@ describe('summarise', () => {
       model(5, 5),
       [],
       ['blocked', 'blocked!', 'blocked#', 'blocked%', 'blocked-'],
-      3000
+      notes()
     )[0];
     expect(line).toContain('1 state matched no value mapping: blocked');
     expect(line).toContain('(5 with flags)');
@@ -76,39 +77,39 @@ describe('summarise', () => {
   });
 
   it('does not mention flag variants when there are none', () => {
-    expect(summarise(model(2, 2), [], ['blocked', 'zzz'], 3000)[0]).not.toContain('with flags');
+    expect(summarise(model(2, 2), [], ['blocked', 'zzz'], notes())[0]).not.toContain('with flags');
   });
 
   it('does not mistake a state that merely ends in a flag character for a flagged one', () => {
     // Guard against stripping a character off a one-character state and
     // reporting an empty name.
-    expect(summarise(model(1, 1), [], ['-'], 3000)[0]).toContain('1 state matched no value mapping: -');
+    expect(summarise(model(1, 1), [], ['-'], notes())[0]).toContain('1 state matched no value mapping: -');
   });
 
   it('caps the named list and says how many it held back', () => {
     // The panel clips its overflow, so an unbounded list eats the grid.
     const many = Array.from({ length: 12 }, (_, i) => `state${i}`);
-    const line = summarise(model(2, 2), [], many, 3000)[0];
+    const line = summarise(model(2, 2), [], many, notes())[0];
     expect(line).toContain('12 states matched no value mapping:');
     expect(line).toContain('and 4 more');
     expect(line).not.toContain('state8');
   });
 
   it('prints a rule that can be pasted, for the state it just named', () => {
-    const lines = summarise(model(1, 1), [], ['blocked', 'blocked!'], 3000);
+    const lines = summarise(model(1, 1), [], ['blocked', 'blocked!'], notes());
     expect(lines[0]).toContain('1 state matched no value mapping: blocked');
     expect(lines[1]).toContain('condition Regex');
     expect(lines[1]).toContain('/^blocked.*$/');
   });
 
   it('offers the rule as an example when several states need one', () => {
-    const lines = summarise(model(1, 1), [], ['blocked', 'completing'], 3000);
+    const lines = summarise(model(1, 1), [], ['blocked', 'completing'], notes());
     expect(lines[1]).toContain('one per state');
     expect(lines[1]).toContain('e.g. /^blocked.*$/');
   });
 
   it('says nothing about rules when nothing is unmapped', () => {
-    expect(summarise(model(2, 2), [], [], 3000).join(' ')).not.toContain('Value mappings');
+    expect(summarise(model(2, 2), [], [], notes()).join(' ')).not.toContain('Value mappings');
   });
 
   it('escapes a state that would otherwise be a different regex', () => {
@@ -134,16 +135,83 @@ describe('summarise', () => {
   });
 
   it('passes an ingest warning through with its refId', () => {
-    expect(summarise(model(0, 0), [{ kind: 'no-identity', refId: 'B', detail: 'no node label or column' }], [], 3000))
+    expect(summarise(model(0, 0), [{ kind: 'no-identity', refId: 'B', detail: 'no node label or column' }], [], notes()))
       .toContain('Query B skipped: no node label or column');
   });
+});
 
-  it('warns past the cell threshold and suggests a filter', () => {
-    // nodeCount and slotCount deliberately differ here: with both at 4000 the
-    // assertion below cannot tell whether the code compares slotCount or
-    // nodeCount against maxCells. slotCount (4000) exceeds it; nodeCount
-    // (2000) does not.
-    expect(summarise(model(2000, 4000), [], [], 3000))
-      .toContain('4000 cells exceeds 3000. Filter the query or split the view by region.');
+const notes = (over: Partial<GroupingNotes> = {}): GroupingNotes => ({
+  source: { kind: 'none' },
+  orphans: [],
+  emptyGroups: [],
+  problems: [],
+  ...over,
+});
+
+describe('grouping warnings', () => {
+  const model = (nodeCount: number): GroupedModel => ({
+    groups: [], nodeCount, slotCount: nodeCount, duplicated: false,
+  });
+
+  it('names orphan nodes collapsed back to hostlist syntax', () => {
+    const lines = summarise(model(3), [], [], notes({
+      source: { kind: 'ranges', table: 'rack1: c[1-2]' },
+      orphans: ['c201', 'c202', 'c203'],
+    }));
+    expect(lines).toContain('3 nodes matched no range: c[201-203]. Drawn under "ungrouped".');
+  });
+
+  it('names the cause, which differs by source', () => {
+    const line = summarise(model(1), [], [], notes({
+      source: { kind: 'label', label: 'rack' }, orphans: ['c1'],
+    }))[0];
+    expect(line).toContain('1 node carries no "rack" label');
+  });
+
+  it('says nothing about orphans when grouping is switched off', () => {
+    // Every node is ungrouped on purpose; that is the configuration chosen.
+    const lines = summarise(model(2), [], [], notes({ orphans: ['c1', 'c2'] }));
+    expect(lines.join(' ')).not.toContain('ungrouped');
+  });
+
+  it('names a declared range that matched no node', () => {
+    const lines = summarise(model(1), [], [], notes({
+      source: { kind: 'ranges', table: 'x: c[1-1]' },
+      emptyGroups: [{ name: 'rack7', members: ['c213', 'c214'] }],
+    }));
+    expect(lines).toContain('Range "rack7" matched no node: c[213-214].');
+  });
+
+  it('passes a table problem straight through', () => {
+    const lines = summarise(model(1), [], [], notes({
+      source: { kind: 'ranges', table: 'bad' },
+      problems: ['Line 2 has no "name: hostlist" separator.'],
+    }));
+    expect(lines).toContain('Line 2 has no "name: hostlist" separator.');
+  });
+
+  it('reports a better label as a measurement, not as advice', () => {
+    const lines = summarise(model(240), [], [], notes({
+      source: { kind: 'chunk', size: 40 },
+      suggestion: { label: 'rack', covered: 240, total: 240 },
+    }));
+    expect(lines).toContain('Label "rack" would group all 240. Grouping > Group by > Label.');
+  });
+
+  it('says how many when a better label does not cover everything', () => {
+    const lines = summarise(model(240), [], [], notes({
+      source: { kind: 'chunk', size: 40 },
+      suggestion: { label: 'rack', covered: 228, total: 240 },
+    }));
+    expect(lines).toContain('Label "rack" would group 228 of 240. Grouping > Group by > Label.');
+  });
+
+  it('caps a very long orphan list', () => {
+    // The strip clips its overflow, so an unbounded line eats the grid.
+    const orphans = Array.from({ length: 20 }, (_, i) => `x${i}y`);
+    const line = summarise(model(20), [], [], notes({
+      source: { kind: 'ranges', table: 'x: c[1-1]' }, orphans,
+    }))[0];
+    expect(line).toContain('and 12 more');
   });
 });

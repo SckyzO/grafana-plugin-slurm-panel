@@ -8,7 +8,7 @@ import type { SlurmNode } from '@slurm-views/core';
 import { useNodeModel } from '../hooks/useNodeModel';
 import { NodeGroup } from './NodeGroup';
 import { PanelWarnings } from './PanelWarnings';
-import { collectUnmapped, summarise } from '../utils/unmapped';
+import { collectUnmapped, summarise } from '../utils/warnings';
 import type { PanelOptions } from '../types';
 
 const getStyles = (theme: GrafanaTheme2, layout: PanelOptions['layout']) => ({
@@ -31,10 +31,10 @@ const getStyles = (theme: GrafanaTheme2, layout: PanelOptions['layout']) => ({
   empty: css({ color: theme.colors.text.secondary, padding: theme.spacing(1) }),
 });
 
-export function NodeGridPanel({ data, options, fieldConfig }: PanelProps<PanelOptions>) {
+export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: PanelProps<PanelOptions>) {
   const theme = useTheme2();
   const styles = getStyles(theme, options.layout);
-  const { model, warnings, stateField } = useNodeModel(data, options);
+  const { model, warnings, stateField, grouping } = useNodeModel(data, options, replaceVariables);
 
   // Colour is never chosen here. The state string goes through the field
   // config's value mappings and comes back with a theme colour attached.
@@ -82,8 +82,8 @@ export function NodeGridPanel({ data, options, fieldConfig }: PanelProps<PanelOp
     [model.groups, stateDisplay]
   );
   const lines = useMemo(
-    () => summarise(model, warnings, unmapped, options.maxCells),
-    [model, warnings, unmapped, options.maxCells]
+    () => summarise(model, warnings, unmapped, grouping),
+    [model, warnings, unmapped, grouping]
   );
 
   if (model.groups.length === 0) {

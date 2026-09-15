@@ -1,5 +1,6 @@
 import type { DisplayProcessor } from '@grafana/data';
-import type { GroupedModel, IngestWarning, SlurmNode } from '@slurm-views/core';
+import { collapseHostlist, UNGROUPED } from '@slurm-views/core';
+import type { CoverageSuggestion, GroupedModel, IngestWarning, KeySource, SlurmNode } from '@slurm-views/core';
 
 /**
  * A state matched no value mapping when `display()` falls through to the
@@ -73,11 +74,59 @@ const escapeForRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]
  */
 export const ruleFor = (state: string): string => `/^${escapeForRegex(state)}.*$/`;
 
+/**
+ * How many hostlist items to name before summarising the rest. The strip
+ * clips its overflow, so an unbounded line eats the grid it annotates.
+ */
+const HOSTLIST_ITEM_LIMIT = 8;
+
+/** Everything the grouping stage could not fully resolve. */
+export interface GroupingNotes {
+  /** How the panel grouped, so the orphan line can name the cause. */
+  source: KeySource;
+  /** Nodes the source placed nowhere. */
+  orphans: string[];
+  /** Declared groups that matched no node, and what they claimed. */
+  emptyGroups: Array<{ name: string; members: string[] }>;
+  /** Already-worded problems from the range table parser. */
+  problems: string[];
+  /** A label that would group more nodes than the active source does. */
+  suggestion?: CoverageSuggestion;
+}
+
+/** Node names as hostlist items, capped: 240 orphans must still fit on a line. */
+const listOf = (names: string[]): string => {
+  const items = collapseHostlist(names);
+  const shown = items.slice(0, HOSTLIST_ITEM_LIMIT);
+  const rest = items.length - shown.length;
+  return rest > 0 ? `${shown.join(',')} and ${rest} more` : shown.join(',');
+};
+
+/**
+ * Why these nodes have no group. The condition is identical across sources —
+ * the panel could not place them — but the cause is not, and the cause is the
+ * only part that tells the operator what to go and fix.
+ */
+const causeOf = (source: KeySource, plural: boolean): string => {
+  switch (source.kind) {
+    case 'ranges':
+      return 'matched no range';
+    case 'label':
+      return `${plural ? 'carry' : 'carries'} no "${source.label}" label`;
+    case 'capture':
+      return 'did not match the capture pattern';
+    case 'chunk':
+      return `${plural ? 'have' : 'has'} no number in ${plural ? 'their names' : 'its name'} to chunk by`;
+    default:
+      return 'could not be placed';
+  }
+};
+
 export function summarise(
   model: GroupedModel,
   warnings: IngestWarning[],
   unmapped: string[],
-  maxCells: number
+  grouping: GroupingNotes
 ): string[] {
   const lines: string[] = [];
 
@@ -124,10 +173,30 @@ export function summarise(
     );
   }
 
-  if (model.slotCount > maxCells) {
-    // Render what we have and say the view needs splitting, rather than
-    // refusing or silently truncating.
-    lines.push(`${model.slotCount} cells exceeds ${maxCells}. Filter the query or split the view by region.`);
+  // `none` puts every node in `ungrouped` deliberately. Warning about it would
+  // be warning about the configuration the operator chose.
+  if (grouping.source.kind !== 'none' && grouping.orphans.length > 0) {
+    const n = grouping.orphans.length;
+    lines.push(
+      `${n} ${n === 1 ? 'node' : 'nodes'} ${causeOf(grouping.source, n !== 1)}: ${listOf(grouping.orphans)}. Drawn under "${UNGROUPED}".`
+    );
+  }
+
+  // The opposite problem: a box with no nodes rather than nodes with no box.
+  // A cluster mid-recabling shows both, and they must read separately.
+  for (const group of grouping.emptyGroups) {
+    lines.push(`Range "${group.name}" matched no node: ${listOf(group.members)}.`);
+  }
+
+  lines.push(...grouping.problems);
+
+  if (grouping.suggestion !== undefined) {
+    const { label, covered, total } = grouping.suggestion;
+    lines.push(
+      covered === total
+        ? `Label "${label}" would group all ${total}. Grouping > Group by > Label.`
+        : `Label "${label}" would group ${covered} of ${total}. Grouping > Group by > Label.`
+    );
   }
 
   return lines;

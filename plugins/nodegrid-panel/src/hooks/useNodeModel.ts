@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { FieldType } from '@grafana/data';
-import type { DataFrame, Field, PanelData } from '@grafana/data';
-import { buildGroups, ingest } from '@slurm-views/core';
-import type { GroupedModel, IngestWarning, MinimalFrame } from '@slurm-views/core';
+import type { DataFrame, Field, InterpolateFunction, PanelData } from '@grafana/data';
+import { buildGroups, declaredKeys, ingest, parseRangeTable, suggestLabel, UNGROUPED } from '@slurm-views/core';
+import type { GroupedModel, IngestWarning, KeySource, MinimalFrame } from '@slurm-views/core';
+import type { GroupingNotes } from '../utils/warnings';
 import type { PanelOptions } from '../types';
 
 /** DataFrame -> the structural shape core accepts, without core importing Grafana. */
@@ -21,19 +22,55 @@ export interface NodeModel {
   warnings: IngestWarning[];
   /** The field the state colour is resolved against. */
   stateField: Field | undefined;
+  grouping: GroupingNotes;
 }
 
-export function useNodeModel(data: PanelData, options: PanelOptions): NodeModel {
+export function useNodeModel(
+  data: PanelData,
+  options: PanelOptions,
+  replaceVariables: InterpolateFunction
+): NodeModel {
   return useMemo(() => {
     const frames = data.series.map(toMinimal);
     const { nodes, warnings } = ingest({ frames, slots: options.slots, labels: options.labels });
-    const model = buildGroups(nodes, options.grouping, { multiValueLabel: options.multiValueLabel });
+
+    // Interpolated once, here, so the key function, the declared order and the
+    // warning lines all read the same table. Grafana documents
+    // `replaceVariables` for exactly this: a user-defined template string the
+    // panel then processes.
+    const source: KeySource =
+      options.grouping.kind === 'ranges'
+        ? { kind: 'ranges', table: replaceVariables(options.grouping.table) }
+        : options.grouping;
+
+    const model = buildGroups(nodes, source, {
+      multiValueLabel: options.multiValueLabel,
+      order: declaredKeys(source),
+    });
+
+    const table = source.kind === 'ranges' ? parseRangeTable(source.table) : undefined;
+    const claimed = new Map((table?.groups ?? []).map((g) => [g.name, g.members]));
+
+    const grouping: GroupingNotes = {
+      source,
+      orphans: model.groups.find((g) => g.key === UNGROUPED)?.nodes.map((n) => n.name) ?? [],
+      emptyGroups: model.groups
+        .filter((g) => g.nodes.length === 0)
+        .map((g) => ({ name: g.key, members: claimed.get(g.key) ?? [] })),
+      problems: (table?.problems ?? []).map((p) => p.detail),
+      suggestion: suggestLabel({
+        nodes,
+        source,
+        nodeLabel: options.labels.node,
+        stateLabel: options.labels.state,
+      }),
+    };
 
     const stateFrame = data.series.find((f) => f.refId === options.slots.state);
     const stateField =
       stateFrame?.fields.find((f) => f.name === options.labels.state) ??
       stateFrame?.fields.find((f) => f.type === FieldType.string);
 
-    return { model, warnings, stateField };
-  }, [data.series, options]);
+    return { model, warnings, stateField, grouping };
+  }, [data.series, options, replaceVariables]);
 }
