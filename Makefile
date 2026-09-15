@@ -82,8 +82,16 @@ scrape: build ## Generate the Prometheus scrape config from dev/relabel/racks.tx
 	  > dev/prometheus/scrape/nodes.yml
 	@# The file is bind-mounted, so a running Prometheus sees no container
 	@# change to act on and would keep serving the previous config. A stale
-	@# fixture that looks like a panel bug is the worst kind.
-	@$(RUN) sh -c 'curl -sf -X POST http://prometheus:9090/-/reload >/dev/null 2>&1' || true
+	@# fixture that looks like a panel bug is the worst kind. Silence is right
+	@# for a cold start, which `make up` always hits (curl exit 7, connection
+	@# refused) — wrong when Prometheus is already running and rejects the
+	@# regenerated config, which stays silent identically without this check.
+	@$(RUN) sh -c '\
+	    curl -sf -X POST http://prometheus:9090/-/reload >/dev/null 2>&1; \
+	    code=$$?; \
+	    [ "$$code" -eq 0 ] || [ "$$code" -eq 7 ] || \
+	      echo "warning: Prometheus rejected the scrape config reload (curl exit $$code) - it may be serving a stale config until it does" >&2; \
+	    exit 0' || true
 
 up: scrape ## Start Grafana, Prometheus and the synthetic exporter
 	$(COMPOSE) up -d --build grafana prometheus synthetic-exporter
