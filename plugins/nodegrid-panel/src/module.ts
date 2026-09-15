@@ -115,7 +115,7 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
         id: 'grouping',
         path: 'grouping',
         name: 'Group by',
-        description: 'A label, a capture on the node name, or a chunk of its ordinal.',
+        description: 'A label, a capture on the node name, a declared range table, or a chunk of its ordinal.',
         editor: GroupingEditor,
         defaultValue: DEFAULT_OPTIONS.grouping,
         category: ['Grouping'],

@@ -1,11 +1,20 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { FieldType } from '@grafana/data';
 import type { DataFrame, RegistryItem, StandardEditorContext } from '@grafana/data';
 import type { KeySource } from '@slurm-views/core';
 import { GroupingEditor } from './GroupingEditor';
 import { DEFAULT_OPTIONS } from '../types';
 import type { PanelOptions } from '../types';
+
+// An options editor reaches the template service directly (see
+// GroupingEditor's preview memo), and jsdom never runs inside a Grafana app
+// that would call setTemplateSrv() first. Without this, getTemplateSrv()
+// returns undefined and the Ranges preview throws on `.replace`.
+jest.mock('@grafana/runtime', () => ({
+  getTemplateSrv: () => ({ replace: (value: string) => value }),
+}));
 
 // Table-format frame: one string column per label, one row per node — the
 // same shape `toSamples` reads when a query returns node/status/partition as
@@ -33,15 +42,26 @@ const contextWith = (data: DataFrame[], options: PanelOptions | undefined): Stan
   options,
 });
 
-const renderEditor = (value: KeySource, data: DataFrame[] = [tableFrame(rows)]) =>
-  render(
-    <GroupingEditor
-      value={value}
-      onChange={jest.fn()}
-      context={contextWith(data, DEFAULT_OPTIONS)}
-      item={item}
-    />
-  );
+// GroupingEditor's value/onChange are controlled: typing into the Ranges
+// textarea only accumulates across keystrokes if the harness feeds each
+// onChange back in as the next value, the way the real options form does.
+// Without this, React restores the DOM to the original `value` prop after
+// every keystroke userEvent fires.
+const renderEditor = (
+  value: KeySource,
+  onChange: (next?: KeySource) => void = jest.fn(),
+  data: DataFrame[] = [tableFrame(rows)]
+) => {
+  const context = contextWith(data, DEFAULT_OPTIONS);
+  const handleChange = (next?: KeySource) => {
+    onChange(next);
+    if (next) {
+      utils.rerender(<GroupingEditor value={next} onChange={handleChange} context={context} item={item} />);
+    }
+  };
+  const utils = render(<GroupingEditor value={value} onChange={handleChange} context={context} item={item} />);
+  return utils;
+};
 
 describe('GroupingEditor preview', () => {
   it('maps each node to its label value for a label source', () => {
@@ -75,7 +95,7 @@ describe('GroupingEditor preview', () => {
   });
 
   it('renders no preview when the query has not returned any series yet', () => {
-    renderEditor({ kind: 'label', label: 'partition' }, []);
+    renderEditor({ kind: 'label', label: 'partition' }, jest.fn(), []);
     expect(screen.queryByTestId('grouping-preview')).not.toBeInTheDocument();
   });
 
@@ -89,5 +109,31 @@ describe('GroupingEditor preview', () => {
       />
     );
     expect(screen.queryByTestId('grouping-preview')).not.toBeInTheDocument();
+  });
+});
+
+describe('the Ranges source', () => {
+  it('offers Ranges and seeds a table that shows the syntax', async () => {
+    const onChange = jest.fn();
+    renderEditor({ kind: 'none' }, onChange);
+    await userEvent.click(screen.getByText('Ranges'));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'ranges', table: expect.stringContaining(':') })
+    );
+  });
+
+  it('edits the table', async () => {
+    const onChange = jest.fn();
+    renderEditor({ kind: 'ranges', table: 'rack1: c[1-2]' }, onChange);
+    const box = screen.getByRole('textbox');
+    await userEvent.clear(box);
+    await userEvent.type(box, 'x: c1');
+    expect(onChange).toHaveBeenLastCalledWith({ kind: 'ranges', table: 'x: c1' });
+  });
+
+  it('previews the placement the table would produce', () => {
+    // The fixtures in this file name their nodes r1n01/r1n02/r2n01, not c1/c2.
+    renderEditor({ kind: 'ranges', table: 'rack1: r1n[01-02]' }, jest.fn());
+    expect(screen.getByTestId('grouping-preview')).toHaveTextContent('rack1');
   });
 });

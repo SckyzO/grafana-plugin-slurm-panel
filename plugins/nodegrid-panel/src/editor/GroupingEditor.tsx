@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { css } from '@emotion/css';
 import type { GrafanaTheme2, StandardEditorProps } from '@grafana/data';
-import { Field, Input, RadioButtonGroup, useTheme2 } from '@grafana/ui';
+import { Field, Input, RadioButtonGroup, TextArea, useTheme2 } from '@grafana/ui';
+import { getTemplateSrv } from '@grafana/runtime';
 import { ingest, makeKeyFn, UNGROUPED } from '@slurm-views/core';
 import type { KeySource, MinimalFrame } from '@slurm-views/core';
 import type { PanelOptions } from '../types';
@@ -35,6 +36,12 @@ const toMinimalFrame = (frame: Props['context']['data'][number]): MinimalFrame =
   })),
 });
 
+/**
+ * The seed table. It names its own syntax, because the first thing an operator
+ * does with a new source is look at what is already in the box.
+ */
+const SAMPLE_TABLE = '# name: hostlist - one line per group, in display order\nrack1: c[1-40]';
+
 export function GroupingEditor({ value, onChange, context }: Props) {
   const theme = useTheme2();
   const styles = getStyles(theme);
@@ -49,7 +56,12 @@ export function GroupingEditor({ value, onChange, context }: Props) {
     }
     const frames: MinimalFrame[] = context.data.map(toMinimalFrame);
     const { nodes } = ingest({ frames, slots: options.slots, labels: options.labels });
-    const keyFn = makeKeyFn(source);
+    // The panel gets `replaceVariables` on PanelProps; an options editor does
+    // not, so it asks the same service directly. Without this the preview
+    // reads "$racks" literally and claims the table matches nothing.
+    const resolved: KeySource =
+      source.kind === 'ranges' ? { kind: 'ranges', table: getTemplateSrv().replace(source.table) } : source;
+    const keyFn = makeKeyFn(resolved);
     return nodes.slice(0, 8).map((node) => ({ name: node.name, ...keyFn(node) }));
   }, [context.data, options, source]);
 
@@ -62,6 +74,7 @@ export function GroupingEditor({ value, onChange, context }: Props) {
           { value: 'label', label: 'Label' },
           { value: 'capture', label: 'Capture' },
           { value: 'chunk', label: 'Chunk' },
+          { value: 'ranges', label: 'Ranges' },
         ]}
         onChange={(kind) => {
           if (kind === 'label') {
@@ -70,6 +83,8 @@ export function GroupingEditor({ value, onChange, context }: Props) {
             onChange({ kind, pattern: '^(r\\d+)' });
           } else if (kind === 'chunk') {
             onChange({ kind, size: 40 });
+          } else if (kind === 'ranges') {
+            onChange({ kind, table: SAMPLE_TABLE });
           } else {
             onChange({ kind: 'none' });
           }
@@ -100,6 +115,19 @@ export function GroupingEditor({ value, onChange, context }: Props) {
             type="number"
             value={source.size}
             onChange={(e) => onChange({ kind: 'chunk', size: Number.parseInt(e.currentTarget.value, 10) || 0 })}
+          />
+        </Field>
+      )}
+
+      {source.kind === 'ranges' && (
+        <Field
+          label="Ranges"
+          description="One line per group: a name, a colon, then a Slurm hostlist. # comments to end of line. Line order is display order. May be a dashboard variable."
+        >
+          <TextArea
+            rows={8}
+            value={source.table}
+            onChange={(e) => onChange({ kind: 'ranges', table: e.currentTarget.value })}
           />
         </Field>
       )}
