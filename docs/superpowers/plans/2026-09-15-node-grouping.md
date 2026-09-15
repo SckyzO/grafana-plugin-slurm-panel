@@ -325,7 +325,7 @@ name collides with either.
 - [ ] **Step 4: Run the tests and watch them pass**
 
 Run: `make test`
-Expected: PASS — all 13 new tests green, nothing else broken.
+Expected: PASS — all 14 new tests green, nothing else broken.
 
 - [ ] **Step 5: Commit**
 
