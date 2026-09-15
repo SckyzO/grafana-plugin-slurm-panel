@@ -3,6 +3,16 @@ providers:
   - name: slurm-views
     folder: Slurm
     type: file
-    allowUiUpdates: true
+    # The files in this directory are the truth, deliberately.
+    #
+    # With allowUiUpdates: true, Grafana keeps its own copy in the database and
+    # lets it drift: saving a dashboard materialises every default the panel
+    # supplies into the saved JSON. A dashboard saved once froze the plugin's
+    # value mappings as they were that day, kept reporting six Slurm states as
+    # unmapped after the plugin learned them, and no longer matched the file it
+    # came from. Editing in the browser still works for the session — it just
+    # does not persist, so the way to keep a change is to export the JSON into
+    # this directory, where it can be reviewed.
+    allowUiUpdates: false
     options:
       path: /etc/grafana/provisioning/dashboards
