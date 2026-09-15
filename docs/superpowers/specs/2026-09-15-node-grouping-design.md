@@ -226,13 +226,16 @@ One pass over the nodes per render. For each candidate label, how many nodes it
 would classify; for the active source, how many it actually classified.
 
 Candidates are the labels already kept in `SlurmNode.labels` — those whose value
-agrees across every series for that node — **minus** three exclusions:
+agrees across every series for that node — **minus** four exclusions:
 
 - the node label itself, which has a distinct value per node;
 - the state label, which changes between scrapes: that is a measurement, not a
   topology;
 - any label whose distinct-value count equals the node count — an identity in
-  disguise, not a group.
+  disguise, not a group;
+- any label with a single distinct value, such as `cluster="prod"`. It would
+  cover every node and put them all in one group, so it would win the coverage
+  comparison while being useless advice.
 
 `partition` excludes itself already: the model drops it from `labels` because it
 varies per series, and models it separately as `partitions`.
@@ -341,7 +344,7 @@ Both are **optional**, and that is what keeps the change non-breaking, because
 the two layouts disagree about the natural shape of a cell:
 
 ```ts
-const width  = options.cellWidth  ?? options.cellSize ?? 14;
+const width  = options.cellWidth  ?? 14;
 const height = options.cellHeight ?? (layout === 'rack' ? sledHeightFor(width) : width);
 ```
 
@@ -352,9 +355,13 @@ const height = options.cellHeight ?? (layout === 'rack' ? sledHeightFor(width) :
 A fixed default of 14 for both would silently double the sled height in `rack`
 layout; a fixed default of 7 would flatten every cell in `wrap`. Leaving them
 unset preserves both layouts byte-for-byte for anyone who has configured
-nothing, which is the majority. `cellSize` is read as the fallback for width, so
-a dashboard carrying the old option keeps working — phase 1 of the two-phase
-rule.
+nothing, which is the majority.
+
+`cellSize` is **removed outright**, not kept as a fallback. The two-phase rule
+protects released users, and this plugin has none: it is unsigned, unpublished,
+and not merged to `main`. The only dashboards carrying `cellSize` are the four
+provisioned in `dev/`, which this slice updates in the same commit. A fallback
+for users who do not exist would be dead code under the project's own rule.
 
 `rackWidthFor` survives unchanged, deriving the cabinet frame from the width.
 `sledHeightFor` survives too, demoted from "the rule" to "the default when the
@@ -397,7 +404,6 @@ change and passes after.
 - a `$variable` in the range option is interpolated before parsing
 - with `cellWidth`/`cellHeight` unset, `wrap` still renders a square and `rack`
   still renders `sledHeightFor(width)` — the non-breaking claim, asserted
-- a dashboard carrying only the old `cellSize` renders as it did
 
 **Rung 2 verification** (a task, not an assumption):
 - the Prometheus → *Labels to fields* → *Join by field* chain produces a frame
