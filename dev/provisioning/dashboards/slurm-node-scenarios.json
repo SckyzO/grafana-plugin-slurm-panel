@@ -8,7 +8,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 5,
+  "version": 6,
   "refresh": "",
   "time": {
     "from": "now-5m",
@@ -57,7 +57,7 @@
           "label": "status"
         },
         "multiValueLabel": false,
-        "layout": "wrap",
+        "layout": "rack",
         "cellWidth": 22,
         "gap": 3,
         "shapeChannel": false,
@@ -241,7 +241,7 @@
       "id": 5,
       "type": "tomzone-slurmnodegrid-panel",
       "title": "A production cluster on an ordinary day",
-      "description": "Not staged, unlike the panels above: this one reads slurm_node_status and the CPU, GPU and drain facets from this dev cluster's live Prometheus, grouped by the rack label make scrape relabels in, against the synthetic exporter's default PROFILE=production shape — a cluster that is mostly allocated and mixed, with real idle capacity behind it, and only a sliver of drained, down, maintenance and failed nodes. This panel carries no warnings on purpose: it is what the grid looks like when nothing is wrong, so the reader can learn what normal looks like before trying to spot what is not.",
+      "description": "Not staged, unlike the panels above: this one reads slurm_node_status and the CPU, GPU and drain facets from this dev cluster's live Prometheus, grouped by the rack label make scrape relabels in, against the synthetic exporter's default PROFILE=production shape \u2014 a cluster that is mostly allocated and mixed, with real idle capacity behind it, and only a sliver of drained, down, maintenance and failed nodes. This panel carries no warnings on purpose: it is what the grid looks like when nothing is wrong, so the reader can learn what normal looks like before trying to spot what is not.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
