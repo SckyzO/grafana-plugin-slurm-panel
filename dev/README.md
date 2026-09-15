@@ -64,14 +64,18 @@ states a 20-node docker cluster cannot reach — `blocked`, `perfctrs`, and all
 nine state modifiers. Shape it from whichever end you are thinking in:
 
 ```bash
-SYNTH_RACKS=4  SYNTH_NODES_PER_RACK=80 make up   # 4 racks of 80
-SYNTH_RACKS=75 SYNTH_NODES=3000        make up   # 3000 nodes over 75 racks
-SYNTH_RACKS=3  SYNTH_NODES=100         make up   # 3 racks of 34, 33, 33
+SYNTH_RACKS=4  SYNTH_NODES_PER_RACK=80 make up   # 320 nodes: RACKS * NODES_PER_RACK
+SYNTH_RACKS=75 SYNTH_NODES=3000        make up   # 3000 nodes; SYNTH_RACKS has no effect here
+SYNTH_NODES=100                        make up   # 100 nodes
 ```
 
-You get exactly `SYNTH_RACKS` racks in every case. `SYNTH_SEED` fixes which
-node lands in which state, so a screenshot or a failing e2e run reproduces
-exactly; `SYNTH_PARTITIONS` renames the partitions.
+`SYNTH_RACKS` only multiplies with `SYNTH_NODES_PER_RACK` to produce a total
+node count; set `SYNTH_NODES` directly instead and `SYNTH_RACKS` does nothing
+at all. Either way, node names carry no location — `c<n>` and `g<n>`, flat,
+counting within their own family — because the real exporter's don't.
+`SYNTH_SEED` fixes which node lands in which state, so a screenshot or a
+failing e2e run reproduces exactly; `SYNTH_PARTITIONS` renames the
+partitions.
 
 **Real** points at the `slurm_exporter` test cluster instead. Start it with
 `make -C <slurm_exporter>/scripts/testing setup`, then change the Prometheus
@@ -209,12 +213,12 @@ Written as the panel JSON actually carries it:
 ```
 
 **Rung 3 — ranges.** No label and no join: a range table typed straight into
-the panel (or, here, held in the `$racks` dashboard variable so three panels
-can share it), Grouping > Group by > Ranges. The panel resolves it as a plain
-string, so an uninterpolated `$racks` parses as one bad line and places no
-node at all rather than failing loudly — the reason the panel's own e2e test
-also asserts `ungrouped` stays empty, not only that the three named groups
-appear.
+the panel (or, here, held in the `$racks` dashboard variable, which only this
+panel references), Grouping > Group by > Ranges. The panel resolves it as a
+plain string, so an uninterpolated `$racks` parses as one bad line and places
+no node at all rather than failing loudly — the reason the panel's own e2e
+test also asserts `ungrouped` stays empty, not only that the three named
+groups appear.
 
 **The coverage signal, proven deliberately.** The panel prints a line when
 some label would place strictly more nodes than the active source does. Every
