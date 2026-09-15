@@ -35,6 +35,15 @@ describe('expandHostlist', () => {
     expect(expandHostlist('c[1-5').error).toBeDefined();
   });
 
+  it('reports an expression that names no node, rather than succeeding empty', () => {
+    // A trailing comma filters to zero items before any item is validated, so
+    // this used to return {names: []} with no error at all — a silently empty
+    // group rather than a rejected line.
+    const { names, error } = expandHostlist(',');
+    expect(names).toEqual([]);
+    expect(error).toBeDefined();
+  });
+
   it('refuses to expand past the cap instead of hanging the render', () => {
     const { names, error } = expandHostlist(`c[1-${EXPANSION_CAP + 1}]`);
     expect(names).toEqual([]);

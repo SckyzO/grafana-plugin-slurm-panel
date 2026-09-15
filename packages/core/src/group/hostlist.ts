@@ -50,8 +50,17 @@ const BOUND = /^(\d+)(?:-(\d+))?$/;
 
 export function expandHostlist(expr: string): Expansion {
   const names: string[] = [];
+  const items = splitTop(expr);
 
-  for (const item of splitTop(expr)) {
+  // A bare comma, or nothing at all, filters to zero items before any item
+  // reaches validation below. Left unchecked that is a silent empty success —
+  // a group that claims no node and raises no problem, indistinguishable from
+  // an operator who meant to leave the line blank.
+  if (items.length === 0) {
+    return { names: [], error: 'expands to no names' };
+  }
+
+  for (const item of items) {
     const parts = ITEM.exec(item);
     if (parts === null) {
       return { names: [], error: `cannot read "${item}"` };
