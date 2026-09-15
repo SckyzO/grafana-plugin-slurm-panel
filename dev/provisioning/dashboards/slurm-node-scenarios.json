@@ -1,14 +1,14 @@
 {
   "uid": "slurm-node-scenarios",
   "title": "Slurm node grid - scenarios",
-  "description": "Hand-written clusters that render the same way every time. Every panel carries its own CSV, so this dashboard needs no exporter, no Prometheus and no scrape to have happened.",
+  "description": "Hand-written clusters that render the same way every time, plus one that is not hand-written at all. The first four panels carry their own CSV, so they need no exporter, no Prometheus and no scrape to have happened; the last panel reads this dev cluster's live Prometheus on purpose, to show what a real distribution looks like next to the staged ones.",
   "tags": [
     "slurm",
     "scenarios"
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 4,
+  "version": 5,
   "refresh": "",
   "time": {
     "from": "now-5m",
@@ -228,6 +228,119 @@
         "multiValueLabel": false,
         "layout": "wrap",
         "cellWidth": 18,
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "state"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "A production cluster on an ordinary day",
+      "description": "Not staged, unlike the panels above: this one reads slurm_node_status and the CPU, GPU and drain facets from this dev cluster's live Prometheus, grouped by the rack label make scrape relabels in, against the synthetic exporter's default PROFILE=production shape — a cluster that is mostly allocated and mixed, with real idle capacity behind it, and only a sliver of drained, down, maintenance and failed nodes. This panel carries no warnings on purpose: it is what the grid looks like when nothing is wrong, so the reader can learn what normal looks like before trying to spot what is not.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "expr": "slurm_node_status",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "expr": "slurm_node_cpu_alloc",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "expr": "slurm_node_cpu_total",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "expr": "slurm_node_gres_used",
+          "instant": true
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "expr": "slurm_node_gres_total",
+          "instant": true
+        },
+        {
+          "refId": "F",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "expr": "slurm_node_drain_reason_info",
+          "instant": true
+        },
+        {
+          "refId": "G",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "expr": "time() - slurm_node_drain_since_timestamp_seconds",
+          "instant": true
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A",
+          "cpuAlloc": "B",
+          "cpuTotal": "C",
+          "gresUsed": "D",
+          "gresTotal": "E",
+          "drainReason": "F",
+          "drainSince": "G"
+        },
+        "grouping": {
+          "kind": "label",
+          "label": "rack"
+        },
+        "multiValueLabel": false,
+        "layout": "rack",
+        "cellWidth": 14,
         "gap": 2,
         "shapeChannel": false,
         "colorMode": "state"
