@@ -38,13 +38,18 @@ dev cluster's live Prometheus.
 |---|---|---|
 | Slurm node grid | Prometheus | The overview: one panel, every node, grouped by the `rack` label `make scrape` relabels in (falls back to a capture, a join or a range table on a Prometheus without that relabelling) |
 | Slurm node grid - utilisation | Prometheus | State beside CPU, memory and GPU occupancy, driven by Thresholds |
-| Slurm node grid - scenarios | CSV | Hand-written situations that render identically every time |
+| Slurm node grid - scenarios | CSV + Prometheus | Hand-written situations that render identically every time, plus one live panel showing what a real, unstaged distribution looks like |
 | Slurm node grid - grouping and layout | CSV + Prometheus | The same nodes grouped four ways on a hand-written CSV, plus the three live routes to a real topology proven against this dev cluster, plus one panel that deliberately covers less, to prove the coverage warning |
 
-The **scenarios** dashboard uses Grafana's built-in TestData source for
-every panel, so there is no exporter, no Prometheus and no scrape timing
-between the dashboard and what it shows — which is what makes a scenario
-reproducible rather than merely seeded. The first four panels of
+The **scenarios** dashboard uses Grafana's built-in TestData source for its
+first four panels, so there is no exporter, no Prometheus and no scrape
+timing between the dashboard and what those four show — which is what makes
+a scenario reproducible rather than merely seeded. Its fifth panel is the
+opposite by design: it reads this dev cluster's live Prometheus, grouped by
+rack, against the synthetic exporter's default `PROFILE=production` shape, so
+the reader can see what a real, unstaged distribution looks like next to the
+staged ones — and it is the one panel on that dashboard that carries no
+warnings, on purpose. The first four panels of
 **grouping and layout** use the same CSV and the same TestData source, for
 the same reason: a side-by-side comparison of Label, Capture, Chunk and
 None should render identically on every run, not drift with whatever the
@@ -59,14 +64,30 @@ before anything is configured.
 
 ## Two data sources
 
-**Synthetic** (default) produces any cluster shape on demand, including the
-states a 20-node docker cluster cannot reach — `blocked`, `perfctrs`, and all
-nine state modifiers. Shape it from whichever end you are thinking in:
+**Synthetic** (default) produces any cluster shape on demand. `SYNTH_PROFILE`
+picks the shape of the state *distribution* itself, independent of node
+count — three values, `production` the default:
+
+| `SYNTH_PROFILE` | What it is |
+|---|---|
+| `production` (default) | A cluster that is working: weighted mostly `allocated` and `mixed`, real idle capacity behind it, and only a sliver of `drained`, `down`, `maint` and `fail` — percentages measured against a real cluster, not invented. |
+| `incident` | The same weighted shape, except every node in `rack3` — `c81`..`c120`, the block `dev/relabel/racks.txt` names that way — is `down`, and roughly 15% of the remaining nodes are `drained` or `draining`. |
+| `showcase` | A uniform draw over every base state and every one of the nine state modifiers, including states a 20-node docker cluster would otherwise rarely reach, like `blocked` and `perfctrs`. This was the exporter's only shape before this branch; keep it for a dashboard built to show every colour the panel can paint at once. |
+
+An unrecognised value falls back to `production` and says so on the
+exporter's stderr, rather than crashing or picking something silently. Drain
+reasons are picked per node from a short list of realistic causes — a failed
+health check, a filesystem not mounted, a memory error, a thermal event, an
+administrative hold — deterministically from `SYNTH_SEED`, so a drain storm
+does not read as forty nodes sharing one copy-pasted reason.
+
+Shape the node count from whichever end you are thinking in:
 
 ```bash
 SYNTH_RACKS=4  SYNTH_NODES_PER_RACK=80 make up   # 320 nodes: RACKS * NODES_PER_RACK
 SYNTH_RACKS=75 SYNTH_NODES=3000        make up   # 3000 nodes; SYNTH_RACKS has no effect here
 SYNTH_NODES=100                        make up   # 100 nodes
+SYNTH_PROFILE=incident                 make up   # the default node count, in incident shape
 ```
 
 `SYNTH_RACKS` only multiplies with `SYNTH_NODES_PER_RACK` to produce a total
