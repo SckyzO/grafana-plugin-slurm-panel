@@ -5,7 +5,7 @@ import type { DisplayProcessor } from '@grafana/data';
 import type { NodeGroup as NodeGroupModel, SlurmNode } from '@slurm-views/core';
 import { NodeGroup } from './NodeGroup';
 import type { NodeGroupProps } from './NodeGroup';
-import { rackWidthFor } from './rackGeometry';
+import { rackWidthFor, resolveCellSize } from './rackGeometry';
 import { DEFAULT_MAPPINGS } from '../defaults/mappings';
 import { DEFAULT_OPTIONS } from '../types';
 import type { PanelOptions } from '../types';
@@ -65,9 +65,9 @@ describe('NodeGroup', () => {
     expect(screen.getByTestId('node-group-rack-1')).toHaveAttribute('data-layout', 'rack');
     const rack = screen.getByTestId('rack-frame');
     expect(rack).toBeInTheDocument();
-    // NodeGroup threads options.cellSize through to RackFrame rather than
-    // computing (or hardcoding) the rack's width itself.
-    expect(getComputedStyle(rack).width).toBe(`${rackWidthFor(DEFAULT_OPTIONS.cellSize)}px`);
+    // NodeGroup threads the resolved cell width through to RackFrame rather
+    // than computing (or hardcoding) the rack's width itself.
+    expect(getComputedStyle(rack).width).toBe(`${rackWidthFor(resolveCellSize(DEFAULT_OPTIONS).width)}px`);
 
     // A sled is wide and short, not a square: NodeCell only stretches to fill
     // the rack's width (auto) when it received sled={true}.
@@ -82,7 +82,7 @@ describe('NodeGroup', () => {
     expect(screen.queryByTestId('rack-frame')).not.toBeInTheDocument();
 
     const cell = screen.getByTestId('node-cell-node-a');
-    expect(cell.style.width).toBe(`${DEFAULT_OPTIONS.cellSize}px`);
+    expect(cell.style.width).toBe(`${resolveCellSize(DEFAULT_OPTIONS).width}px`);
   });
 
   it('resolves a click-through link per node via hrefFor', () => {

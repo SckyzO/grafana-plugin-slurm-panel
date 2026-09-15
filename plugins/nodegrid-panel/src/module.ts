@@ -66,11 +66,18 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
         category: ['Layout'],
       })
       .addSliderInput({
-        path: 'cellSize',
-        name: 'Cell size',
+        path: 'cellWidth',
+        name: 'Cell width',
         description: 'Below 10px a cell stops being a usable hover target.',
-        defaultValue: DEFAULT_OPTIONS.cellSize,
+        defaultValue: DEFAULT_OPTIONS.cellWidth,
         settings: { min: 6, max: 48, step: 1 },
+        category: ['Layout'],
+      })
+      .addNumberInput({
+        path: 'cellHeight',
+        name: 'Cell height',
+        description: 'Leave empty to derive it: a square in Wrap, a sled in Rack.',
+        settings: { placeholder: 'auto', min: 3, max: 48 },
         category: ['Layout'],
       })
       .addSliderInput({
@@ -103,13 +110,6 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
           ],
         },
         category: ['Display'],
-      })
-      .addNumberInput({
-        path: 'maxCells',
-        name: 'Cell warning threshold',
-        description: 'Past this the panel still renders, and says the view needs splitting.',
-        defaultValue: DEFAULT_OPTIONS.maxCells,
-        category: ['Layout'],
       })
       .addCustomEditor({
         id: 'grouping',

@@ -4,7 +4,6 @@ import type { DisplayProcessor, GrafanaTheme2 } from '@grafana/data';
 import { Tooltip, useTheme2 } from '@grafana/ui';
 import type { SlurmNode } from '@slurm-views/core';
 import { NodeTooltip } from './NodeTooltip';
-import { sledHeightFor } from './rackGeometry';
 import { fractionFor } from '../utils/colorMode';
 import type { ColorMode } from '../types';
 
@@ -32,7 +31,8 @@ const getStyles = (theme: GrafanaTheme2) => ({
 
 export interface NodeCellProps {
   node: SlurmNode;
-  size: number;
+  width: number;
+  height: number;
   /** Resolves the state string to text + a mapped colour. Always used for the label. */
   stateDisplay: DisplayProcessor;
   /** Resolves a 0-100 utilisation fraction to a colour, via Thresholds. */
@@ -61,7 +61,8 @@ function shapeFor(text: string): string | undefined {
 
 export function NodeCell({
   node,
-  size,
+  width,
+  height,
   stateDisplay,
   valueDisplay,
   colorMode,
@@ -109,9 +110,9 @@ export function NodeCell({
         // carries utilisation instead of state.
         aria-label={`${node.name}, ${dv.text}`}
         style={{
-          width: sled ? 'auto' : size,
+          width: sled ? 'auto' : width,
           alignSelf: sled ? 'stretch' : undefined,
-          height: sled ? sledHeightFor(size) : size,
+          height,
           background,
           clipPath: shapeChannel ? shapeFor(dv.text) : undefined,
         }}

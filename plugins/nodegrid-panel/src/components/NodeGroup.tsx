@@ -7,6 +7,7 @@ import { UNGROUPED } from '@slurm-views/core';
 import { GroupHeader } from './GroupHeader';
 import { NodeCell } from './NodeCell';
 import { RackFrame } from './RackFrame';
+import { resolveCellSize } from './rackGeometry';
 import type { ColorMode, PanelOptions } from '../types';
 
 const getStyles = (theme: GrafanaTheme2, gap: number) => ({
@@ -38,12 +39,14 @@ export function NodeGroup({ group, stateDisplay, valueDisplay, colorMode, hrefFo
   const unplaced = group.key === UNGROUPED && options.grouping.kind !== 'none';
   const empty = group.nodes.length === 0;
   const unresolved = unplaced || empty;
+  const cell = resolveCellSize(options);
 
   const cells = group.nodes.map((node) => (
     <NodeCell
       key={node.name}
       node={node}
-      size={options.cellSize}
+      width={cell.width}
+      height={cell.height}
       stateDisplay={stateDisplay}
       valueDisplay={valueDisplay}
       colorMode={colorMode}
@@ -63,7 +66,7 @@ export function NodeGroup({ group, stateDisplay, valueDisplay, colorMode, hrefFo
     >
       <GroupHeader group={group} unplaced={unplaced} />
       {options.layout === 'rack' ? (
-        <RackFrame cellWidth={options.cellSize} dashed={unresolved}>{cells}</RackFrame>
+        <RackFrame cellWidth={cell.width} dashed={unresolved}>{cells}</RackFrame>
       ) : (
         // A dashed box round what the panel did not resolve, the same idiom as
         // the hollow ring on a state with no value mapping.

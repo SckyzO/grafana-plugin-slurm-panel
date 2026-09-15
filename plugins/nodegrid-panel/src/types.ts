@@ -9,11 +9,17 @@ export interface PanelOptions {
   grouping: KeySource;
   multiValueLabel: boolean;
   layout: Layout;
-  cellSize: number;
+  /** Cell width in pixels. */
+  cellWidth: number;
+  /**
+   * Cell height in pixels. Optional on purpose: the two layouts disagree about
+   * the natural shape of a cell, so an unset height derives what that layout
+   * already drew — a square in Wrap, a sled in Rack.
+   */
+  cellHeight?: number;
   gap: number;
   shapeChannel: boolean;
   colorMode: ColorMode;
-  maxCells: number;
 }
 
 export const DEFAULT_OPTIONS: PanelOptions = {
@@ -24,9 +30,9 @@ export const DEFAULT_OPTIONS: PanelOptions = {
   layout: 'wrap',
   // 10px is the honest floor: below it a notch stops being legible and a cell
   // stops being a usable hover target.
-  cellSize: 14,
+  cellWidth: 14,
+  // cellHeight is deliberately absent. See the type.
   gap: 2,
   shapeChannel: false,
   colorMode: 'state',
-  maxCells: 3000,
 };

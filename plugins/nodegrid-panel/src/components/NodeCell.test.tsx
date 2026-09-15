@@ -39,7 +39,8 @@ describe('NodeCell', () => {
     render(
       <NodeCell
         node={nodeWith('idle')}
-        size={14}
+        width={14}
+        height={14}
         stateDisplay={displayFor('idle')}
         valueDisplay={displayFor('idle')}
         colorMode="state"
@@ -63,7 +64,8 @@ describe('NodeCell', () => {
     render(
       <NodeCell
         node={nodeWith(UNKNOWN_STATE)}
-        size={14}
+        width={14}
+        height={14}
         stateDisplay={displayFor(UNKNOWN_STATE)}
         valueDisplay={displayFor(UNKNOWN_STATE)}
         colorMode="state"
@@ -84,7 +86,8 @@ describe('NodeCell', () => {
     render(
       <NodeCell
         node={node}
-        size={14}
+        width={14}
+        height={14}
         stateDisplay={displayFor(UNKNOWN_STATE)}
         valueDisplay={displayFor(UNKNOWN_STATE)}
         colorMode="cpu"
@@ -115,7 +118,8 @@ describe('NodeCell', () => {
     const state = render(
       <NodeCell
         node={nodeWith(UNKNOWN_STATE)}
-        size={14}
+        width={14}
+        height={14}
         stateDisplay={displayFor(UNKNOWN_STATE)}
         valueDisplay={displayFor(UNKNOWN_STATE)}
         colorMode="state"
@@ -130,7 +134,8 @@ describe('NodeCell', () => {
     const filled = render(
       <NodeCell
         node={nodeWith('idle')}
-        size={14}
+        width={14}
+        height={14}
         stateDisplay={displayFor('idle')}
         valueDisplay={displayFor('idle')}
         colorMode="state"
@@ -147,7 +152,8 @@ describe('NodeCell', () => {
     render(
       <NodeCell
         node={nodeWith('idle')}
-        size={14}
+        width={14}
+        height={14}
         stateDisplay={displayFor('idle')}
         valueDisplay={displayFor('idle')}
         colorMode="mem"
@@ -164,7 +170,8 @@ describe('NodeCell', () => {
     render(
       <NodeCell
         node={nodeWith('idle')}
-        size={14}
+        width={14}
+        height={14}
         stateDisplay={displayFor('idle')}
         valueDisplay={displayFor('idle')}
         colorMode="state"

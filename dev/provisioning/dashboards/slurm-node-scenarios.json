@@ -8,7 +8,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 3,
+  "version": 4,
   "refresh": "",
   "time": {
     "from": "now-5m",
@@ -58,11 +58,10 @@
         },
         "multiValueLabel": false,
         "layout": "wrap",
-        "cellSize": 22,
+        "cellWidth": 22,
         "gap": 3,
         "shapeChannel": false,
-        "colorMode": "state",
-        "maxCells": 3000
+        "colorMode": "state"
       },
       "fieldConfig": {
         "defaults": {},
@@ -112,11 +111,10 @@
         },
         "multiValueLabel": false,
         "layout": "rack",
-        "cellSize": 16,
+        "cellWidth": 16,
         "gap": 2,
         "shapeChannel": false,
-        "colorMode": "state",
-        "maxCells": 3000
+        "colorMode": "state"
       },
       "fieldConfig": {
         "defaults": {},
@@ -166,11 +164,10 @@
         },
         "multiValueLabel": false,
         "layout": "rack",
-        "cellSize": 16,
+        "cellWidth": 16,
         "gap": 2,
         "shapeChannel": true,
-        "colorMode": "state",
-        "maxCells": 3000
+        "colorMode": "state"
       },
       "fieldConfig": {
         "defaults": {},
@@ -230,11 +227,10 @@
         },
         "multiValueLabel": false,
         "layout": "wrap",
-        "cellSize": 18,
+        "cellWidth": 18,
         "gap": 2,
         "shapeChannel": false,
-        "colorMode": "state",
-        "maxCells": 3000
+        "colorMode": "state"
       },
       "fieldConfig": {
         "defaults": {},

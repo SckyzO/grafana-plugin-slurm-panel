@@ -6,6 +6,9 @@
  * without a layout engine cannot see.
  */
 
+import { DEFAULT_OPTIONS } from '../types';
+import type { Layout } from '../types';
+
 /**
  * The rack's width in pixels, derived from the chosen cell size.
  *
@@ -25,4 +28,24 @@ export function rackWidthFor(cellSize: number): number {
  */
 export function sledHeightFor(cellSize: number): number {
   return Math.max(5, Math.round(cellSize / 2));
+}
+
+export interface CellSize {
+  width: number;
+  height: number;
+}
+
+/**
+ * The two dimensions a cell is drawn at.
+ *
+ * Both options being optional is what makes the split non-breaking, because
+ * the two layouts disagree about the natural shape of a cell: Wrap draws a
+ * square, Rack draws a sled at half the width. A fixed default height would
+ * double the sled in Rack or flatten every cell in Wrap, so an unset height
+ * keeps deriving whatever that layout already drew.
+ */
+export function resolveCellSize(options: { cellWidth?: number; cellHeight?: number; layout: Layout }): CellSize {
+  const width = options.cellWidth ?? DEFAULT_OPTIONS.cellWidth;
+  const height = options.cellHeight ?? (options.layout === 'rack' ? sledHeightFor(width) : width);
+  return { width, height };
 }
