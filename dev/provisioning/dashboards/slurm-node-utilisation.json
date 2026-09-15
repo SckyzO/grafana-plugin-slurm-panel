@@ -8,7 +8,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 6,
+  "version": 7,
   "refresh": "30s",
   "time": {
     "from": "now-5m",
@@ -25,7 +25,7 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 7,
+        "h": 13,
         "w": 24,
         "x": 0,
         "y": 0
@@ -74,10 +74,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 9,
+        "h": 12,
         "w": 8,
         "x": 0,
-        "y": 7
+        "y": 13
       },
       "targets": [
         {
@@ -114,7 +114,7 @@
           "label": "rack"
         },
         "multiValueLabel": false,
-        "layout": "rack",
+        "layout": "wrap",
         "cellWidth": 13,
         "gap": 2,
         "shapeChannel": false,
@@ -161,10 +161,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 9,
+        "h": 12,
         "w": 8,
         "x": 8,
-        "y": 7
+        "y": 13
       },
       "targets": [
         {
@@ -201,7 +201,7 @@
           "label": "rack"
         },
         "multiValueLabel": false,
-        "layout": "rack",
+        "layout": "wrap",
         "cellWidth": 13,
         "gap": 2,
         "shapeChannel": false,
@@ -248,10 +248,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 9,
+        "h": 12,
         "w": 8,
         "x": 16,
-        "y": 7
+        "y": 13
       },
       "targets": [
         {
@@ -288,7 +288,7 @@
           "label": "rack"
         },
         "multiValueLabel": false,
-        "layout": "rack",
+        "layout": "wrap",
         "cellWidth": 13,
         "gap": 2,
         "shapeChannel": false,

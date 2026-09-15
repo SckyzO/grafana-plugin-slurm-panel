@@ -168,10 +168,15 @@ test.describe('the continuous colour modes', () => {
     await gotoDashboardPage(dashboard);
 
     const grids = page.locator('[data-testid="slurm-node-grid"]');
-    await expect.poll(() => grids.count(), { timeout: 20_000 }).toBe(4);
+    // A floor, not an identity. This dashboard carries more panels than this
+    // test is about, and how many of them Grafana has rendered depends on how
+    // many fit above the fold — which panel heights change. Pinning the total
+    // made this test an assertion about lazy rendering rather than about
+    // grouping, and it broke the day the panels were resized.
+    await expect.poll(() => grids.count(), { timeout: 20_000 }).toBeGreaterThanOrEqual(4);
 
-    // All four panels read the same 32-row CSV, so a differing cell count
-    // means a grouping key dropped nodes rather than regrouping them.
+    // The first four panels read the same 32-row CSV, so a differing cell
+    // count means a grouping key dropped nodes rather than regrouping them.
     for (let i = 0; i < 4; i++) {
       await expect
         .poll(() => grids.nth(i).locator('[data-testid^="node-cell-"]').count(), { timeout: 20_000 })
@@ -237,6 +242,35 @@ test.describe('the primary overview dashboard groups by the rack it now has', ()
 
     await expect(page.getByTestId('node-group-rack1')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('node-group-ungrouped')).toHaveCount(0);
+  });
+});
+
+test.describe('the utilisation dashboard groups the same six racks on every panel', () => {
+  test('shows all six named racks and drops nothing into ungrouped, on every panel', async ({
+    gotoDashboardPage,
+    readProvisionedDashboard,
+    page,
+  }) => {
+    // Regression coverage for these four panels' grouping: this branch
+    // switched State, CPU, Memory and GPU occupancy from a capture pattern
+    // ('^(r\\d+)') to the relabelled `rack` label. The colour test above only
+    // checks fill behaviour on panels 2 and 4 and would keep passing even if
+    // the grouping key were wrong — every panel would just render one
+    // "ungrouped" block instead of six named racks, with nothing failing.
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-utilisation.json' });
+    await gotoDashboardPage(dashboard);
+
+    const grids = page.locator('[data-testid="slurm-node-grid"]');
+    await expect.poll(() => grids.count(), { timeout: 20_000 }).toBe(4);
+
+    const racks = ['rack1', 'rack2', 'rack3', 'rack4', 'gpu1', 'gpu2'];
+    for (let i = 0; i < 4; i++) {
+      const grid = grids.nth(i);
+      for (const key of racks) {
+        await expect(grid.getByTestId(`node-group-${key}`)).toBeVisible({ timeout: 15_000 });
+      }
+      await expect(grid.getByTestId('node-group-ungrouped')).toHaveCount(0);
+    }
   });
 });
 
