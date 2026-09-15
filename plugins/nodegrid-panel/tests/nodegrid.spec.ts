@@ -220,3 +220,63 @@ test.describe('the options editor', () => {
     await expect(page.getByTestId('grouping-preview')).toBeVisible({ timeout: 15_000 });
   });
 });
+
+test.describe('the three ways to get a topology, proven against the same live data', () => {
+  const groups = ['rack1', 'rack2', 'gpu1'];
+
+  test('rung 1 groups by a relabelled Prometheus label', async ({ page }) => {
+    await page.goto('/d/slurm-node-grouping/grouping?viewPanel=5');
+    for (const key of groups) {
+      await expect(page.getByTestId(`node-group-${key}`)).toBeVisible();
+    }
+  });
+
+  test('rung 2 groups by a column joined onto the frame', async ({ page }) => {
+    // The Grafana-native answer when the data lacks the dimension the view
+    // needs, and the only rung available without Prometheus access. The panel
+    // datasource is -- Mixed --, query A asks Prometheus for Format: Table so
+    // it returns one row per node instead of one frame per series, and Join
+    // by field (byField node, mode outer) merges query B's CSV rack column
+    // onto it.
+    await page.goto('/d/slurm-node-grouping/grouping?viewPanel=6');
+    for (const key of groups) {
+      await expect(page.getByTestId(`node-group-${key}`)).toBeVisible();
+    }
+  });
+
+  test('rung 3 groups by a range table held in a dashboard variable', async ({ page }) => {
+    await page.goto('/d/slurm-node-grouping/grouping?viewPanel=7');
+    for (const key of groups) {
+      await expect(page.getByTestId(`node-group-${key}`)).toBeVisible();
+    }
+    // Interpolation is the part that fails silently: an uninterpolated
+    // "$racks" parses as one bad line and places no node at all.
+    await expect(page.getByTestId('node-group-ungrouped')).toHaveCount(0);
+  });
+});
+
+test.describe('the coverage signal, proven by a source that deliberately covers less', () => {
+  test('an incomplete range table draws the orphans as unplaced and names a wider label', async ({ page }) => {
+    await page.goto('/d/slurm-node-grouping/grouping?viewPanel=8');
+
+    // The table names only rack1: c[1-40] against the full 240-node cluster,
+    // so 40 nodes are placed and the other 200 fall outside every range.
+    const placed = page.getByTestId('node-group-rack1');
+    await expect(placed).toBeVisible({ timeout: 15_000 });
+    await expect.poll(() => placed.locator('[data-testid^="node-cell-"]').count(), { timeout: 15_000 }).toBe(40);
+
+    const orphaned = page.getByTestId('node-group-ungrouped');
+    await expect(orphaned).toBeVisible();
+    await expect(orphaned).toHaveAttribute('data-unplaced', 'true');
+    await expect.poll(() => orphaned.locator('[data-testid^="node-cell-"]').count(), { timeout: 15_000 }).toBe(200);
+
+    // Both signals on one panel: the orphan line names what the range table
+    // missed, and the coverage line names the label that would have covered
+    // all 240 - the measurement that stays silent on every other panel here,
+    // because their sources already cover every node.
+    const strip = page.getByTestId('panel-warnings').first();
+    await expect(strip).toBeVisible({ timeout: 15_000 });
+    await expect(strip).toContainText('200 nodes matched no range');
+    await expect(strip).toContainText('Label "rack" would group all 240');
+  });
+});

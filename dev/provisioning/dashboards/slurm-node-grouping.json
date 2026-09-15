@@ -1,14 +1,14 @@
 {
   "uid": "slurm-node-grouping",
   "title": "Slurm node grid - grouping and layout",
-  "description": "One set of nodes, four ways of deciding what a group is. Same CSV in every panel, so the only difference you are looking at is the grouping key and the layout.",
+  "description": "Four ways of deciding what a group is, against a hand-written CSV (top row), plus the three routes to a real topology proven against the live dev cluster (label, join, ranges), and a panel that is deliberately incomplete to exercise the coverage warning.",
   "tags": [
     "slurm",
     "reference"
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 3,
+  "version": 11,
   "refresh": "",
   "time": {
     "from": "now-5m",
@@ -71,8 +71,8 @@
     {
       "id": 2,
       "type": "tomzone-slurmnodegrid-panel",
-      "title": "By a capture on the node name",
-      "description": "What a real cluster needs. slurm_exporter publishes no rack label - only node, partition, status, instance and job - so the only structure available is the one encoded in the name. '^([a-z]+)' splits c* from g*.",
+      "title": "By a capture, splitting compute from GPU",
+      "description": "Not a location grouping, and it no longer pretends to be one: the dev cluster's node names are flat (c1..c160, g1..g80) with nothing encoding a rack, so '^([a-z]+)' recovers only the node's class - compute or GPU - not its position on the floor. That is genuinely useful on its own, which is why the panel stays, but do not read it as the realistic answer for topology; the live-Prometheus panels below (label, join, ranges) are that answer, because they read from something outside the node name.",
       "datasource": {
         "type": "grafana-testdata-datasource",
         "uid": "slurm-views-testdata"
@@ -225,6 +225,251 @@
         "defaults": {},
         "overrides": []
       }
+    },
+    {
+      "id": 5,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "Rung 1 -- label, against live Prometheus",
+      "description": "Rung 1 of three routes to the same topology: slurm_node_status carries a real rack label because dev/relabel/racks.txt was turned into Prometheus relabelling by make scrape. Grouping > Group by > Label needs nothing else. Same 15-node slice as the join and ranges panels beside it, so all three can be compared directly.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "expr": "slurm_node_status{node=~\"c[1-5]|c4[1-5]|g[1-5]\"}",
+          "instant": true
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A"
+        },
+        "grouping": {
+          "kind": "label",
+          "label": "rack"
+        },
+        "multiValueLabel": false,
+        "layout": "wrap",
+        "cellWidth": 14,
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "state"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "Rung 2 -- join, against live Prometheus",
+      "description": "Rung 2 of three routes to the same topology, and the one available to anyone who can query Prometheus but cannot touch its scrape config: query A reads slurm_node_status live with Format set to Table, so Prometheus hands back one row per node instead of one frame per series; query B is a hand-maintained CSV inventory (node,rack) against the TestData source. The panel's own datasource is set to -- Mixed --, which is what makes Grafana actually run a query-B target when the panel datasource is Prometheus. Join by field (byField node, mode outer) merges the two into one frame, whose refId becomes \"joinByField-A-B\" -- not \"A\" -- which is why Grouping > Slots > State points at that name rather than the query's own refId.",
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Mixed --"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "expr": "slurm_node_status{node=~\"c[1-5]|c4[1-5]|g[1-5]\"}",
+          "instant": true,
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "slurm-views-testdata"
+          },
+          "scenarioId": "csv_content",
+          "csvContent": "node,rack\nc1,rack1\nc2,rack1\nc3,rack1\nc4,rack1\nc5,rack1\nc41,rack2\nc42,rack2\nc43,rack2\nc44,rack2\nc45,rack2\ng1,gpu1\ng2,gpu1\ng3,gpu1\ng4,gpu1\ng5,gpu1\n"
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "joinByField-A-B"
+        },
+        "grouping": {
+          "kind": "label",
+          "label": "rack"
+        },
+        "multiValueLabel": false,
+        "layout": "wrap",
+        "cellWidth": 14,
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "state"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "node",
+            "mode": "outer"
+          }
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "Rung 3 -- ranges, against live Prometheus",
+      "description": "Rung 3 of three routes to the same topology: no rack label and no join, just a range table typed into the panel and held in the $racks dashboard variable. Same 15-node slice as the label and join panels beside it.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 27
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "expr": "slurm_node_status{node=~\"c[1-5]|c4[1-5]|g[1-5]\"}",
+          "instant": true
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A"
+        },
+        "grouping": {
+          "kind": "ranges",
+          "table": "$racks"
+        },
+        "multiValueLabel": false,
+        "layout": "wrap",
+        "cellWidth": 14,
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "state"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 8,
+      "type": "tomzone-slurmnodegrid-panel",
+      "title": "Deliberately incomplete -- a range table covering one rack of six",
+      "description": "Not a bug: this panel's range table names only rack1: c[1-40], against the full 240-node cluster. 200 nodes match no range and are drawn under \"ungrouped\", dashed and marked unplaced, and the warnings strip both names them and reports that the rack label would cover all 240 -- the coverage signal the other panels never trigger, because every source they use already covers every node.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 36
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "expr": "slurm_node_status",
+          "instant": true
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A"
+        },
+        "grouping": {
+          "kind": "ranges",
+          "table": "rack1: c[1-40]"
+        },
+        "multiValueLabel": false,
+        "layout": "wrap",
+        "cellWidth": 14,
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "state"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
     }
-  ]
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "racks",
+        "type": "constant",
+        "hide": 2,
+        "query": "rack1: c[1-5]\nrack2: c[41-45]\ngpu1: g[1-5]",
+        "current": {
+          "text": "",
+          "value": "rack1: c[1-5]\nrack2: c[41-45]\ngpu1: g[1-5]"
+        }
+      }
+    ]
+  }
 }

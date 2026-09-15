@@ -36,7 +36,7 @@ their own data and need nothing running but Grafana.
 | Slurm node grid | Prometheus | The overview: one panel, every node, grouped by a capture on the node name |
 | Slurm node grid - utilisation | Prometheus | State beside CPU, memory and GPU occupancy, driven by Thresholds |
 | Slurm node grid - scenarios | CSV | Hand-written situations that render identically every time |
-| Slurm node grid - grouping and layout | CSV | The same nodes grouped four ways, side by side |
+| Slurm node grid - grouping and layout | CSV + Prometheus | The same nodes grouped four ways on a hand-written CSV, plus the three live routes to a real topology proven against this dev cluster, plus one panel that deliberately covers less, to prove the coverage warning |
 
 The two CSV dashboards use Grafana's built-in TestData source. Each panel
 carries its own rows, so there is no exporter, no Prometheus and no scrape
@@ -97,6 +97,92 @@ config, not something the panel can do for you.
 The synthetic exporter reproduces those label sets exactly, `rack` included in
 the sense that it does not have one. An earlier revision invented a `rack`
 label, which made every dashboard here work and none of them portable.
+
+## Three ways to a topology, and how each one is wired
+
+`dev/relabel/racks.txt` gives this dev cluster a real `rack` label — six
+groups, `rack1..rack4` over `c1..c160` and `gpu1..gpu2` over `g1..g80` — by
+turning the same table into Prometheus relabelling (`make scrape`, run by
+`make up`) that also pastes into the panel's Grouping > Ranges option. That
+one file is the input to two of the three routes below; **grouping and
+layout** provisions one panel per rung, all three read from a Prometheus
+query on that live cluster, and the panel plugin's own e2e suite
+(`the three ways to get a topology`) asserts each of them.
+
+**Rung 1 — label.** The plain case, once a `rack` label exists: Prometheus
+datasource, `slurm_node_status`, Grouping > Group by > Label, label `rack`.
+Nothing else to configure.
+
+**Rung 2 — join.** The Grafana-native answer for anyone who can query
+Prometheus but cannot touch its scrape config, so `rack` never reaches this
+route through relabelling — it comes from a second query the panel joins on.
+This was designed from Grafana's transformation docs and had never been run
+before this task; two things about it turned out not to match the docs, and
+the working chain is:
+
+1. **The panel's own datasource must be `-- Mixed --`.** A panel whose
+   datasource is Prometheus and that also carries a TestData target simply
+   never sends that second query — Grafana only executes per-target
+   datasource overrides when the panel itself is Mixed. Query A stays
+   Prometheus, query B stays TestData; only the panel-level `datasource`
+   changes.
+2. **Query A needs Format: Table**, not the default Time series. An instant
+   vector query returns one frame per series — `labelsToFields` turns each
+   series' labels into columns in place, but that still leaves one frame per
+   series, and `Join by field` folds those into a synthetic `refId` string
+   with one `-A` per series, which changes size with the query and is not
+   something to hardcode. Format: Table asks Prometheus's own datasource to
+   hand back a single frame — one row per series, `node` and every label
+   already a column — before the transformation pipeline runs at all, so
+   there is nothing left for `labelsToFields` to do.
+3. **Join by field, `byField: node`, `mode: outer`**, over query A (now one
+   table frame) and query B (the CSV, also one frame). Two input frames in,
+   one frame out — the part of the docs that did hold.
+4. **The joined frame's `refId` is not `A`.** `Join by field` names its
+   output `joinByField-<refId>-<refId>-...` for every frame it joined — here,
+   deterministically, `joinByField-A-B`. Grouping > Slots > State has to name
+   that string, not the query's own `A`, or the panel reads zero frames and
+   prints "No nodes" with no warning to explain why (ingest only warns about
+   a query it can see and cannot read; a query it never receives is silent).
+
+Written as the panel JSON actually carries it:
+
+```json
+{
+  "datasource": { "type": "datasource", "uid": "-- Mixed --" },
+  "targets": [
+    { "refId": "A", "datasource": { "type": "prometheus", "uid": "..." },
+      "expr": "slurm_node_status{...}", "instant": true, "format": "table" },
+    { "refId": "B", "datasource": { "type": "grafana-testdata-datasource", "uid": "..." },
+      "scenarioId": "csv_content", "csvContent": "node,rack\n..." }
+  ],
+  "transformations": [
+    { "id": "joinByField", "options": { "byField": "node", "mode": "outer" } }
+  ],
+  "options": {
+    "slots": { "state": "joinByField-A-B" },
+    "grouping": { "kind": "label", "label": "rack" }
+  }
+}
+```
+
+**Rung 3 — ranges.** No label and no join: a range table typed straight into
+the panel (or, here, held in the `$racks` dashboard variable so three panels
+can share it), Grouping > Group by > Ranges. The panel resolves it as a plain
+string, so an uninterpolated `$racks` parses as one bad line and places no
+node at all rather than failing loudly — the reason the panel's own e2e test
+also asserts `ungrouped` stays empty, not only that the three named groups
+appear.
+
+**The coverage signal, proven deliberately.** The panel prints a line when
+some label would place strictly more nodes than the active source does. Every
+demo above covers every node it queries, so that line never fires on any of
+them — proving nothing is not the same as the signal working. One further
+panel groups the *entire* 240-node cluster by a range table naming only
+`rack1: c[1-40]`: 40 nodes land in `rack1`, the other 200 match no range and
+draw under `ungrouped`, dashed and marked unplaced, and the warnings strip
+both names the 200 and reports that `rack` would cover all 240. Deliberately
+incomplete, not a broken panel — its own description says so.
 
 ## Browser tests
 
