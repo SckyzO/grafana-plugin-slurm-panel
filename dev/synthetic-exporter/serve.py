@@ -20,9 +20,23 @@ publishes. It reads sinfo, and sinfo has no concept of a rack, so a node name
 here that encoded one would hand the panel a location it never had to work
 for — the invented rack label this project already removed once, in a
 different costume.
+
+PROFILE picks the shape of the state distribution itself, independent of
+node count:
+
+    PROFILE=production   # default. A cluster that is working.
+    PROFILE=incident      # production, plus one rack down and a drain storm.
+    PROFILE=showcase      # every base state and every modifier, uniformly —
+                           # today's old default, kept for demos that want to
+                           # show every colour the panel can paint at once.
+
+An unrecognised PROFILE value falls back to production and says so on
+stderr, rather than crashing or silently picking something the caller did
+not ask for.
 """
 import os
 import random
+import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 RACKS = max(1, int(os.environ.get("RACKS", "6")))
@@ -31,13 +45,94 @@ NODES = RACKS * NODES_PER_RACK if NODES_PER_RACK > 0 else int(os.environ.get("NO
 PARTITIONS = os.environ.get("PARTITIONS", "cpu,gpu,debug").split(",")
 SEED = int(os.environ.get("SEED", "1"))
 
-# Weighted so a healthy cluster looks healthy, with every awkward state present.
+_KNOWN_PROFILES = ("production", "incident", "showcase")
+_requested_profile = os.environ.get("PROFILE", "production")
+if _requested_profile in _KNOWN_PROFILES:
+    PROFILE = _requested_profile
+else:
+    print(
+        "warning: unrecognised PROFILE %r, falling back to 'production' "
+        "(known: %s)" % (_requested_profile, ", ".join(_KNOWN_PROFILES)),
+        file=sys.stderr,
+    )
+    PROFILE = "production"
+
+# The full, unweighted spread. Used only by the `showcase` profile: every
+# base state and every modifier, uniformly likely, so a dashboard built to
+# show every colour the panel can paint still gets the full set at once. This
+# used to be the only shape the exporter produced — measured against a real
+# cluster it left 3.8% of nodes with an invalid registration, 2.7% down, 1.9%
+# failed and only 8.7% idle, which is not a working cluster, it is one in
+# permanent crisis. `production` and `incident` below are what a real one
+# looks like.
 BASE_STATES = [
     "idle", "idle", "idle", "idle", "mixed", "mixed", "allocated",
     "drained", "draining", "down", "fail", "maint", "planned",
     "blocked", "perfctrs", "reserved", "completing", "inval",
 ]
 MODIFIERS = ["", "", "", "", "", "*", "~", "#", "!", "%", "$", "@", "^", "-"]
+
+# `production` and `incident` share this weighted table: a cluster that is
+# mostly doing work, with idle capacity behind it and only a sliver of
+# anything that needs attention. Weights are percentages measured against a
+# real cluster, not invented — see dev/README.md.
+PRODUCTION_STATE_WEIGHTS = [
+    ("allocated", 54), ("mixed", 20), ("idle", 15), ("drained", 4),
+    ("completing", 2), ("planned", 2), ("down", 1), ("maint", 1), ("fail", 1),
+]
+# `incident` sweeps 15% of its non-forced nodes into drained/draining
+# explicitly (see _pick_state below); the other 85% draw from this table —
+# the production shape minus `drained` — so that band is what puts drained
+# nodes at roughly 15%, rather than stacking on top of production's own 4%.
+INCIDENT_BACKGROUND_WEIGHTS = [(s, w) for s, w in PRODUCTION_STATE_WEIGHTS if s != "drained"]
+
+# Flags are rare on a cluster that is working: the large majority of nodes
+# carry none at all, with what is left spread evenly across the flags sinfo
+# actually prints.
+PRODUCTION_MODIFIER_WEIGHTS = [("", 92.0)] + [
+    (m, 8.0 / 6) for m in ("-", "*", "~", "#", "@", "$")
+]
+
+# dev/relabel/racks.txt calls c[81-120] "rack3". The exporter itself has no
+# way to know that: it reads sinfo, which has no concept of a rack — the same
+# reason it has no rack label to publish in the first place. An `incident`
+# that wants to take a whole rack down therefore has to pick the block out by
+# node ordinal, matching that table by hand, rather than by asking the
+# exporter something it structurally cannot answer.
+INCIDENT_DOWN_RACK_FIRST = 81
+INCIDENT_DOWN_RACK_LAST = 120
+
+# A drain storm where forty nodes share one reason reads as a copy-paste
+# artefact, not an incident. Picked per node, deterministically from SEED.
+DRAIN_REASONS = [
+    "healthcheck: NHC failed",
+    "healthcheck: /scratch not mounted",
+    "memory error: uncorrectable ECC fault",
+    "thermal event: GPU over temperature",
+    "administrative hold: pending maintenance",
+]
+
+
+def _weighted_choice(rng, table):
+    states, weights = zip(*table)
+    return rng.choices(states, weights=weights, k=1)[0]
+
+
+def _pick_state(rng, name):
+    """One node's state, shaped by PROFILE and (for incident) its name."""
+    if PROFILE == "incident" and name[0] == "c":
+        ordinal = int(name[1:])
+        if INCIDENT_DOWN_RACK_FIRST <= ordinal <= INCIDENT_DOWN_RACK_LAST:
+            return "down"
+
+    if PROFILE == "showcase":
+        return rng.choice(BASE_STATES) + rng.choice(MODIFIERS)
+
+    if PROFILE == "incident" and rng.random() < 0.15:
+        return "drained" if rng.random() < 0.5 else "draining"
+
+    table = INCIDENT_BACKGROUND_WEIGHTS if PROFILE == "incident" else PRODUCTION_STATE_WEIGHTS
+    return _weighted_choice(rng, table) + _weighted_choice(rng, PRODUCTION_MODIFIER_WEIGHTS)
 
 
 def cluster():
@@ -46,7 +141,6 @@ def cluster():
     cpu_count = 0
     gpu_count = 0
     for i in range(1, NODES + 1):
-        state = rng.choice(BASE_STATES) + rng.choice(MODIFIERS)
         parts = [PARTITIONS[i % len(PARTITIONS)]]
         if i % 7 == 0:
             parts.append("debug")
@@ -60,6 +154,8 @@ def cluster():
         else:
             cpu_count += 1
             name = "c%d" % cpu_count
+
+        state = _pick_state(rng, name)
         nodes.append({
             "name": name,
             "state": state,
@@ -71,6 +167,7 @@ def cluster():
             "gpus": 8 if is_gpu else 0,
             "gpu_used": rng.choice([0, 2, 8]) if is_gpu else 0,
             "drained": state.startswith("drain"),
+            "drain_reason": rng.choice(DRAIN_REASONS),
         })
     return nodes
 
@@ -147,7 +244,8 @@ def render():
     for n in NODES_CACHE:
         if n["drained"]:
             out.append(
-                'slurm_node_drain_reason_info{node="%s",reason="healthcheck: /scratch not mounted"} 1' % n["name"]
+                'slurm_node_drain_reason_info{node="%s",reason="%s"} 1'
+                % (n["name"], n["drain_reason"])
             )
             out.append('slurm_node_drain_since_timestamp_seconds{node="%s"} 1789000000' % n["name"])
 

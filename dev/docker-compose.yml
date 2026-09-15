@@ -62,6 +62,12 @@ services:
       NODES: ${SYNTH_NODES:-240}
       PARTITIONS: ${SYNTH_PARTITIONS:-cpu,gpu,debug}
       SEED: ${SYNTH_SEED:-1}
+      # Shape of the state distribution, independent of cluster size:
+      # production (default) is a cluster that is working; incident is the
+      # same shape with rack3 (c81..c120) down and a drain storm; showcase is
+      # a uniform spread over every base state and modifier, for a dashboard
+      # that wants to show every colour the panel can paint at once.
+      PROFILE: ${SYNTH_PROFILE:-production}
 
   tools:
     # The toolchain, not a long-running service: `profiles` keeps it out of
