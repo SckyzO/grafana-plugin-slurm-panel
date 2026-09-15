@@ -48,8 +48,38 @@ describe('parseRangeTable', () => {
   it('gives a duplicated node to the first line that claimed it, and says so', () => {
     const { index, problems } = parseRangeTable('rack1: c[1-3]\nrack2: c[3-4]');
     expect(index.get('c3')).toBe('rack1');
+    expect(problems).toHaveLength(1);
     expect(problems[0]!.detail).toContain('c3');
     expect(problems[0]!.detail).toContain('rack1');
+    expect(problems[0]!.detail).toContain('rack2');
+    expect(problems[0]!.detail).toContain('kept in');
+    expect(problems[0]!.detail).toContain('is claimed');
+  });
+
+  it('collapses every node one line steals from the same owner into a single problem', () => {
+    // The regression this guards: one problem per stolen node meant a
+    // duplicated 40-node block produced 40 near-identical lines in a strip
+    // whose container clips its overflow — the grid squeezed to nothing.
+    const table = 'rack1: c[1-40]\nrack2: c[41-80]\nrack3: c[41-80]';
+    const { groups, index, problems } = parseRangeTable(table);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]!.detail).toContain('c[41-80]');
+    expect(problems[0]!.detail).toContain('rack2');
+    expect(problems[0]!.detail).toContain('rack3');
+    expect(problems[0]!.detail).toContain('kept in');
+    expect(problems[0]!.detail).toContain('are claimed');
+    // rack2 still keeps every node; rack3 is declared with none of its own.
+    expect(index.get('c41')).toBe('rack2');
+    expect(groups.find((g) => g.name === 'rack3')?.members).toEqual([]);
+  });
+
+  it('reports a separate problem per owner when one line steals from two different groups', () => {
+    const table = 'rack1: c[1-2]\nrack2: c[41-42]\nrack3: c[1-2],c[41-42]';
+    const { problems } = parseRangeTable(table);
+    expect(problems).toHaveLength(2);
+    const owners = problems.map((p) => p.detail).sort();
+    expect(owners[0]).toContain('rack1');
+    expect(owners[1]).toContain('rack2');
   });
 
   it('refuses a second declaration of the same group name', () => {

@@ -215,6 +215,29 @@ describe('grouping warnings', () => {
     }))[0];
     expect(line).toContain('and 12 more');
   });
+
+  it('caps the strip itself, not just the length of one line', () => {
+    // A duplicated block that renames the copy but keeps the range table's
+    // node list produces one empty-group line per declared group: bounding
+    // each line's own length does nothing when the *count* of lines is what
+    // eats the grid. Twelve empty groups exceed STRIP_LINE_LIMIT (8).
+    const emptyGroups = Array.from({ length: 12 }, (_, i) => ({ name: `rack${i}`, members: [] }));
+    const lines = summarise(model(1), [], [], notes({
+      source: { kind: 'ranges', table: 'x: c[1-1]' }, emptyGroups,
+    }));
+    expect(lines).toHaveLength(9);
+    expect(lines.slice(0, 8)).toEqual(emptyGroups.slice(0, 8).map((g) => `Range "${g.name}" matched no node: .`));
+    expect(lines[8]).toBe('and 4 more warnings.');
+  });
+
+  it('does not cap a strip at or under the limit', () => {
+    const emptyGroups = Array.from({ length: 8 }, (_, i) => ({ name: `rack${i}`, members: [] }));
+    const lines = summarise(model(1), [], [], notes({
+      source: { kind: 'ranges', table: 'x: c[1-1]' }, emptyGroups,
+    }));
+    expect(lines).toHaveLength(8);
+    expect(lines.join(' ')).not.toContain('more warnings');
+  });
 });
 
 describe('groupingNotes', () => {

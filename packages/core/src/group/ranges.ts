@@ -1,4 +1,4 @@
-import { expandHostlist } from './hostlist.js';
+import { expandHostlist, collapseHostlist } from './hostlist.js';
 import { UNGROUPED } from './keys.js';
 
 export interface RangeGroup {
@@ -76,17 +76,29 @@ export function parseRangeTable(table: string): RangeTable {
     }
 
     const members: string[] = [];
+    // Stolen nodes are grouped by owner rather than reported one at a time: a
+    // line that duplicates a 40-node block would otherwise emit 40
+    // near-identical problems, one per node, in a strip whose container clips
+    // its overflow — the grid squeezed to nothing under a wall of text.
+    const stolenByOwner = new Map<string, string[]>();
     for (const nodeName of names) {
       const owner = index.get(nodeName);
       if (owner !== undefined) {
-        problems.push({
-          line,
-          detail: `${nodeName} is claimed by both "${owner}" and "${name}"; kept in "${owner}".`,
-        });
+        const stolen = stolenByOwner.get(owner) ?? [];
+        stolen.push(nodeName);
+        stolenByOwner.set(owner, stolen);
         continue;
       }
       index.set(nodeName, name);
       members.push(nodeName);
+    }
+    for (const [owner, stolen] of stolenByOwner) {
+      const list = collapseHostlist(stolen).join(',');
+      const verb = stolen.length === 1 ? 'is' : 'are';
+      problems.push({
+        line,
+        detail: `${list} ${verb} claimed by both "${owner}" and "${name}"; kept in "${owner}".`,
+      });
     }
     groups.push({ name, members });
   });

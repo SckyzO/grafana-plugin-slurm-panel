@@ -80,6 +80,20 @@ export const ruleFor = (state: string): string => `/^${escapeForRegex(state)}.*$
  */
 const HOSTLIST_ITEM_LIMIT = 8;
 
+/**
+ * How many lines the strip prints in total before summarising the rest.
+ *
+ * Capping the length of one line is a different problem from capping how
+ * many of them there are: the strip's container is `overflow: hidden`, so an
+ * unbounded *count* of short lines eats the grid exactly as one unbounded
+ * line would — a duplicated range-table block that renames the copy but not
+ * its hostlist can print one problem per claimant and one empty-group line
+ * per group it now shadows, and neither of those is capped in number by
+ * anything above. This one rule, applied last in `summarise`, covers every
+ * line source that exists today and any added later.
+ */
+const STRIP_LINE_LIMIT = 8;
+
 /** Everything the grouping stage could not fully resolve. */
 export interface GroupingNotes {
   /** How the panel grouped, so the orphan line can name the cause. */
@@ -236,6 +250,15 @@ export function summarise(
         ? `Label "${label}" would group all ${total}. Grouping > Group by > Label.`
         : `Label "${label}" would group ${covered} of ${total}. Grouping > Group by > Label.`
     );
+  }
+
+  // Applied last, over every line pushed above: capping one source's line
+  // count does not cap the strip, since several sources can each stay under
+  // their own limit and still overflow together.
+  if (lines.length > STRIP_LINE_LIMIT) {
+    const kept = lines.slice(0, STRIP_LINE_LIMIT);
+    kept.push(`and ${lines.length - STRIP_LINE_LIMIT} more warnings.`);
+    return kept;
   }
 
   return lines;
