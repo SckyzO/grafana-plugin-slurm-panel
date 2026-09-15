@@ -85,6 +85,19 @@ describe('NodeGroup', () => {
     expect(cell.style.width).toBe(`${resolveCellSize(DEFAULT_OPTIONS).width}px`);
   });
 
+  it('gives a cell its width and its height, and not the same number twice', () => {
+    // Splitting one size into two created a failure mode a single number could
+    // not have: the props can be swapped, transposing every grid. No symmetric
+    // fixture notices, because width and height are both 14 by default.
+    renderGroup(
+      { key: 'rack1', nodes: [mkNode('c1')], assumed: false },
+      { ...DEFAULT_OPTIONS, layout: 'wrap', cellWidth: 20, cellHeight: 6 }
+    );
+    const cell = screen.getByTestId('node-cell-c1');
+    expect(cell.style.width).toBe('20px');
+    expect(cell.style.height).toBe('6px');
+  });
+
   it('resolves a click-through link per node via hrefFor', () => {
     const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
     const hrefFor = (node: SlurmNode) => `/d/some-dash?var-node=${node.name}`;
