@@ -80,6 +80,10 @@ scrape: build ## Generate the Prometheus scrape config from dev/relabel/racks.tx
 	@mkdir -p dev/prometheus/scrape
 	$(RUN) node dev/relabel/generate.mjs dev/relabel/racks.txt slurm_exporter synthetic-exporter:9341 \
 	  > dev/prometheus/scrape/nodes.yml
+	@# The file is bind-mounted, so a running Prometheus sees no container
+	@# change to act on and would keep serving the previous config. A stale
+	@# fixture that looks like a panel bug is the worst kind.
+	@$(RUN) sh -c 'curl -sf -X POST http://prometheus:9090/-/reload >/dev/null 2>&1' || true
 
 up: scrape ## Start Grafana, Prometheus and the synthetic exporter
 	$(COMPOSE) up -d --build grafana prometheus synthetic-exporter

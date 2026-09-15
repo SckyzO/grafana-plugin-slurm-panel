@@ -26,6 +26,15 @@ services:
 
   prometheus:
     image: prom/prometheus:v3.14.0
+    # The default two flags, plus --web.enable-lifecycle: the generated
+    # scrape file changes without the container changing (it is
+    # bind-mounted), so `make scrape` has nothing to signal short of asking
+    # this running process to re-read its config itself. Acceptable only
+    # because this stack is dev-only and bound to localhost.
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
     ports:
       - '9091:9090'
     volumes:
