@@ -4,7 +4,8 @@ Self-contained and fully containerised: a toolchain image, Grafana, Prometheus
 and a synthetic Slurm exporter. Driven from the repository root with `make`.
 
 ```bash
-make up      # build the panel, start the stack, wait for Grafana
+make scrape  # regenerate the Prometheus scrape config from dev/relabel/racks.txt
+make up      # build the panel, start the stack, wait for Grafana (runs make scrape first)
 make e2e     # browser tests against it
 make down    # stop, keeping the volumes
 ```
@@ -28,23 +29,29 @@ hosting several repositories nor recognisable in `docker compose ls`.
 
 ## The dashboards
 
-Four, provisioned into the **Slurm** folder. Two read Prometheus; two carry
-their own data and need nothing running but Grafana.
+Four, provisioned into the **Slurm** folder. Two read Prometheus outright,
+one carries its own data and needs nothing running but Grafana, and one
+mixes both — four panels on a hand-written CSV, plus four that read this
+dev cluster's live Prometheus.
 
 | Dashboard | Source | What it is for |
 |---|---|---|
-| Slurm node grid | Prometheus | The overview: one panel, every node, grouped by a capture on the node name |
+| Slurm node grid | Prometheus | The overview: one panel, every node, grouped by the `rack` label `make scrape` relabels in (falls back to a capture, a join or a range table on a Prometheus without that relabelling) |
 | Slurm node grid - utilisation | Prometheus | State beside CPU, memory and GPU occupancy, driven by Thresholds |
 | Slurm node grid - scenarios | CSV | Hand-written situations that render identically every time |
 | Slurm node grid - grouping and layout | CSV + Prometheus | The same nodes grouped four ways on a hand-written CSV, plus the three live routes to a real topology proven against this dev cluster, plus one panel that deliberately covers less, to prove the coverage warning |
 
-The two CSV dashboards use Grafana's built-in TestData source. Each panel
-carries its own rows, so there is no exporter, no Prometheus and no scrape
-timing between the dashboard and what it shows — which is what makes a
-scenario reproducible rather than merely seeded. They are also the honest
-place to demonstrate the grouping a real cluster needs: `slurm_exporter`
-publishes no `rack` label, so structure has to come from a capture on the
-node name.
+The **scenarios** dashboard uses Grafana's built-in TestData source for
+every panel, so there is no exporter, no Prometheus and no scrape timing
+between the dashboard and what it shows — which is what makes a scenario
+reproducible rather than merely seeded. The first four panels of
+**grouping and layout** use the same CSV and the same TestData source, for
+the same reason: a side-by-side comparison of Label, Capture, Chunk and
+None should render identically on every run, not drift with whatever the
+synthetic exporter happens to generate that session. That dashboard's other
+four panels are the opposite by design — they read this dev cluster's live
+Prometheus, because proving the three routes to a real topology means
+proving them against a real scrape.
 
 None of the four configures value mappings. The Slurm state colours
 are the panel's own default, so a panel added to a new dashboard is coloured
@@ -98,6 +105,15 @@ The synthetic exporter reproduces those label sets exactly, `rack` included in
 the sense that it does not have one. An earlier revision invented a `rack`
 label, which made every dashboard here work and none of them portable.
 
+This dev stack gets a real `rack` label anyway, through rung 1:
+`dev/relabel/racks.txt` declares the floor plan by hand, and
+`dev/relabel/generate.mjs` turns it into the `metric_relabel_configs` block
+Prometheus reads at scrape time (`make scrape`, which `make up` runs for
+you). Neither file ships with the plugin or is maintained for anyone else's
+Prometheus — they are this repository's own fixture for standing up a
+cluster that has a rack label to demonstrate against. The next section
+covers what each of the three rungs actually needs from you.
+
 ## Three ways to a topology, and how each one is wired
 
 `dev/relabel/racks.txt` gives this dev cluster a real `rack` label — six
@@ -108,6 +124,23 @@ one file is the input to two of the three routes below; **grouping and
 layout** provisions one panel per rung, all three read from a Prometheus
 query on that live cluster, and the panel plugin's own e2e suite
 (`the three ways to get a topology`) asserts each of them.
+
+The dashboard's eight panels, in provisioned order:
+
+| # | Panel | Grouping | Data |
+|---|---|---|---|
+| 1 | By a label, in rack layout | Label `rack` | CSV, hand-written — the best case, exporter already publishes the structure |
+| 2 | By a capture, splitting compute from GPU | Capture `^([a-z]+)` | CSV, hand-written — recovers node class, not a location |
+| 3 | By a chunk of the ordinal | Chunk, size 8 | CSV, hand-written — invents structure, marked `assumed` |
+| 4 | Not grouped at all | None | CSV, hand-written — one flat grid |
+| 5 | Rung 1 — label, against live Prometheus | Label `rack` | Prometheus, relabelled by `make scrape` |
+| 6 | Rung 2 — join, against an inventory the metrics do not carry | Label `zone` | Prometheus (query A) joined to a CSV inventory (query B) |
+| 7 | Rung 3 — ranges, against live Prometheus | Ranges, `$racks` dashboard variable | Prometheus |
+| 8 | Deliberately incomplete — a range table covering one rack of six | Ranges, `rack1: c[1-40]` | Prometheus, the full 240-node cluster |
+
+Panels 1-4 are the same 20-node CSV, grouped four ways, and need nothing
+running but Grafana. Panels 5-8 are rungs 1-3 plus the coverage signal,
+proven live against this dev cluster's Prometheus.
 
 **Rung 1 — label.** The plain case, once a `rack` label exists: Prometheus
 datasource, `slurm_node_status`, Grouping > Group by > Label, label `rack`.
@@ -140,10 +173,11 @@ working chain is:
    one frame out — the part of the docs that did hold.
 4. **The joined frame's `refId` is not `A`.** `Join by field` names its
    output `joinByField-<refId>-<refId>-...` for every frame it joined — here,
-   deterministically, `joinByField-A-B`. Grouping > Slots > State has to name
-   that string, not the query's own `A`, or the panel reads zero frames and
-   prints "No nodes" with no warning to explain why (ingest only warns about
-   a query it can see and cannot read; a query it never receives is silent).
+   deterministically, `joinByField-A-B`. The panel's **State query** option
+   (Data > State query, `options.slots.state`) has to name that string, not
+   the query's own `A`, or the panel reads zero frames and prints "No nodes"
+   with no warning to explain why (ingest only warns about a query it can
+   see and cannot read; a query it never receives is silent).
 5. **The inventory's column is `zone`, not `rack`.** The first working version
    named it `rack` with the same `rack1`/`rack2`/`gpu1` values relabelling
    already carries on query A — both frames agreed, so the panel rendered

@@ -125,3 +125,5 @@ colour for an unmapped state and draws a hollow ring instead, and names the
 state in its warnings strip (capped at eight, `and N more` past that), so a
 state introduced by a Slurm upgrade is visible instead of quietly reading as
 healthy.
+
+Grouping has its own document: [`grouping.md`](grouping.md).

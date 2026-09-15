@@ -29,8 +29,12 @@ services:
     # The default two flags, plus --web.enable-lifecycle: the generated
     # scrape file changes without the container changing (it is
     # bind-mounted), so `make scrape` has nothing to signal short of asking
-    # this running process to re-read its config itself. Acceptable only
-    # because this stack is dev-only and bound to localhost.
+    # this running process to re-read its config itself. The port below is
+    # published as `9091:9090`, with no `127.0.0.1` prefix, so Docker binds
+    # it on every interface, not just localhost. Narrowing that would risk
+    # breaking the WSL2 host-browser path this repository is developed
+    # against, so the binding stays as it is — acceptable only because this
+    # stack is dev-only, not because it is actually loopback-bound.
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
@@ -47,9 +51,12 @@ services:
   synthetic-exporter:
     build: ./synthetic-exporter
     environment:
-      # Give RACKS with SYNTH_NODES_PER_RACK when the rack is the shape you
-      # care about, or with SYNTH_NODES when the total is. Either way the
-      # exporter produces exactly RACKS racks.
+      # The exporter has no rack concept any more — node names are flat
+      # (c1..cN, g1..gN), the same shape the real slurm_exporter publishes.
+      # RACKS only feeds NODES = RACKS * NODES_PER_RACK, and only when
+      # SYNTH_NODES_PER_RACK is set: give it that way when the rack size is
+      # the shape you care about, or set SYNTH_NODES directly when the total
+      # is — in which case RACKS has no effect on the exporter at all.
       RACKS: ${SYNTH_RACKS:-6}
       NODES_PER_RACK: ${SYNTH_NODES_PER_RACK:-0}
       NODES: ${SYNTH_NODES:-240}

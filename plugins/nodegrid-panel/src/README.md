@@ -38,14 +38,51 @@ plugin's repository is a complete worked example — its panel's
 
 ## Grouping
 
-**Grouping > Group by** groups nodes from one of three sources:
+`slurm_exporter` publishes no rack or location label of any kind — it reads
+`sinfo`, which has no concept of one — so no configuration on this side ever
+produces one by itself. There are three ways to still get a real topology,
+and what decides which one you can reach for is the privilege you hold, not
+which is more elegant:
 
-- **Label** — a label the data already carries, e.g. `partition`. Note that
-  `slurm_exporter` publishes no rack or location label of any kind: it reads
-  `sinfo`, which has no concept of one. Unless you add such a label yourself
-  through relabelling or an inventory join, use a capture instead.
+- **Relabel at scrape time**, if you administer the Prometheus behind this
+  panel. The label then works in alerting, recording rules and every other
+  dashboard, not only this one. If you write that rule by hand, do not
+  reach for `sinfo`'s own range notation: Prometheus compiles a relabelling
+  `regex` as RE2, where `c[1-40]` does not mean "c1 through c40" — it means
+  "c, followed by one of the characters 1, 2, 3, 4 or 0". That is right by
+  accident on `c[1-5]` and silently wrong from `c[1-10]` onward, with
+  nothing to say so. Write an expanded alternation of literal node names
+  instead.
+- **Join an inventory** onto the metric frame with Grafana's own
+  transformations, if you only have Editor on the dashboard. This needs
+  nothing upstream of Grafana.
+- **Write a range table**, below, if you want the layout to live in the
+  dashboard itself rather than anywhere upstream of it.
+
+The full recipe for each — including the exact transformation chain the
+join needs — is in this repository's `docs/grouping.md`.
+
+**Grouping > Group by** groups nodes from one of four sources:
+
+- **Label** — a label the data already carries, e.g. `partition`, or a rack
+  label once one of the routes above has put one there.
 - **Capture** — the first capture group of a regular expression run against
-  the node name (`^(r\d+)` groups `r012n03` under `r012`).
+  the node name (`^(r\d+)` groups `r012n03` under `r012`). This only
+  recovers structure the node name already spells out; it invents nothing
+  that is not literally in the name.
+- **Ranges** — a table you write by hand, one line per group, in Slurm
+  hostlist syntax: `name: hostlist`. For example:
+
+  ```
+  rack1: c[1-40]
+  rack2: c[41-80]
+  ```
+
+  Line order is display order — the table is the only place you get to say
+  what order a machine-room floor is actually in, since it is rarely
+  alphabetical. The value can be a dashboard variable instead of a literal
+  table, so several panels can share one layout and it can be edited in one
+  place. See `docs/grouping.md` for the full syntax.
 - **Chunk** — slices nodes by ordinal into fixed-size groups.
 
 Chunking is the one source that invents structure the data never stated: HPC
@@ -55,10 +92,48 @@ grouping editor's live preview, and in that group's header inside the panel
 itself, so the claim travels with the data rather than staying only in the
 editor.
 
+A node that matches no group is drawn last, under a header marked
+**unplaced**, inside a dashed frame — deliberately, because a node missing
+from a supervision view is a worse failure than a node drawn in the wrong
+box — and it is named in the warnings strip. A range the table declares
+that matches no node is the opposite problem, a box with no nodes rather
+than nodes with no box: it is still drawn, empty, in its declared place, and
+named in the warnings strip too.
+
+The panel also measures whether some other label already on the data would
+group the nodes more completely than the source configured today, and names
+that label in the warnings strip if so. It never switches sources by
+itself: a panel that reconfigured itself because a third party edited the
+scrape would change behaviour with nothing in its own JSON to explain why.
+
 **Grouping > Node may appear in several groups** draws a node once per
 partition when grouping by the `partition` label — the only label this
 fan-out supports, since it needs a per-node list of every value the label
 takes, and the engine only builds that list for partitions.
+
+## Layout
+
+**Layout** draws the grid one of two ways:
+
+- **Wrap** (default) — cells flow left to right, top to bottom.
+- **Rack** — each group is drawn as a cabinet, one sled per node, stacked
+  bottom to top the way a rack is actually read.
+
+**Layout > Cell width** and **Layout > Cell height** are both in pixels.
+Cell height is optional on purpose: Wrap and Rack disagree about what a
+cell should look like by default, so leaving it empty derives a square in
+Wrap and a sled — about half the cell width — in Rack. **Layout > Cell
+gap** is the space between cells, which is what actually makes a dense grid
+readable, not a border.
+
+Rack mode draws exactly one sled per node and has no idea what a chassis
+is. A site running 2, 3 or 4 nodes per blade sees a cabinet taller than the
+real one, because every one of those nodes still gets its own sled — nothing
+marks where one chassis ends and the next begins. Nodes from one physical
+chassis do stay adjacent, since a group's nodes are always sorted by the
+trailing number in their name, but the boundary itself is not drawn.
+**Layout > Cell height** can correct the cabinet's overall height to match
+reality; it cannot draw the missing chassis lines.
 
 ## Colour
 
@@ -177,17 +252,31 @@ configured is not clickable.
 
 ## Scale
 
-Past about 3,000 cells the panel keeps rendering, but says so: the warnings
-strip reports the cell count and suggests filtering the query or splitting
-the view. The threshold is itself an option, **Layout > Cell warning
-threshold**.
+The panel draws one cell per node regardless of how many the query returns;
+there is no built-in cell-count warning or cutoff. **Grouping** is what
+keeps a very large cluster legible — splitting the grid into named boxes
+reads better than one long wrap or one very tall rack once a cluster passes
+a few hundred nodes.
 
 ## Warnings
 
 A strip above the grid names, rather than hides, anything the panel could
-not fully resolve: a query skipped for carrying no node identity, states
-that matched no value mapping (capped at eight named, then `and N more`),
-and the cell count once it passes the warning threshold above. A state
-matching no mapping keeps its raw text; Grafana would colour it with the
-threshold base colour (green, by default) rather than a mapped one, so the
-cell deliberately refuses that colour and draws a hollow ring instead.
+not fully resolve:
+
+- a query skipped for carrying no node identity;
+- states that matched no value mapping (capped at eight named, then `and N
+  more`), together with the exact rule to paste under Value mappings to fix
+  it;
+- nodes the active grouping source could not place, drawn under
+  `ungrouped` and why, e.g. `3 nodes matched no range: c[41-43]. Drawn
+  under "ungrouped".`;
+- a declared range that matched no node, drawn empty in its place, e.g.
+  `Range "rack5" matched no node: r[501-502].`;
+- a label that would group the data more completely than the source
+  configured today, e.g. `Label "rack" would group all 240. Grouping >
+  Group by > Label.` — measured, never acted on: the panel does not switch
+  sources by itself.
+
+A state matching no mapping keeps its raw text; Grafana would colour it with
+the threshold base colour (green, by default) rather than a mapped one, so
+the cell deliberately refuses that colour and draws a hollow ring instead.
