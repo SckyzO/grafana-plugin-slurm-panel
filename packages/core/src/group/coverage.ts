@@ -57,13 +57,18 @@ export function suggestLabel({ nodes, source, nodeLabel, stateLabel }: CoverageI
   // Sorted so that two labels covering the same number resolve to the first
   // by name rather than by Map insertion order.
   for (const [label, seen] of [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const covered = [...seen.values()].reduce((sum, n) => sum + n, 0);
     const distinct = seen.size;
-    // One group per node groups nothing; one group for everything is not a
-    // grouping either, and it would win on coverage every single time.
-    if (distinct === nodes.length || distinct < 2) {
+    // One group per node groups nothing, and the comparison has to be against
+    // the nodes this label actually reaches rather than the whole model: a
+    // label carried by four nodes with four distinct values is an identity for
+    // those four, and measuring it against a 240-node total lets it through.
+    // slurm_exporter ships exactly such a label — `reason`, which only drained
+    // nodes carry. One group for everything is not a grouping either, and it
+    // would win on coverage every single time.
+    if (distinct === covered || distinct < 2) {
       continue;
     }
-    const covered = [...seen.values()].reduce((sum, n) => sum + n, 0);
     if (covered <= active) {
       continue;
     }

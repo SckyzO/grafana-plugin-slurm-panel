@@ -30,19 +30,45 @@ describe('suggestLabel', () => {
   });
 
   it('never nominates the node label, which is one group per node', () => {
+    // The identity guard would catch this too, since a node label has one
+    // value per node by definition. The explicit exclusion is kept because it
+    // states the intent and skips the counting; this test pins the outcome,
+    // not which of the two guards produced it.
     const nodes = [node('c1', { node: 'c1' }), node('c2', { node: 'c2' })];
     const source = { kind: 'capture', pattern: '^(zzz)' } as const;
     expect(suggestLabel({ nodes, source, ...args })).toBeUndefined();
   });
 
   it('never nominates the state label, which is a measurement and not a topology', () => {
-    const nodes = [node('c1', { status: 'idle' }), node('c2', { status: 'down' })];
+    // Three nodes, two states: the identity guard does not fire here, so the
+    // state-label exclusion is the only thing that can keep this quiet. That
+    // is what makes the test able to fail.
+    const nodes = [
+      node('c1', { status: 'idle' }),
+      node('c2', { status: 'down' }),
+      node('c3', { status: 'idle' }),
+    ];
     const source = { kind: 'capture', pattern: '^(zzz)' } as const;
     expect(suggestLabel({ nodes, source, ...args })).toBeUndefined();
   });
 
   it('never nominates an identity in disguise', () => {
     const nodes = [node('c1', { serial: 'a' }), node('c2', { serial: 'b' })];
+    const source = { kind: 'capture', pattern: '^(zzz)' } as const;
+    expect(suggestLabel({ nodes, source, ...args })).toBeUndefined();
+  });
+
+  it('never nominates a sparse identity: one value per node it reaches', () => {
+    // slurm_exporter's `reason` label lands only on drained nodes, so a
+    // distinct count measured against the whole model never fires. The
+    // comparison has to be against the nodes the label actually reaches.
+    const nodes = [
+      node('c1', { reason: 'disk' }),
+      node('c2', { reason: 'memory' }),
+      node('c3', {}),
+      node('c4', {}),
+      node('c5', {}),
+    ];
     const source = { kind: 'capture', pattern: '^(zzz)' } as const;
     expect(suggestLabel({ nodes, source, ...args })).toBeUndefined();
   });
