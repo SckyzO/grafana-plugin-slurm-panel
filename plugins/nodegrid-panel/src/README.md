@@ -126,14 +126,15 @@ Wrap and a sled — about half the cell width — in Rack. **Layout > Cell
 gap** is the space between cells, which is what actually makes a dense grid
 readable, not a border.
 
-Rack mode draws exactly one sled per node and has no idea what a chassis
-is. A site running 2, 3 or 4 nodes per blade sees a cabinet taller than the
-real one, because every one of those nodes still gets its own sled — nothing
-marks where one chassis ends and the next begins. Nodes from one physical
-chassis do stay adjacent, since a group's nodes are always sorted by the
-trailing number in their name, but the boundary itself is not drawn.
-**Layout > Cell height** can correct the cabinet's overall height to match
-reality; it cannot draw the missing chassis lines.
+Rack mode draws each cabinet as a stack of sleds, bottom to top the way a
+rack is actually read. Nodes from one physical chassis stay adjacent, since
+a group's nodes are always sorted by the trailing number in their name, but
+that adjacency is all Rack mode used to know about a chassis. **Nodes per
+blade**, below, says how many of those adjacent nodes share one physical
+chassis, so a site running quads or duos draws one row per blade instead of
+one per node. **Slots per rack** says how tall the cabinet itself is, in
+chassis positions — a property of the hardware, not of what is currently
+plugged into it, and set separately.
 
 ### Blades
 
@@ -170,8 +171,8 @@ vertical stack that makes no claim about where anything sits sideways.
 
 ### Cabinet height
 
-In the Rack layout, a cabinet is as tall as it needs to be for what it holds,
-unless you say otherwise.
+In the Rack layout every cabinet stands on a common floor, levelled to the
+tallest one drawn, unless you declare a height.
 
 **Slots per rack** says how tall a cabinet is drawn, in slots — chassis
 positions, not nodes and not rack units. A slot holds a whole blade, so a

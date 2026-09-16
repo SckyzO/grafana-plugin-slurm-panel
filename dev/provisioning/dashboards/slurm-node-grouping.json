@@ -460,7 +460,7 @@
       "id": 9,
       "type": "tomzone-slurm-panel",
       "title": "Blades -- a mixed floor, against live Prometheus",
-      "description": "rack1-rack4 are quads and gpu1-gpu2 are duos, declared as two hostlist lines rather than six. The cabinets are the same width whichever blade they hold, because a floor plan whose cabinets differ in width does not read as a floor plan.",
+      "description": "rack1-rack4 are quads and gpu1-gpu2 are duos, declared as two hostlist lines rather than six. The cabinets are the same width whichever blade they hold, because a floor plan whose cabinets differ in width does not read as a floor plan. rack1-rack4 also declare 12 slots and gpu1-gpu2 declare 24, rather than deriving a height from what each cabinet holds, so the two stand at different heights for a stated reason. Whatever that difference, every cabinet's foot lands on the same line -- the property this panel's e2e test measures.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"

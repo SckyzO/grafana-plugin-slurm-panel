@@ -320,10 +320,11 @@ export function summarise(
       }
     }
     // Worst first, by how far the declaration is from the truth. The strip's
-    // line cap is applied once at the end over every source, so these lines
-    // are the ones truncation reaches — which makes this order load-bearing
-    // rather than cosmetic: the cabinet whose table is most wrong is the one
-    // worth keeping. Ties break by size so the order is total.
+    // line cap is applied once at the end over every source, so a run of
+    // overflow lines can still be the ones truncation reaches — which makes
+    // this order load-bearing rather than cosmetic: the cabinet whose table
+    // is most wrong is the one worth keeping. Ties break by size so the
+    // order is total.
     const worstFirst = [...byPair.values()].sort(
       (a, b) => b.needed - b.declared - (a.needed - a.declared) || b.needed - a.needed
     );
