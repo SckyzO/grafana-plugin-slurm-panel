@@ -1,5 +1,5 @@
-import { expect, test } from '@grafana/plugin-e2e';
-import type { Page } from '@playwright/test';
+import { expect, test, type DashboardPage } from '@grafana/plugin-e2e';
+import type { Locator, Page } from '@playwright/test';
 
 /**
  * Open a panel of the grouping dashboard and wait until it has live data.
@@ -34,6 +34,27 @@ async function gotoPanelWithData(page: Page, viewPanel: number, anchor: string):
       }
     }
   }
+}
+
+/**
+ * The node grid drawn by the panel with this title.
+ *
+ * Panels used to be reached with `grids.nth(i)` over every grid on the page,
+ * which turned each assertion into a claim about where a panel sits rather
+ * than about which panel it is. Resizing one panel reorders that list, and
+ * the first time it happened it broke two tests that had nothing to do with
+ * the change — so a cosmetic fix to a dashboard had to be reverted. A title
+ * is what the dashboard JSON actually promises, and renaming a panel is a
+ * deliberate act that should fail loudly here.
+ *
+ * Scrolling first is not decoration: from Grafana 13 the scenes renderer
+ * mounts a panel only once its container enters the viewport, so a panel
+ * below the fold has no grid in the DOM at all.
+ */
+async function gridIn(dashboardPage: DashboardPage, title: string): Promise<Locator> {
+  const panel = dashboardPage.getPanelByTitle(title);
+  await panel.scrollIntoView();
+  return panel.locator.getByTestId('slurm-node-grid');
 }
 
 test.describe('the node grid renders against a real Grafana', () => {
@@ -162,18 +183,14 @@ test.describe('the continuous colour modes', () => {
   test('resolves occupancy through thresholds and leaves a node with no data empty', async ({
     gotoDashboardPage,
     readProvisionedDashboard,
-    page,
   }) => {
     const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-utilisation.json' });
-    await gotoDashboardPage(dashboard);
+    const dashboardPage = await gotoDashboardPage(dashboard);
 
-    const grids = page.locator('[data-testid="slurm-node-grid"]');
-    await expect.poll(() => grids.count(), { timeout: 20_000 }).toBe(4);
-
-    // Panel 2 is CPU occupancy. Every synthetic node reports cpu_alloc and
-    // cpu_total, so every cell has a value and none may be drawn empty — if
-    // the facet slots stopped being read this would be 240, not 0.
-    const cpu = grids.nth(1).locator('[data-testid^="node-cell-"]');
+    // Every synthetic node reports cpu_alloc and cpu_total, so every cell has
+    // a value and none may be drawn empty — if the facet slots stopped being
+    // read this would be 240, not 0.
+    const cpu = (await gridIn(dashboardPage, 'CPU occupancy')).locator('[data-testid^="node-cell-"]');
     await expect.poll(() => cpu.count(), { timeout: 20_000 }).toBeGreaterThan(200);
     expect(await cpu.locator(':scope[data-filled="false"]').count()).toBe(0);
 
@@ -184,11 +201,11 @@ test.describe('the continuous colour modes', () => {
     );
     expect(bands.length).toBeGreaterThan(1);
 
-    // Panel 4 is GPU occupancy, where most synthetic nodes have no GPU at all.
-    // Those must be drawn as empty rather than filled: an undefined background
-    // on a <button> falls back to the browser's ButtonFace grey, which reads
-    // as a real measurement and once covered two thirds of this panel.
-    const gpu = grids.nth(3).locator('[data-testid^="node-cell-"]');
+    // Most synthetic nodes have no GPU at all. Those must be drawn as empty
+    // rather than filled: an undefined background on a <button> falls back to
+    // the browser's ButtonFace grey, which reads as a real measurement and
+    // once covered two thirds of this panel.
+    const gpu = (await gridIn(dashboardPage, 'GPU occupancy')).locator('[data-testid^="node-cell-"]');
     await expect.poll(() => gpu.locator(':scope[data-filled="false"]').count(), { timeout: 20_000 })
       .toBeGreaterThan(50);
     const empty = gpu.locator(':scope[data-filled="false"]').first();
@@ -198,36 +215,35 @@ test.describe('the continuous colour modes', () => {
   test('groups the same nodes four different ways', async ({
     gotoDashboardPage,
     readProvisionedDashboard,
-    page,
   }) => {
     const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-grouping.json' });
-    await gotoDashboardPage(dashboard);
+    const dashboardPage = await gotoDashboardPage(dashboard);
 
-    const grids = page.locator('[data-testid="slurm-node-grid"]');
-    // A floor, not an identity. This dashboard carries more panels than this
-    // test is about, and how many of them Grafana has rendered depends on how
-    // many fit above the fold — which panel heights change. Pinning the total
-    // made this test an assertion about lazy rendering rather than about
-    // grouping, and it broke the day the panels were resized.
-    await expect.poll(() => grids.count(), { timeout: 20_000 }).toBeGreaterThanOrEqual(4);
-
-    // The first four panels read the same 32-row CSV, so a differing cell
-    // count means a grouping key dropped nodes rather than regrouping them.
-    for (let i = 0; i < 4; i++) {
+    // These four panels read the same 32-row CSV, so a differing cell count
+    // means a grouping key dropped nodes rather than regrouping them.
+    for (const title of [
+      'By a label, in rack layout',
+      'By a capture, splitting compute from GPU',
+      'By a chunk of the ordinal',
+      'Not grouped at all',
+    ]) {
+      const grid = await gridIn(dashboardPage, title);
       await expect
-        .poll(() => grids.nth(i).locator('[data-testid^="node-cell-"]').count(), { timeout: 20_000 })
+        .poll(() => grid.locator('[data-testid^="node-cell-"]').count(), { timeout: 20_000 })
         .toBe(32);
     }
 
     // The capture panel splits c* from g* on the node name, which is the only
     // structure a real slurm_exporter offers: it publishes no rack label.
-    await expect(grids.nth(1).getByText('c', { exact: true })).toBeVisible();
-    await expect(grids.nth(1).getByText('g', { exact: true })).toBeVisible();
+    const capture = await gridIn(dashboardPage, 'By a capture, splitting compute from GPU');
+    await expect(capture.getByText('c', { exact: true })).toBeVisible();
+    await expect(capture.getByText('g', { exact: true })).toBeVisible();
 
     // Chunking is the one key that asserts structure the data never stated,
     // and the panel has to say so on every group it invents.
-    await expect(grids.nth(2).getByText('chunk 1', { exact: true })).toBeVisible();
-    await expect(grids.nth(2).getByText('assumed', { exact: true }).first()).toBeVisible();
+    const chunk = await gridIn(dashboardPage, 'By a chunk of the ordinal');
+    await expect(chunk.getByText('chunk 1', { exact: true })).toBeVisible();
+    await expect(chunk.getByText('assumed', { exact: true }).first()).toBeVisible();
   });
 });
 
@@ -297,7 +313,6 @@ test.describe('the utilisation dashboard groups the same six racks on every pane
   test('shows all six named racks and drops nothing into ungrouped, on every panel', async ({
     gotoDashboardPage,
     readProvisionedDashboard,
-    page,
   }) => {
     // Regression coverage for these four panels' grouping: this branch
     // switched State, CPU, Memory and GPU occupancy from a capture pattern
@@ -306,14 +321,11 @@ test.describe('the utilisation dashboard groups the same six racks on every pane
     // the grouping key were wrong — every panel would just render one
     // "ungrouped" block instead of six named racks, with nothing failing.
     const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-utilisation.json' });
-    await gotoDashboardPage(dashboard);
-
-    const grids = page.locator('[data-testid="slurm-node-grid"]');
-    await expect.poll(() => grids.count(), { timeout: 20_000 }).toBe(4);
+    const dashboardPage = await gotoDashboardPage(dashboard);
 
     const racks = ['rack1', 'rack2', 'rack3', 'rack4', 'gpu1', 'gpu2'];
-    for (let i = 0; i < 4; i++) {
-      const grid = grids.nth(i);
+    for (const title of ['State', 'CPU occupancy', 'Memory occupancy', 'GPU occupancy']) {
+      const grid = await gridIn(dashboardPage, title);
       for (const key of racks) {
         await expect(grid.getByTestId(`node-group-${key}`)).toBeVisible({ timeout: 15_000 });
       }
