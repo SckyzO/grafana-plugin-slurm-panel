@@ -104,17 +104,33 @@ up: scrape ## Start Grafana, Prometheus and the synthetic exporter
 	    curl -sf http://grafana:3000/api/health >/dev/null && exit 0; \
 	    sleep 1; \
 	  done; echo "Grafana never became healthy" >&2; exit 1'
-	@# Grafana being healthy does not mean there is anything to draw. These
-	@# dashboards set no auto-refresh, so a panel whose first query runs before
-	@# Prometheus has scraped stays empty for good: no assertion timeout
-	@# rescues it, because nothing ever re-queries. That is what made the
-	@# live-data tests flake, and it is the same argument as the wait above —
-	@# the stack is ready when it has data, not when it answers.
+	@# Grafana being healthy does not mean there is anything to draw, so the
+	@# probe below asks the question the dashboards ask: run one of their
+	@# queries, through Grafana, and wait until it comes back with a node in
+	@# it. Four separate things have to be true for that, and each one of them
+	@# has produced a flake here:
+	@#
+	@#   - Prometheus has scraped at least once;
+	@#   - the provisioned datasource exists;
+	@#   - Grafana has registered the Prometheus datasource *plugin* — it
+	@#     answers /api/health and the datasource API well before this, and in
+	@#     that window every query fails with "Could not find plugin definition
+	@#     for data source", which reaches the panel as no frames at all and
+	@#     draws as "No nodes";
+	@#   - the panel plugin is loaded, since a dashboard cannot draw without it.
+	@#
+	@# Waiting on the query rather than on the four parts is what keeps this
+	@# honest: any fifth thing that has to be true is covered too. These
+	@# dashboards refresh every 30s, so an empty first render eventually heals
+	@# on a screen — but a test asserting inside 15s has already failed, and
+	@# the grouping dashboard, which sets no refresh at all, never heals.
 	@$(RUN) sh -c 'for _ in $$(seq 1 90); do \
-	    curl -sf "http://prometheus:9090/api/v1/query?query=count(slurm_node_status)" \
-	      | grep -q "\"value\"" && exit 0; \
+	    curl -sf -u admin:admin -H "Content-Type: application/json" -X POST \
+	      http://grafana:3000/api/ds/query \
+	      -d "{\"queries\":[{\"refId\":\"A\",\"datasource\":{\"type\":\"prometheus\",\"uid\":\"slurm-views-prom\"},\"expr\":\"slurm_node_status\",\"instant\":true,\"format\":\"table\"}],\"from\":\"now-5m\",\"to\":\"now\"}" \
+	      2>/dev/null | grep -q "\"node\"" && exit 0; \
 	    sleep 1; \
-	  done; echo "Prometheus never returned any node data" >&2; exit 1'
+	  done; echo "Grafana never answered a node query - see: make logs-once" >&2; exit 1'
 	@# Asked of compose rather than hardcoded: the published port is
 	@# ${GRAFANA_PORT:-3000}, and a message that names the wrong one is
 	@# worse than no message.
