@@ -15,3 +15,5 @@ export { buildGroups } from './group/build.js';
 export type { NodeGroup, GroupedModel, BuildOptions } from './group/build.js';
 export { suggestLabel } from './group/coverage.js';
 export type { CoverageInput, CoverageSuggestion } from './group/coverage.js';
+export { parseBladeTable, MIN_BLADE, MAX_BLADE } from './layout/blades.js';
+export type { BladeTable, BladeProblem } from './layout/blades.js';
