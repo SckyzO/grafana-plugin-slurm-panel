@@ -456,6 +456,58 @@
         "defaults": {},
         "overrides": []
       }
+    },
+    {
+      "id": 9,
+      "type": "tomzone-slurm-panel",
+      "title": "Blades -- a mixed floor, against live Prometheus",
+      "description": "rack1-rack4 are quads and gpu1-gpu2 are duos, declared as two hostlist lines rather than six. The cabinets are the same width whichever blade they hold, because a floor plan whose cabinets differ in width does not read as a floor plan.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_node_status",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "slots": {
+          "state": "A"
+        },
+        "grouping": {
+          "kind": "label",
+          "label": "rack"
+        },
+        "multiValueLabel": false,
+        "layout": "rack",
+        "cellWidth": 14,
+        "nodesPerBlade": 1,
+        "bladeOverrides": "rack[1-4]: 4\ngpu[1-2]: 2",
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "state"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
     }
   ],
   "templating": {

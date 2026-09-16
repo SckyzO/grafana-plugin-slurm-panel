@@ -436,3 +436,23 @@ test.describe('a cabinet holds every sled it draws', () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 });
+
+test.describe('blades, against the same live data', () => {
+  test('draws a quad cabinet four sleds wide and a duo cabinet two', async ({ page }) => {
+    // getBoundingClientRect, not toBeVisible: the question is where these
+    // cells actually are, and toBeVisible passes for anything mounted.
+    await gotoPanelWithData(page, 9, 'rack1');
+
+    const rows = async (group: string) => {
+      const boxes = await page
+        .getByTestId(`node-group-${group}`)
+        .locator('[data-testid^="node-cell-"]')
+        .evaluateAll((cells) => cells.map((c) => Math.round(c.getBoundingClientRect().top)));
+      return new Set(boxes).size;
+    };
+
+    // Forty nodes: ten rows at four per blade, twenty at two.
+    expect(await rows('rack1')).toBe(10);
+    expect(await rows('gpu1')).toBe(20);
+  });
+});

@@ -135,6 +135,39 @@ trailing number in their name, but the boundary itself is not drawn.
 **Layout > Cell height** can correct the cabinet's overall height to match
 reality; it cannot draw the missing chassis lines.
 
+### Blades
+
+In the Rack layout, **Nodes per blade** says how many nodes share one slot in
+the cabinet. The default is 1 — a single-node server — and it draws one sled
+per node. Set it to 4 and a forty-node cabinet becomes ten rows instead of
+forty.
+
+**Nodes per blade, by group** overrides it for the groups it names, one line
+per declaration:
+
+```
+rack[1-120]: 2
+rack[121-125]: 3
+gpu1: 4
+```
+
+The left-hand side is a Slurm hostlist of **group** names, so a floor of 125
+cabinets is two lines. Note the mirror of the Ranges table, where the hostlist
+is on the right and names nodes: here it is on the left and names groups. `#`
+comments run to end of line.
+
+Every cabinet is drawn the same width, taken from the densest blade in the
+panel rather than its own, because a floor plan whose cabinets differ in width
+does not read as a floor plan. A duo's sleds are simply wider than a quad's,
+as they are in the hardware.
+
+A blade here is a count of nodes in a row, and nothing else. A 4U chassis
+holding two nodes above two more cannot be described by a count and is not
+supported. Neither is a cabinet that mixes blade sizes within itself —
+**declare it as two groups**, which costs nothing and keeps every position on
+the drawing true. A group with no declaration keeps one sled per node, a
+vertical stack that makes no claim about where anything sits sideways.
+
 ## Colour
 
 **Display > Colour by** picks one encoding for the cell fill at a time:
