@@ -17,6 +17,16 @@ export interface PanelOptions {
    * already drew — a square in Wrap, a sled in Rack.
    */
   cellHeight?: number;
+  /**
+   * How many nodes share one slot in a cabinet. 1 is a single-node server,
+   * which is the truth for most clusters and draws one sled per node.
+   */
+  nodesPerBlade: number;
+  /**
+   * One line per declaration: a hostlist of group names, a colon, a count.
+   * Overrides nodesPerBlade for the groups it names.
+   */
+  bladeOverrides: string;
   gap: number;
   shapeChannel: boolean;
   colorMode: ColorMode;
@@ -32,6 +42,11 @@ export const DEFAULT_OPTIONS: PanelOptions = {
   // stops being a usable hover target.
   cellWidth: 14,
   // cellHeight is deliberately absent. See the type.
+  // 1, not 0 and not a flag: "one node per blade" is a true statement about
+  // most clusters, and the drawing it produces is the one the panel already
+  // produced. A reader who never opens the option sees no change.
+  nodesPerBlade: 1,
+  bladeOverrides: '',
   gap: 2,
   shapeChannel: false,
   colorMode: 'state',

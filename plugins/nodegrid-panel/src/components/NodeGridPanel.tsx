@@ -4,10 +4,12 @@ import { FieldType, getDisplayProcessor } from '@grafana/data';
 import type { Field, GrafanaTheme2, PanelProps } from '@grafana/data';
 import { getTemplateSrv } from '@grafana/runtime';
 import { useTheme2 } from '@grafana/ui';
+import { parseBladeTable } from '@slurm-views/core';
 import type { SlurmNode } from '@slurm-views/core';
 import { useNodeModel } from '../hooks/useNodeModel';
 import { NodeGroup } from './NodeGroup';
 import { PanelWarnings } from './PanelWarnings';
+import { layoutBlades } from './rackGeometry';
 import { collectUnmapped, summarise } from '../utils/warnings';
 import type { PanelOptions } from '../types';
 
@@ -81,6 +83,20 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
     () => collectUnmapped(model.groups.flatMap((g) => g.nodes), stateDisplay),
     [model.groups, stateDisplay]
   );
+  // Resolved once for the whole panel, because the width every cabinet shares
+  // depends on the densest blade across all of them. Computed in both layouts
+  // and consumed only in Rack: the cost is one pass over the groups, and a
+  // conditional hook is worse than a wasted one.
+  const blades = useMemo(() => {
+    const table = parseBladeTable(options.bladeOverrides);
+    const layout = layoutBlades({
+      groupKeys: model.groups.map((g) => g.key),
+      sizes: table.sizes,
+      fallback: options.nodesPerBlade,
+      cellWidth: options.cellWidth,
+    });
+    return { table, layout };
+  }, [options.bladeOverrides, options.nodesPerBlade, options.cellWidth, model.groups]);
   const lines = useMemo(
     () => summarise(model, warnings, unmapped, grouping),
     [model, warnings, unmapped, grouping]
@@ -110,6 +126,7 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
             colorMode={options.colorMode}
             hrefFor={hrefFor}
             options={options}
+            blades={blades.layout}
           />
         ))}
       </div>
