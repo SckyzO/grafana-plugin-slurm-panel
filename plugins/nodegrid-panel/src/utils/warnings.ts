@@ -118,6 +118,16 @@ export interface BladeNotes {
   squeezed: Array<{ key: string; blade: number; width: number }>;
 }
 
+/** Everything the slot layout could not honour. Absent outside the rack layout. */
+export interface SlotNotes {
+  /** Already-worded problems from the slot table parser. */
+  problems: string[];
+  /** Declared groups the panel is not drawing. */
+  undrawn: string[];
+  /** Drawn groups whose content needs more rows than the frame has. */
+  overflowing: Array<{ key: string; needed: number; declared: number }>;
+}
+
 export interface GroupingNotesInput {
   model: GroupedModel;
   nodes: SlurmNode[];
@@ -195,7 +205,8 @@ export function summarise(
   warnings: IngestWarning[],
   unmapped: string[],
   grouping: GroupingNotes,
-  blades?: BladeNotes
+  blades?: BladeNotes,
+  slots?: SlotNotes
 ): string[] {
   const lines: string[] = [];
 
@@ -283,6 +294,45 @@ export function summarise(
     }
     for (const [blade, { keys, width }] of [...bySize].sort((a, b) => a[0] - b[0])) {
       lines.push(`A blade of ${blade} leaves each node ${width}px wide in ${listOf(keys)}. Raise Cell width.`);
+    }
+  }
+
+  if (slots !== undefined) {
+    lines.push(...slots.problems);
+
+    if (slots.undrawn.length > 0) {
+      const n = slots.undrawn.length;
+      lines.push(
+        `Slots per rack named ${n} ${n === 1 ? 'group that is' : 'groups that are'} not drawn: ${listOf(slots.undrawn)}.`
+      );
+    }
+
+    // Grouped by the pair of numbers rather than one line per cabinet: a row
+    // of identical cabinets that all outgrew the same declaration is one fact.
+    const byPair = new Map<string, { keys: string[]; needed: number; declared: number }>();
+    for (const { key, needed, declared } of slots.overflowing) {
+      const id = `${needed}/${declared}`;
+      const seen = byPair.get(id);
+      if (seen === undefined) {
+        byPair.set(id, { keys: [key], needed, declared });
+      } else {
+        seen.keys.push(key);
+      }
+    }
+    // Worst first, by how far the declaration is from the truth. The strip's
+    // line cap is applied once at the end over every source, so a run of
+    // overflow lines can still be the ones truncation reaches — which makes
+    // this order load-bearing rather than cosmetic: the cabinet whose table
+    // is most wrong is the one worth keeping. Ties break by size so the
+    // order is total.
+    const worstFirst = [...byPair.values()].sort(
+      (a, b) => b.needed - b.declared - (a.needed - a.declared) || b.needed - a.needed
+    );
+    for (const { keys, needed, declared } of worstFirst) {
+      // Slots on both sides, not nodes: under quads "45 nodes but 42 slots"
+      // is arithmetic the reader has to redo.
+      const verb = keys.length === 1 ? 'needs' : 'need';
+      lines.push(`${listOf(keys)} ${verb} ${needed} slots but ${declared} were declared.`);
     }
   }
 

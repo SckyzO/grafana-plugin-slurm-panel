@@ -11,7 +11,7 @@ import {
 import type { FieldConfigSource, PanelData, PanelProps } from '@grafana/data';
 import { setTemplateSrv } from '@grafana/runtime';
 import { NodeGridPanel } from './NodeGridPanel';
-import { rackWidthFor, sledWidthFor } from './rackGeometry';
+import { frameHeight, rackWidthFor, resolveCellSize, sledWidthFor } from './rackGeometry';
 import { DEFAULT_MAPPINGS } from '../defaults/mappings';
 import { DEFAULT_OPTIONS } from '../types';
 import type { PanelOptions } from '../types';
@@ -129,5 +129,23 @@ describe('NodeGridPanel', () => {
     // what proves the override is read rather than the slider.
     const width = rackWidthFor(DEFAULT_OPTIONS.cellWidth, 4);
     expect(screen.getByTestId('node-cell-c1').style.width).toBe(`${sledWidthFor(width, 4)}px`);
+  });
+
+  it('resolves a group named in the slot table through to the drawn frame', () => {
+    render(
+      <NodeGridPanel
+        {...baseProps}
+        data={rackData()}
+        options={{ ...rackOptions, slotOverrides: 'rack1: 20' }}
+        fieldConfig={plainConfig}
+      />
+    );
+
+    // rack1 holds a single node, so an undeclared cabinet would draw at one
+    // row. The frame's height has to come from the 20-slot declaration
+    // instead — a typo in the option path this reads would leave every jest
+    // test here green while make e2e is the only thing that would catch it.
+    const cell = resolveCellSize(rackOptions);
+    expect(getComputedStyle(screen.getByTestId('rack-frame')).height).toBe(`${frameHeight(20, cell.height)}px`);
   });
 });

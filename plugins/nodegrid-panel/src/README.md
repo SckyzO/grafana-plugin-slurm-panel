@@ -126,14 +126,15 @@ Wrap and a sled — about half the cell width — in Rack. **Layout > Cell
 gap** is the space between cells, which is what actually makes a dense grid
 readable, not a border.
 
-Rack mode draws exactly one sled per node and has no idea what a chassis
-is. A site running 2, 3 or 4 nodes per blade sees a cabinet taller than the
-real one, because every one of those nodes still gets its own sled — nothing
-marks where one chassis ends and the next begins. Nodes from one physical
-chassis do stay adjacent, since a group's nodes are always sorted by the
-trailing number in their name, but the boundary itself is not drawn.
-**Layout > Cell height** can correct the cabinet's overall height to match
-reality; it cannot draw the missing chassis lines.
+Rack mode draws each cabinet as a stack of sleds, bottom to top the way a
+rack is actually read. Nodes from one physical chassis stay adjacent, since
+a group's nodes are always sorted by the trailing number in their name, but
+that adjacency is all Rack mode used to know about a chassis. **Nodes per
+blade**, below, says how many of those adjacent nodes share one physical
+chassis, so a site running quads or duos draws one row per blade instead of
+one per node. **Slots per rack** says how tall the cabinet itself is, in
+chassis positions — a property of the hardware, not of what is currently
+plugged into it, and set separately.
 
 ### Blades
 
@@ -167,6 +168,33 @@ supported. Neither is a cabinet that mixes blade sizes within itself —
 **declare it as two groups**, which costs nothing and keeps every position on
 the drawing true. A group with no declaration keeps one sled per node, a
 vertical stack that makes no claim about where anything sits sideways.
+
+### Cabinet height
+
+In the Rack layout every cabinet stands on a common floor, levelled to the
+tallest one drawn, unless you declare a height.
+
+**Slots per rack** says how tall a cabinet is drawn, in slots — chassis
+positions, not nodes and not rack units. A slot holds a whole blade, so a
+42-slot cabinet holds 42 nodes of single-node servers and 168 of quads, which
+is also true of the hardware. Leave it empty and every cabinet levels to the
+tallest one drawn, so a half-full rack stands on the floor instead of hanging
+from the ceiling.
+
+**Slots per rack, by group** overrides it per group, one line per declaration,
+the hostlist of group names on the left:
+
+```
+rack[1-120]: 42
+rack[121-125]: 47   # the row we inherited
+```
+
+A declared cabinet keeps its height even when its neighbours are taller — a
+declaration is an assertion about the hardware, and a genuinely small cabinet
+stays small. A cabinet holding more than it declares is still drawn in full:
+the rows that do not fit spill above the frame and the warnings strip names
+it. Nothing is ever hidden, because a node that exists and is not drawn is a
+node nobody is watching.
 
 ## Colour
 

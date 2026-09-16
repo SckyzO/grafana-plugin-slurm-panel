@@ -6,6 +6,7 @@
  * without a layout engine cannot see.
  */
 
+import { MAX_SLOT, MIN_SLOT } from '@slurm-views/core';
 import { DEFAULT_OPTIONS } from '../types';
 import type { Layout } from '../types';
 
@@ -86,6 +87,23 @@ export const RACK_GAP = 2;
 export const RACK_BORDER = 1;
 
 /**
+ * The cabinet's foot, in pixels — the heavier bottom edge that makes a frame
+ * read as a rack standing on a floor rather than as a box.
+ *
+ * Exported for the same reason RACK_PADDING and RACK_GAP are: `frameHeight`
+ * has to charge for the border the frame actually draws, and a solid cabinet's
+ * vertical borders are 1 on top and this at the foot. Charging RACK_BORDER
+ * twice under-counted the chrome by exactly two pixels, which is the same
+ * arithmetic slip as the missing border term in the width formula, on the
+ * other axis.
+ *
+ * A dashed frame draws a 1px foot, so it gets two pixels more room than it
+ * needs. Nothing depends on a dashed cabinet being tight, and one constant is
+ * worth more than that precision.
+ */
+export const RACK_FOOT = 3;
+
+/**
  * The narrowest a sled may be drawn and still be a hover target rather than a
  * hairline — the same floor the Cell width option's description already names.
  */
@@ -155,4 +173,145 @@ export function layoutBlades({ groupKeys, sizes, fallback, cellWidth }: BladeLay
   const undrawn = [...sizes.keys()].filter((key) => !drawn.has(key));
 
   return { rackWidth, sizeOf, sledWidthOf, undrawn, squeezed };
+}
+
+/**
+ * The shortest a cabinet may be drawn, in pixels — `theme.spacing(3)`, which
+ * `RackFrame` used to apply as a CSS `min-height`.
+ *
+ * It belongs in the arithmetic rather than in the stylesheet because a CSS
+ * floor is a second path to the frame's height, and `layoutSlots` cannot see
+ * it: a one-row cabinet would render at 24px while its band was sized at 17,
+ * and the frame would overflow the band it is meant to sit in. Two paths
+ * reading the same number differently is the defect class the missing border
+ * term already produced once on this file.
+ */
+export const MIN_FRAME_HEIGHT = 24;
+
+/**
+ * A cabinet frame's height in pixels, for a given number of rows.
+ *
+ * The padding and border terms are here for the same reason they are in
+ * `sledWidthFor`: the app runs under `box-sizing: border-box`, so an explicit
+ * height includes both. Leaving the border out of the width formula is what
+ * let a sled overflow its frame by exactly two pixels, undetected by a full
+ * review and ninety-seven unit tests — this is that trap on the other axis.
+ * The vertical borders are asymmetric, unlike the width's: `RACK_BORDER` on
+ * top and the heavier `RACK_FOOT` at the bottom, not `RACK_BORDER` twice.
+ *
+ * Unlike the width there is no `floor()` here, so every term of the formula is
+ * visible in the result and a literal assertion detects a missing one. The
+ * result is never below `MIN_FRAME_HEIGHT`.
+ */
+export function frameHeight(rows: number, cellHeight: number): number {
+  const chrome = RACK_PADDING * 2 + RACK_BORDER + RACK_FOOT;
+  const content = rows <= 0 ? 0 : rows * cellHeight + (rows - 1) * RACK_GAP;
+  return Math.max(MIN_FRAME_HEIGHT, content + chrome);
+}
+
+export interface SlotLayoutInput {
+  /**
+   * The groups the panel is actually drawing, in draw order, each with its
+   * node count — one structure rather than a key list beside a count map.
+   * Two structures that must cover the same keys, with nothing forcing them
+   * to, is how a `?? 0` ends up drawing a silently empty cabinet.
+   */
+  groups: Array<{ key: string; nodes: number }>;
+  /** Resolved blade layout, for `sizeOf`. Built from the same group list. */
+  blades: BladeLayout;
+  /** Declared group name to slot count, from parseSlotTable. */
+  declared: Map<string, number>;
+  /** The panel-wide Slots per rack, where the table is silent. Absent means level. */
+  fallback: number | undefined;
+  cellHeight: number;
+}
+
+export interface SlotLayout {
+  /** Shared by every cabinet, so headers align and cabinets share a floor. */
+  bandHeight: number;
+  /** Rows the frame is drawn at, per drawn group. */
+  slotsOf: Map<string, number>;
+  /** Frame height in pixels, per drawn group. */
+  heightOf: Map<string, number>;
+  /** Declared groups the panel is not drawing. */
+  undrawn: string[];
+  /** Drawn groups whose content needs more rows than the frame has. */
+  overflowing: Array<{ key: string; needed: number; declared: number }>;
+}
+
+/**
+ * How tall each cabinet is drawn, resolved once for the whole panel.
+ *
+ * A declaration wins; what is not declared levels to the tallest cabinet on
+ * the floor, declared or filled. Pure, and outside the component on purpose:
+ * the levelled height and the shared band depend on every group at once, which
+ * no single group can work out for itself.
+ *
+ * The invariant this establishes: a levelled cabinet takes `panelRows`, which
+ * is at least its own row count by construction, so it cannot overflow. Only
+ * a group with an effective declaration — a table entry or the panel-wide
+ * number — can be too small, because the panel-wide number is a declaration
+ * for every group, not only for the ones named in the table.
+ */
+export function layoutSlots({ groups, blades, declared, fallback, cellHeight }: SlotLayoutInput): SlotLayout {
+  const neededOf = new Map<string, number>();
+  for (const { key, nodes } of groups) {
+    // blades.sizeOf is keyed by every group layoutBlades was given, and the
+    // panel builds both from the same list, so the key is always present.
+    // A fallback here would silently draw a cabinet at the wrong row count.
+    const blade = blades.sizeOf.get(key)!;
+    neededOf.set(key, Math.ceil(nodes / blade));
+  }
+
+  // The editor's min/max are widget constraints; a provisioned dashboard or a
+  // hand-edited panel JSON goes straight past them. The table's own bound
+  // exists to stop a typo turning one cabinet into a column of a thousand
+  // rows, and the panel-wide number is the one path around it. Clamped rather
+  // than reported, the way an out-of-range Cell height already is.
+  const panelWide =
+    fallback === undefined
+      ? undefined
+      : Math.min(MAX_SLOT, Math.max(MIN_SLOT, Math.floor(fallback)));
+
+  const declaredFor = (key: string): number | undefined => declared.get(key) ?? panelWide;
+
+  // The tallest cabinet on the floor, whatever made it tall. Taking a declared
+  // neighbour into account here is what keeps the floor flat when one cabinet
+  // is declared tall and nearly empty.
+  let panelRows = 0;
+  for (const { key } of groups) {
+    const rows = declaredFor(key) ?? neededOf.get(key)!;
+    if (rows > panelRows) {
+      panelRows = rows;
+    }
+  }
+
+  const slotsOf = new Map<string, number>();
+  const heightOf = new Map<string, number>();
+  const overflowing: SlotLayout['overflowing'] = [];
+  let bandRows = 0;
+
+  for (const { key } of groups) {
+    const rows = declaredFor(key) ?? panelRows;
+    slotsOf.set(key, rows);
+    heightOf.set(key, frameHeight(rows, cellHeight));
+
+    const needed = neededOf.get(key)!;
+    if (needed > rows) {
+      overflowing.push({ key, needed, declared: rows });
+    }
+    // The band has to clear whatever is actually drawn, overflow included —
+    // otherwise the rows that spill above the frame paint over the header.
+    const drawn = Math.max(rows, needed);
+    if (drawn > bandRows) {
+      bandRows = drawn;
+    }
+  }
+
+  // A declaration for a cabinet the query did not return is worth saying, and
+  // must not raise the ones it did: only drawn groups feed panelRows above.
+  const drawn = new Set(groups.map((g) => g.key));
+  const undrawn = [...declared.keys()].filter((key) => !drawn.has(key));
+
+  return { bandHeight: frameHeight(bandRows, cellHeight), slotsOf, heightOf, undrawn, overflowing };
 }

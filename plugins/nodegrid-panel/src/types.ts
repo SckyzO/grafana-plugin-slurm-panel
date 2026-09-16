@@ -27,6 +27,18 @@ export interface PanelOptions {
    * Overrides nodesPerBlade for the groups it names.
    */
   bladeOverrides: string;
+  /**
+   * How many slots — chassis positions, not nodes and not rack units — a
+   * cabinet is drawn with. Optional on purpose: an unset height levels every
+   * cabinet to the tallest one drawn, which is what stops a short rack
+   * hanging from the ceiling without anyone declaring anything.
+   */
+  slotsPerRack?: number;
+  /**
+   * One line per declaration: a hostlist of group names, a colon, a slot
+   * count. Overrides slotsPerRack for the groups it names.
+   */
+  slotOverrides: string;
   gap: number;
   shapeChannel: boolean;
   colorMode: ColorMode;
@@ -47,6 +59,9 @@ export const DEFAULT_OPTIONS: PanelOptions = {
   // produced. A reader who never opens the option sees no change.
   nodesPerBlade: 1,
   bladeOverrides: '',
+  // slotsPerRack is deliberately absent, the same way cellHeight is: an empty
+  // field is a real state — "level to the tallest" — rather than a sentinel.
+  slotOverrides: '',
   gap: 2,
   shapeChannel: false,
   colorMode: 'state',

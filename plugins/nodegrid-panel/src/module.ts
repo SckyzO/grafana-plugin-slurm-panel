@@ -1,10 +1,11 @@
 import { FieldConfigProperty, PanelPlugin } from '@grafana/data';
-import { MAX_BLADE, MIN_BLADE } from '@slurm-views/core';
+import { MAX_BLADE, MAX_SLOT, MIN_BLADE, MIN_SLOT } from '@slurm-views/core';
 import { NodeGridPanel } from './components/NodeGridPanel';
 import { MIN_CELL_HEIGHT } from './components/rackGeometry';
 import { DEFAULT_MAPPINGS } from './defaults/mappings';
 import { BladeEditor } from './editor/BladeEditor';
 import { GroupingEditor } from './editor/GroupingEditor';
+import { SlotEditor } from './editor/SlotEditor';
 import { DEFAULT_OPTIONS } from './types';
 import type { PanelOptions } from './types';
 
@@ -102,6 +103,27 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
           'One line per declaration: a hostlist of group names, a colon, a count. Note the mirror of Ranges — the hostlist is on the left here, and names groups rather than nodes. # comments to end of line.',
         editor: BladeEditor,
         defaultValue: DEFAULT_OPTIONS.bladeOverrides,
+        category: ['Layout'],
+        showIf: (options) => options.layout === 'rack',
+      })
+      .addNumberInput({
+        path: 'slotsPerRack',
+        name: 'Slots per rack',
+        description:
+          'How many chassis positions a cabinet has — slots, not nodes: a slot holds a whole blade. Leave empty to level every cabinet to the tallest one drawn.',
+        settings: { placeholder: 'auto', min: MIN_SLOT, max: MAX_SLOT },
+        category: ['Layout'],
+        // A cabinet's height means nothing outside a cabinet.
+        showIf: (options) => options.layout === 'rack',
+      })
+      .addCustomEditor({
+        id: 'slotOverrides',
+        path: 'slotOverrides',
+        name: 'Slots per rack, by group',
+        description:
+          'One line per declaration: a hostlist of group names, a colon, a slot count. A declared cabinet keeps its height even when its neighbours are taller. # comments to end of line.',
+        editor: SlotEditor,
+        defaultValue: DEFAULT_OPTIONS.slotOverrides,
         category: ['Layout'],
         showIf: (options) => options.layout === 'rack',
       })

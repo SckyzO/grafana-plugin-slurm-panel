@@ -1,12 +1,20 @@
 import {
+  frameHeight,
   layoutBlades,
+  layoutSlots,
   MIN_CELL_HEIGHT,
+  MIN_FRAME_HEIGHT,
   MIN_SLED_WIDTH,
   rackWidthFor,
+  RACK_BORDER,
+  RACK_FOOT,
+  RACK_GAP,
+  RACK_PADDING,
   resolveCellSize,
   sledHeightFor,
   sledWidthFor,
 } from './rackGeometry';
+import { MAX_SLOT, MIN_SLOT } from '@slurm-views/core';
 import { DEFAULT_OPTIONS } from '../types';
 
 describe('rackGeometry', () => {
@@ -142,5 +150,230 @@ describe('layoutBlades', () => {
     expect(l.sizeOf.size).toBe(0);
     expect(l.squeezed).toEqual([]);
     expect(l.rackWidth).toBe(rackWidthFor(14, 1));
+  });
+});
+
+describe('frameHeight', () => {
+  // Literal on purpose, the same reason sledWidthFor's assertions are literal.
+  // Every other number in this file is produced by the formula it checks, and
+  // that is exactly how a missing border term survived a full review and 97
+  // green tests — and how charging the foot as RACK_BORDER rather than
+  // RACK_FOOT survived after it. Both of these sit above the floor, so every
+  // term of the formula shows in the result: without the border 46 reads 42
+  // and 37 reads 33, without the padding 38 and 29, without the inter-row
+  // gaps 40 and 33.
+  it('counts the rows, the gaps between them, the padding and the border', () => {
+    expect(frameHeight(4, 7)).toBe(46);
+    expect(frameHeight(3, 7)).toBe(37);
+  });
+
+  // The floor lives here rather than in RackFrame's CSS. A stylesheet
+  // min-height is a second path to the frame's height that layoutSlots cannot
+  // see, so a short cabinet would render taller than the band sized for it.
+  it('never returns less than the floor, so the band and the frame agree', () => {
+    expect(frameHeight(1, 7)).toBe(MIN_FRAME_HEIGHT);
+    expect(frameHeight(0, 7)).toBe(MIN_FRAME_HEIGHT);
+    // An invisible cabinet is worse than a stubby one.
+    expect(MIN_FRAME_HEIGHT).toBeGreaterThan(RACK_PADDING * 2 + RACK_BORDER * 2);
+    // Pinned rather than only compared to itself: 24 is theme.spacing(3), and
+    // that number is the whole point of having moved the floor out of the
+    // CSS and into this arithmetic. Without this, the constant could drift to
+    // 30 and every assertion above would still pass.
+    expect(MIN_FRAME_HEIGHT).toBe(24);
+  });
+
+  // The test that would have caught this from the start: relate the height to
+  // the box the browser will give the rows, not to the formula that produced
+  // it. Under box-sizing: border-box the content box is the height minus the
+  // padding and minus the borders the frame actually draws — 1 on top and
+  // RACK_FOOT below, not RACK_BORDER twice. Charging the foot as 1px left
+  // every solid cabinet two pixels short and the rows leaked out of the top.
+  it('leaves a content box exactly as tall as the rows it was sized for', () => {
+    const rows = 8;
+    const cellHeight = 9;
+    const stack = rows * cellHeight + (rows - 1) * RACK_GAP;
+    const contentBox = frameHeight(rows, cellHeight) - RACK_PADDING * 2 - RACK_BORDER - RACK_FOOT;
+    expect(contentBox).toBe(stack);
+  });
+});
+
+describe('layoutSlots', () => {
+  const CELL = 7;
+
+  // Every cabinet at one node per blade, which is the default and the case
+  // 95% of clusters are in.
+  const flat = (entries: Array<[string, number]>) => {
+    const groups = entries.map(([key, nodes]) => ({ key, nodes }));
+    const blades = layoutBlades({
+      groupKeys: groups.map((g) => g.key),
+      sizes: new Map(),
+      fallback: 1,
+      cellWidth: 14,
+    });
+    return { groups, blades };
+  };
+
+  it('levels an undeclared floor to the tallest cabinet filled', () => {
+    // The default, and the whole point: a 20-node cabinet beside a 40-node one
+    // stands on the floor instead of hanging from the ceiling.
+    const { groups, blades } = flat([['rack1', 40], ['rack2', 20]]);
+    const l = layoutSlots({ groups, blades, declared: new Map(), fallback: undefined, cellHeight: CELL });
+    expect(l.slotsOf.get('rack1')).toBe(40);
+    expect(l.slotsOf.get('rack2')).toBe(40);
+    expect(l.heightOf.get('rack2')).toBe(frameHeight(40, CELL));
+  });
+
+  it('honours a declaration even when it is shorter than its neighbours', () => {
+    // A declaration is an assertion about the hardware. A genuinely small
+    // cabinet stays small rather than being levelled up into a claim about
+    // empty slots that do not exist.
+    const { groups, blades } = flat([['rack1', 40], ['rack2', 20]]);
+    const l = layoutSlots({
+      groups, blades,
+      declared: new Map([['rack2', 20]]),
+      fallback: undefined,
+      cellHeight: CELL,
+    });
+    expect(l.slotsOf.get('rack1')).toBe(40);
+    expect(l.slotsOf.get('rack2')).toBe(20);
+  });
+
+  it('levels an undeclared cabinet up to a declared neighbour, not only to a filled one', () => {
+    // rack1 is nearly empty but declared tall; rack2 declares nothing. The
+    // floor stays flat because the levelling height is the tallest cabinet
+    // drawn, whatever made it tall.
+    const { groups, blades } = flat([['rack1', 10], ['rack2', 20]]);
+    const l = layoutSlots({
+      groups, blades,
+      declared: new Map([['rack1', 42]]),
+      fallback: undefined,
+      cellHeight: CELL,
+    });
+    expect(l.slotsOf.get('rack1')).toBe(42);
+    expect(l.slotsOf.get('rack2')).toBe(42);
+  });
+
+  it('uses the panel-wide number where the table is silent', () => {
+    const { groups, blades } = flat([['rack1', 40], ['rack2', 20]]);
+    const l = layoutSlots({
+      groups, blades,
+      declared: new Map([['rack1', 24]]),
+      fallback: 42,
+      cellHeight: CELL,
+    });
+    expect(l.slotsOf.get('rack1')).toBe(24);
+    expect(l.slotsOf.get('rack2')).toBe(42);
+  });
+
+  it('counts rows through the blade, not nodes', () => {
+    // Forty nodes of quads occupy ten slots. Declaring a height in nodes
+    // would draw this cabinet four times taller than it stands, which is the
+    // defect the slot unit exists to avoid.
+    const groups = [{ key: 'rack1', nodes: 40 }];
+    const blades = layoutBlades({
+      groupKeys: ['rack1'],
+      sizes: new Map([['rack1', 4]]),
+      fallback: 1,
+      cellWidth: 14,
+    });
+    const l = layoutSlots({ groups, blades, declared: new Map(), fallback: undefined, cellHeight: CELL });
+    expect(l.slotsOf.get('rack1')).toBe(10);
+  });
+
+  it('names a cabinet that holds more than it declares, and only a declared one', () => {
+    // The invariant: a levelled cabinet takes panelRows, which is at least its
+    // own rowsNeeded by construction, so it cannot overflow. Only a
+    // declaration can be too small.
+    const { groups, blades } = flat([['rack1', 45], ['rack2', 20]]);
+    const l = layoutSlots({
+      groups, blades,
+      declared: new Map([['rack1', 42]]),
+      fallback: undefined,
+      cellHeight: CELL,
+    });
+    expect(l.overflowing).toEqual([{ key: 'rack1', needed: 45, declared: 42 }]);
+  });
+
+  it('grows the band to clear whatever is actually drawn, overflow included', () => {
+    // If the band only cleared the declared height, the rows that spill above
+    // the frame would paint over the group header.
+    const { groups, blades } = flat([['rack1', 45]]);
+    const l = layoutSlots({
+      groups, blades,
+      declared: new Map([['rack1', 10]]),
+      fallback: undefined,
+      cellHeight: CELL,
+    });
+    expect(l.heightOf.get('rack1')).toBe(frameHeight(10, CELL));
+    expect(l.bandHeight).toBe(frameHeight(45, CELL));
+  });
+
+  it('gives every cabinet the same band, so headers align and cabinets share a floor', () => {
+    const { groups, blades } = flat([['rack1', 40], ['rack2', 20]]);
+    const l = layoutSlots({
+      groups, blades,
+      declared: new Map([['rack2', 20]]),
+      fallback: undefined,
+      cellHeight: CELL,
+    });
+    expect(l.bandHeight).toBe(frameHeight(40, CELL));
+  });
+
+  it('names the groups a declaration claims that are not drawn', () => {
+    const { groups, blades } = flat([['rack1', 40]]);
+    const l = layoutSlots({
+      groups, blades,
+      declared: new Map([['rack1', 42], ['rack9', 42]]),
+      fallback: undefined,
+      cellHeight: CELL,
+    });
+    expect(l.undrawn).toEqual(['rack9']);
+  });
+
+  it('does not let an undrawn declaration raise the cabinets that are drawn', () => {
+    const { groups, blades } = flat([['rack1', 10]]);
+    const l = layoutSlots({
+      groups, blades,
+      declared: new Map([['rack9', 64]]),
+      fallback: undefined,
+      cellHeight: CELL,
+    });
+    expect(l.slotsOf.get('rack1')).toBe(10);
+  });
+
+  it('is empty and silent with no groups drawn', () => {
+    const l = layoutSlots({
+      groups: [],
+      blades: layoutBlades({ groupKeys: [], sizes: new Map(), fallback: 1, cellWidth: 14 }),
+      declared: new Map(),
+      fallback: undefined,
+      cellHeight: CELL,
+    });
+    expect(l.slotsOf.size).toBe(0);
+    expect(l.overflowing).toEqual([]);
+    expect(l.bandHeight).toBe(frameHeight(0, CELL));
+  });
+
+  it('clamps a panel-wide slot count that arrived past the editor', () => {
+    const { groups, blades } = flat([['rack1', 8]]);
+    const high = layoutSlots({ groups, blades, declared: new Map(), fallback: 400, cellHeight: CELL });
+    expect(high.slotsOf.get('rack1')).toBe(MAX_SLOT);
+    const low = layoutSlots({ groups, blades, declared: new Map(), fallback: 0, cellHeight: CELL });
+    expect(low.slotsOf.get('rack1')).toBe(MIN_SLOT);
+    const fractional = layoutSlots({ groups, blades, declared: new Map(), fallback: 12.5, cellHeight: CELL });
+    expect(fractional.slotsOf.get('rack1')).toBe(12);
+  });
+
+  it('lets a group overflow through the panel-wide number, with no table entry of its own', () => {
+    // The likeliest first misconfiguration: one number typed for a floor whose
+    // cabinets are taller than it. Nothing is declared per group, so this is
+    // the path the invariant's narrower wording used to miss.
+    const { groups, blades } = flat([['rack1', 40], ['rack2', 40]]);
+    const l = layoutSlots({ groups, blades, declared: new Map(), fallback: 10, cellHeight: CELL });
+    expect(l.slotsOf.get('rack1')).toBe(10);
+    expect(l.overflowing).toEqual([
+      { key: 'rack1', needed: 40, declared: 10 },
+      { key: 'rack2', needed: 40, declared: 10 },
+    ]);
   });
 });

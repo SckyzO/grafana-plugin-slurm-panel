@@ -5,7 +5,7 @@ import type { DisplayProcessor } from '@grafana/data';
 import type { NodeGroup as NodeGroupModel, SlurmNode } from '@slurm-views/core';
 import { NodeGroup } from './NodeGroup';
 import type { NodeGroupProps } from './NodeGroup';
-import { layoutBlades, rackWidthFor, resolveCellSize, sledWidthFor } from './rackGeometry';
+import { frameHeight, layoutBlades, layoutSlots, rackWidthFor, resolveCellSize, sledWidthFor } from './rackGeometry';
 import { DEFAULT_MAPPINGS } from '../defaults/mappings';
 import { DEFAULT_OPTIONS } from '../types';
 import type { PanelOptions } from '../types';
@@ -53,6 +53,18 @@ const renderGroup = (
     cellWidth: resolveCellSize(options).width,
   });
 
+  // slots is required for the same reason blades is: NodeGridPanel is the only
+  // production caller and always resolves one. With no declaration and one
+  // group, this levels to that group's own content — which is the height the
+  // frame drew before cabinet heights existed.
+  const defaultSlots = layoutSlots({
+    groups: [{ key: group.key, nodes: group.nodes.length }],
+    blades: defaultBlades,
+    declared: new Map(),
+    fallback: undefined,
+    cellHeight: resolveCellSize(options).height,
+  });
+
   return render(
     <NodeGroup
       group={group}
@@ -62,6 +74,7 @@ const renderGroup = (
       hrefFor={noLink}
       options={options}
       blades={defaultBlades}
+      slots={defaultSlots}
       {...overrides}
     />
   );
@@ -182,6 +195,54 @@ describe('NodeGroup', () => {
     expect(openSpy).toHaveBeenCalledWith('/d/some-dash?var-node=node-a', '_self');
 
     openSpy.mockRestore();
+  });
+
+  it('stands a short cabinet on the floor inside a band the tall one sets', () => {
+    // The defect this fixes, at component level: rack2 has half the nodes and
+    // must still reach the same floor. The band is the shared height; the
+    // frame inside it is aligned to the band's bottom.
+    const options: PanelOptions = { ...DEFAULT_OPTIONS, layout: 'rack' };
+    const cellHeight = resolveCellSize(options).height;
+    const blades = layoutBlades({
+      groupKeys: ['rack1', 'rack2'],
+      sizes: new Map(),
+      fallback: 1,
+      cellWidth: resolveCellSize(options).width,
+    });
+    const slots = layoutSlots({
+      groups: [{ key: 'rack1', nodes: 8 }, { key: 'rack2', nodes: 4 }],
+      blades,
+      declared: new Map([['rack2', 4]]),
+      fallback: undefined,
+      cellHeight,
+    });
+
+    render(
+      <NodeGroup
+        group={{ key: 'rack2', nodes: [mkNode('c1'), mkNode('c2'), mkNode('c3'), mkNode('c4')], assumed: false }}
+        stateDisplay={display}
+        valueDisplay={display}
+        colorMode="state"
+        hrefFor={noLink}
+        options={options}
+        blades={blades}
+        slots={slots}
+      />
+    );
+
+    const band = screen.getByTestId('rack-band');
+    expect(getComputedStyle(band).height).toBe(`${frameHeight(8, cellHeight)}px`);
+    expect(getComputedStyle(band).alignItems).toBe('flex-end');
+    expect(getComputedStyle(screen.getByTestId('rack-frame')).height).toBe(`${frameHeight(4, cellHeight)}px`);
+  });
+
+  it('draws no band in the wrap layout', () => {
+    // The band is a cabinet's floor. Wrap draws no cabinet.
+    renderGroup(
+      { key: 'rack1', nodes: [mkNode('c1')], assumed: false },
+      { ...DEFAULT_OPTIONS, layout: 'wrap' }
+    );
+    expect(screen.queryByTestId('rack-band')).toBeNull();
   });
 });
 

@@ -456,3 +456,85 @@ test.describe('blades, against the same live data', () => {
     expect(await rows('gpu1')).toBe(20);
   });
 });
+
+test.describe('cabinet height, against the same live data', () => {
+  test('draws each cabinet at its declared height, standing on one floor', async ({ page }) => {
+    await gotoPanelWithData(page, 9, 'rack1');
+
+    const frame = async (group: string) => {
+      const box = await page.getByTestId(`node-group-${group}`).getByTestId('rack-frame').boundingBox();
+      expect(box).not.toBeNull();
+      return box!;
+    };
+
+    const rack = await frame('rack1');
+    const gpu = await frame('gpu1');
+
+    // Twelve slots against twenty-four: the declaration decides the height,
+    // not the contents — both cabinets hold forty nodes.
+    expect(gpu.height).toBeGreaterThan(rack.height);
+
+    // And the shorter one is not hanging: both feet land on the same line.
+    // This is the defect the whole change exists to fix, measured rather than
+    // asserted from the formula that produced it.
+    expect(Math.round(rack.y + rack.height)).toBe(Math.round(gpu.y + gpu.height));
+  });
+
+  test('spills what does not fit above the frame, clear of the group header', async ({ page }) => {
+    await gotoPanelWithData(page, 40, 'rack1');
+
+    const group = page.getByTestId('node-group-rack1');
+    const frameBox = await group.getByTestId('rack-frame').boundingBox();
+    const bandBox = await group.locator('[data-testid="rack-band"]').boundingBox();
+    expect(frameBox).not.toBeNull();
+    expect(bandBox).not.toBeNull();
+
+    const tops = await group
+      .locator('[data-testid^="node-cell-"]')
+      .evaluateAll((cells) => cells.map((c) => c.getBoundingClientRect().top));
+    expect(tops.length).toBe(40);
+    const highest = Math.min(...tops);
+
+    // Up, not down: the frame fills from its floor, so the rows that do not
+    // fit leave through the top edge.
+    expect(highest).toBeLessThan(frameBox!.y);
+
+    // And the band reserved the room: the highest cell stays inside the band,
+    // whose top edge is the boundary the group header sits above.
+    expect(highest).toBeGreaterThanOrEqual(Math.floor(bandBox!.y));
+  });
+
+  test('names the cabinet that outgrew its declaration', async ({ page }) => {
+    await gotoPanelWithData(page, 40, 'rack1');
+    await expect(page.getByText('rack1 needs 40 slots but 4 were declared.')).toBeVisible();
+  });
+
+  test('gives the rows the whole content box, with nothing leaking past the padding', async ({ page }) => {
+    // jsdom has no layout engine, so only this can see it: under border-box a
+    // frame whose arithmetic under-counts its own border hands the rows a
+    // content box smaller than they need, and they leave through the top.
+    //
+    // Panel 1 rather than panel 9: this needs a group with nothing spare
+    // above its rows, and every cabinet on panel 9 is deliberately declared
+    // taller than it needs, which leaves room above the stack that would
+    // swamp a two-pixel shortfall and make the assertion pass whether the
+    // border term is right or not. r001 is undeclared but ties for the
+    // tallest group on panel 1, so its height is set by its own row count —
+    // no slack, and the row a real regression has nowhere to hide behind.
+    await gotoPanelWithData(page, 1, 'r001');
+
+    const gap = await page.getByTestId('node-group-r001').evaluate((group) => {
+      const frame = group.querySelector('[data-testid="rack-frame"]');
+      const style = getComputedStyle(frame);
+      const tops = [...frame.querySelectorAll('[data-testid^="node-cell-"]')].map(
+        (cell) => cell.getBoundingClientRect().top
+      );
+      return {
+        actual: Math.round(Math.min(...tops) - frame.getBoundingClientRect().top),
+        expected: Math.round(parseFloat(style.borderTopWidth) + parseFloat(style.paddingTop)),
+      };
+    });
+
+    expect(gap.actual).toBe(gap.expected);
+  });
+});

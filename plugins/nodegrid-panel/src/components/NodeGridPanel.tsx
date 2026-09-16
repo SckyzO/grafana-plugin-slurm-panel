@@ -4,12 +4,12 @@ import { FieldType, getDisplayProcessor } from '@grafana/data';
 import type { Field, GrafanaTheme2, PanelProps } from '@grafana/data';
 import { getTemplateSrv } from '@grafana/runtime';
 import { useTheme2 } from '@grafana/ui';
-import { parseBladeTable } from '@slurm-views/core';
+import { parseBladeTable, parseSlotTable } from '@slurm-views/core';
 import type { SlurmNode } from '@slurm-views/core';
 import { useNodeModel } from '../hooks/useNodeModel';
 import { NodeGroup } from './NodeGroup';
 import { PanelWarnings } from './PanelWarnings';
-import { layoutBlades, resolveCellSize } from './rackGeometry';
+import { layoutBlades, layoutSlots, resolveCellSize } from './rackGeometry';
 import { collectUnmapped, summarise } from '../utils/warnings';
 import type { PanelOptions } from '../types';
 
@@ -83,25 +83,40 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
     () => collectUnmapped(model.groups.flatMap((g) => g.nodes), stateDisplay),
     [model.groups, stateDisplay]
   );
+  // Goes through the same resolution as every other consumer of cell size,
+  // rather than reading options.cellWidth directly: two paths that can read
+  // the same number differently is the defect class the border fix
+  // (5ebb879) already fell into once.
+  const cell = resolveCellSize(options);
   // Resolved once for the whole panel, because the width every cabinet shares
   // depends on the densest blade across all of them. Computed in both layouts
   // and consumed only in Rack: the cost is one pass over the groups, and a
   // conditional hook is worse than a wasted one.
-  // Goes through the same resolution as every other consumer of cell width,
-  // rather than reading options.cellWidth directly: two paths that can read
-  // the same number differently is the defect class the border fix
-  // (5ebb879) already fell into once.
-  const cellWidth = resolveCellSize(options).width;
   const blades = useMemo(() => {
     const table = parseBladeTable(options.bladeOverrides);
     const layout = layoutBlades({
       groupKeys: model.groups.map((g) => g.key),
       sizes: table.sizes,
       fallback: options.nodesPerBlade,
-      cellWidth,
+      cellWidth: cell.width,
     });
     return { table, layout };
-  }, [options.bladeOverrides, options.nodesPerBlade, cellWidth, model.groups]);
+  }, [options.bladeOverrides, options.nodesPerBlade, cell.width, model.groups]);
+  // Resolved once for the whole panel, for the same reason blades is: the
+  // levelled height and the band every cabinet shares depend on every group
+  // at once. Consumed only in Rack, computed in both — a conditional hook is
+  // worse than a wasted one.
+  const slots = useMemo(() => {
+    const table = parseSlotTable(options.slotOverrides);
+    const layout = layoutSlots({
+      groups: model.groups.map((g) => ({ key: g.key, nodes: g.nodes.length })),
+      blades: blades.layout,
+      declared: table.slots,
+      fallback: options.slotsPerRack,
+      cellHeight: cell.height,
+    });
+    return { table, layout };
+  }, [options.slotOverrides, options.slotsPerRack, cell.height, model.groups, blades.layout]);
   const lines = useMemo(
     () =>
       summarise(
@@ -117,9 +132,16 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
               undrawn: blades.layout.undrawn,
               squeezed: blades.layout.squeezed,
             }
+          : undefined,
+        options.layout === 'rack'
+          ? {
+              problems: slots.table.problems.map((p) => p.detail),
+              undrawn: slots.layout.undrawn,
+              overflowing: slots.layout.overflowing,
+            }
           : undefined
       ),
-    [model, warnings, unmapped, grouping, options.layout, blades]
+    [model, warnings, unmapped, grouping, options.layout, blades, slots]
   );
 
   if (model.groups.length === 0) {
@@ -147,6 +169,7 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
             hrefFor={hrefFor}
             options={options}
             blades={blades.layout}
+            slots={slots.layout}
           />
         ))}
       </div>
