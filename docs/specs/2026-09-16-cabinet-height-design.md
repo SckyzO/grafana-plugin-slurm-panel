@@ -270,7 +270,8 @@ Resolution order:
 Step 3 is what makes an undeclared cabinet level to a *declared* neighbour as
 well as to a filled one. It also yields an invariant worth stating, because it
 bounds the overflow case: a levelled group takes `panelRows`, which is at
-least its own `rowsNeeded`, so **only a declared group can overflow.**
+least its own `rowsNeeded`, so **only a group with an effective declaration —
+a table entry or the panel-wide number — can overflow.**
 
 `undrawn` is computed the way `layoutBlades` computes it — a declaration for a
 cabinet the query did not return is worth saying, and must not change the

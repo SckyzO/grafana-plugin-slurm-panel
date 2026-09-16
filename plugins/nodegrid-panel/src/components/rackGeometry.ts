@@ -246,6 +246,12 @@ export interface SlotLayout {
  * the floor, declared or filled. Pure, and outside the component on purpose:
  * the levelled height and the shared band depend on every group at once, which
  * no single group can work out for itself.
+ *
+ * The invariant this establishes: a levelled cabinet takes `panelRows`, which
+ * is at least its own row count by construction, so it cannot overflow. Only
+ * a group with an effective declaration — a table entry or the panel-wide
+ * number — can be too small, because the panel-wide number is a declaration
+ * for every group, not only for the ones named in the table.
  */
 export function layoutSlots({ groups, blades, declared, fallback, cellHeight }: SlotLayoutInput): SlotLayout {
   const neededOf = new Map<string, number>();

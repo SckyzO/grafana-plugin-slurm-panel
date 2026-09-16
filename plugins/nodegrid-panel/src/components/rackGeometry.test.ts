@@ -358,4 +358,17 @@ describe('layoutSlots', () => {
     const fractional = layoutSlots({ groups, blades, declared: new Map(), fallback: 12.5, cellHeight: CELL });
     expect(fractional.slotsOf.get('rack1')).toBe(12);
   });
+
+  it('lets a group overflow through the panel-wide number, with no table entry of its own', () => {
+    // The likeliest first misconfiguration: one number typed for a floor whose
+    // cabinets are taller than it. Nothing is declared per group, so this is
+    // the path the invariant's narrower wording used to miss.
+    const { groups, blades } = flat([['rack1', 40], ['rack2', 40]]);
+    const l = layoutSlots({ groups, blades, declared: new Map(), fallback: 10, cellHeight: CELL });
+    expect(l.slotsOf.get('rack1')).toBe(10);
+    expect(l.overflowing).toEqual([
+      { key: 'rack1', needed: 40, declared: 10 },
+      { key: 'rack2', needed: 40, declared: 10 },
+    ]);
+  });
 });
