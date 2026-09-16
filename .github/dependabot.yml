@@ -63,6 +63,15 @@ updates:
     commit-message:
       prefix: 'chore(dev)'
     open-pull-requests-limit: 3
+    ignore:
+      # Patches and minors, yes; majors, no. Node 26 dropped corepack, which
+      # `Dockerfile.toolchain` uses to install the exact pnpm named in
+      # `package.json` — so the proposed bump cannot build, and every weekly
+      # run would propose it again. A Node major is a toolchain migration with
+      # a decision in it, not a bump: make it deliberately and delete this
+      # entry at the same time.
+      - dependency-name: node
+        update-types: ['version-update:semver-major']
 
   # Grafana and Prometheus are pinned in dev/docker-compose.yml for the reason
   # given there. Pinned is not the same as frozen: this surfaces each new
