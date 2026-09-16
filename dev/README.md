@@ -10,9 +10,25 @@ make e2e     # browser tests against it
 make down    # stop, keeping the volumes
 ```
 
-Grafana on <http://localhost:3001>, dashboard **Slurm / Slurm node grid**.
-Port 3001 because `slurm_exporter`'s own stack holds 3000, and Prometheus is
-on 9091 for the same reason.
+Grafana on <http://localhost:3000>, dashboard **Slurm / Slurm node grid**;
+Prometheus on <http://localhost:9090>. `make up` prints the address it
+actually published, which is not always that one — see below.
+
+## If those ports are taken
+
+A machine that already runs a Grafana or a Prometheus — the `slurm_exporter`
+test stack does both — needs this one published beside it rather than on top
+of it. Set the two ports in `dev/.env`, which is not tracked:
+
+```ini
+GRAFANA_PORT=3001
+PROM_PORT=9091
+```
+
+Nothing inside the compose network moves: Grafana still answers on 3000 and
+Prometheus on 9090 there, which is how the browser tests reach them. Only a
+host browser sees the difference, and `make up` reads the published port back
+from compose rather than assuming it.
 
 ## The services
 

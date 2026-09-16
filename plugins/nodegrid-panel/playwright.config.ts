@@ -7,7 +7,7 @@ import baseConfig from './.config/playwright.config';
  * See https://playwright.dev/docs/test-configuration.
  *
  * This monorepo runs its dev stack from `dev/docker-compose.yml`, not the
- * scaffold's own `docker-compose.yaml`: Grafana is published on 3001, and
+ * scaffold's own `docker-compose.yaml`, and
  * `readProvisionedDashboard` / `readProvisionedDataSource` must resolve
  * against `dev/provisioning`, not the scaffold's own unused
  * `plugins/nodegrid-panel/provisioning/`.
@@ -22,11 +22,13 @@ import baseConfig from './.config/playwright.config';
  * which is the point of removing them rather than merely tidying them.
  *
  * GRAFANA_URL is set by the `tools` compose service to Grafana's address on
- * the compose network; the localhost fallback is for a run driven by hand.
+ * the compose network, which is always port 3000 regardless of what the stack
+ * publishes on the host. The localhost fallback is for a run driven by hand,
+ * and reads the same GRAFANA_PORT the compose file publishes.
  */
 export default defineConfig<PluginOptions>(baseConfig, {
   use: {
-    baseURL: process.env.GRAFANA_URL ?? 'http://localhost:3001',
+    baseURL: process.env.GRAFANA_URL ?? `http://localhost:${process.env.GRAFANA_PORT ?? 3000}`,
     provisioningRootDir: resolve(__dirname, '../../dev/provisioning'),
   },
 });

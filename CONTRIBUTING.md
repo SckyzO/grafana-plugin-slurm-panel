@@ -37,7 +37,7 @@ what stops that from depending on what a contributor happens to have.
 
 ```bash
 make check   # lint, typecheck, every test, build, React 19 scan — what CI runs
-make up      # Grafana on http://localhost:3001 with the panel loaded
+make up      # Grafana on http://localhost:3000 with the panel loaded
 make e2e     # Playwright against that stack
 make watch   # rebuild the panel on change; Grafana picks it up live
 make shell   # a shell inside the toolchain container

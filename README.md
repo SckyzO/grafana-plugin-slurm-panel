@@ -30,7 +30,7 @@ You need **Docker and make**. Nothing else — no Node, no pnpm, no browser.
 
 ```bash
 make check   # lint, typecheck, every test, build
-make up      # Grafana on http://localhost:3001, panel loaded
+make up      # Grafana on http://localhost:3000, panel loaded
 make e2e     # browser tests against that stack
 ```
 

@@ -115,7 +115,10 @@ up: scrape ## Start Grafana, Prometheus and the synthetic exporter
 	      | grep -q "\"value\"" && exit 0; \
 	    sleep 1; \
 	  done; echo "Prometheus never returned any node data" >&2; exit 1'
-	@echo "Grafana is up on http://localhost:3001"
+	@# Asked of compose rather than hardcoded: the published port is
+	@# ${GRAFANA_PORT:-3000}, and a message that names the wrong one is
+	@# worse than no message.
+	@echo "Grafana is up on http://localhost:$$($(COMPOSE) port grafana 3000 | sed 's/.*://')"
 
 down: ## Stop the stack, keeping the volumes
 	$(COMPOSE) down
