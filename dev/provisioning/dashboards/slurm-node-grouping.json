@@ -25,7 +25,7 @@
         "uid": "slurm-views-testdata"
       },
       "gridPos": {
-        "h": 9,
+        "h": 6,
         "w": 12,
         "x": 0,
         "y": 0
@@ -78,7 +78,7 @@
         "uid": "slurm-views-testdata"
       },
       "gridPos": {
-        "h": 9,
+        "h": 6,
         "w": 12,
         "x": 12,
         "y": 0
@@ -131,10 +131,10 @@
         "uid": "slurm-views-testdata"
       },
       "gridPos": {
-        "h": 9,
+        "h": 6,
         "w": 12,
         "x": 0,
-        "y": 9
+        "y": 6
       },
       "targets": [
         {
@@ -184,10 +184,10 @@
         "uid": "slurm-views-testdata"
       },
       "gridPos": {
-        "h": 9,
+        "h": 6,
         "w": 12,
         "x": 12,
-        "y": 9
+        "y": 6
       },
       "targets": [
         {
@@ -236,10 +236,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 9,
+        "h": 6,
         "w": 12,
         "x": 0,
-        "y": 18
+        "y": 12
       },
       "targets": [
         {
@@ -289,10 +289,10 @@
         "uid": "-- Mixed --"
       },
       "gridPos": {
-        "h": 9,
+        "h": 6,
         "w": 12,
         "x": 12,
-        "y": 18
+        "y": 12
       },
       "targets": [
         {
@@ -361,10 +361,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 9,
+        "h": 6,
         "w": 12,
         "x": 0,
-        "y": 27
+        "y": 18
       },
       "targets": [
         {
@@ -414,10 +414,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 14,
+        "h": 7,
         "w": 24,
         "x": 0,
-        "y": 36
+        "y": 24
       },
       "targets": [
         {
