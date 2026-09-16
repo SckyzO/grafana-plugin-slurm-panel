@@ -1,0 +1,122 @@
+name: Release
+
+# A tag is the trigger because a tag is the deliberate act. Everything below
+# runs through `make`, inside the same toolchain image CI and a contributor
+# use, so a release is the local commands in a fixed order rather than a
+# second build system that only exists here.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build, sign and publish the archive
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Read once here so the signing step can test for it: the `secrets`
+      # context is not available in a step's `if`, but `env` is. Absent, the
+      # release is published unsigned — which is exactly what a first
+      # submission to the Grafana catalogue has to be, since a signature level
+      # is only granted after that first review.
+      GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check the tag against the version it claims
+        # The archive is named from package.json, not from the tag. A tag that
+        # disagrees would publish v0.2.0 containing 0.1.0, under a filename
+        # that says 0.1.0, to a catalogue that keys on the version inside.
+        # Cheaper to fail here than to yank a release.
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg=$(jq -r .version plugins/nodegrid-panel/package.json)
+          if [ "$tag" != "$pkg" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} claims $tag, package.json says $pkg"
+            exit 1
+          fi
+
+      - id: ids
+        name: Read the runner's uid and gid
+        run: |
+          echo "uid=$(id -u)" >> "$GITHUB_OUTPUT"
+          echo "gid=$(id -g)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build the toolchain image
+        uses: docker/build-push-action@v6
+        with:
+          context: dev
+          file: dev/Dockerfile.toolchain
+          tags: slurm-views-tools:local
+          load: true
+          build-args: |
+            UID=${{ steps.ids.outputs.uid }}
+            GID=${{ steps.ids.outputs.gid }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # The same gate as CI. A tag can be pushed at a commit CI never saw.
+      - run: make check
+
+      - name: Sign the plugin
+        if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' }}
+        # Before `make package`, deliberately: signing writes MANIFEST.txt into
+        # dist/, and a manifest added after the archive is built is a manifest
+        # nobody ships.
+        run: make sign
+
+      # Packages the archive and its SHA1, then runs Grafana's own validator
+      # against that archive rather than against a fresh one.
+      - run: make validate
+
+      - id: artifact
+        name: Name the archive
+        run: |
+          dir=plugins/nodegrid-panel/.artifacts
+          name=$(cat "$dir/zipname")
+          echo "path=$dir/$name" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "sha1=$(cut -d' ' -f1 "$dir/$name.sha1")" >> "$GITHUB_OUTPUT"
+          if [ -f "plugins/nodegrid-panel/dist/MANIFEST.txt" ]; then
+            echo "signed=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=no" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish the release
+        # `gh` rather than a third-party action: this repository pins every
+        # image and every action it runs, and the CLI is already on the runner.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ZIP: ${{ steps.artifact.outputs.path }}
+          NAME: ${{ steps.artifact.outputs.name }}
+          SHA1: ${{ steps.artifact.outputs.sha1 }}
+          SIGNED: ${{ steps.artifact.outputs.signed }}
+        run: |
+          url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${NAME}"
+          {
+            echo "Signed: ${SIGNED}"
+            echo
+            echo "Submitting this version to the Grafana catalogue needs these two values:"
+            echo
+            echo "- Archive URL: \`${url}\`"
+            echo "- SHA1: \`${SHA1}\`"
+          } > notes.md
+          gh release create "${GITHUB_REF_NAME}" "${ZIP}" "${ZIP}.sha1" \
+            --title "${GITHUB_REF_NAME}" --notes-file notes.md
+          {
+            echo "### Grafana catalogue submission"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Archive URL | \`${url}\` |"
+            echo "| SHA1 | \`${SHA1}\` |"
+            echo "| Signed | ${SIGNED} |"
+          } >> "$GITHUB_STEP_SUMMARY"

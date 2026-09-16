@@ -15,7 +15,8 @@ RUN := $(COMPOSE) run --rm tools
 
 .DEFAULT_GOAL := help
 .PHONY: help image deps install lock build watch test lint typecheck react-detect \
-        check scrape e2e up down restart logs logs-once shell screenshots validate clean
+        check scrape e2e up down restart logs logs-once shell screenshots package sign \
+        validate clean
 
 help: ## Show this help
 	@awk 'BEGIN { FS = ":.*## "; print "Targets:\n" } \
@@ -160,14 +161,47 @@ screenshots: up ## Regenerate the catalogue screenshots from the dev stack
 	@# plugin.json, which is what makes the build copy them into dist/.
 	$(RUN) node plugins/nodegrid-panel/scripts/screenshots.mjs
 
-validate: build ## Run Grafana's official plugin validator
+sign: build ## Sign dist/ (needs GRAFANA_ACCESS_POLICY_TOKEN in the environment)
+	@# Deliberately not part of `package`. Signing is the one step that speaks
+	@# to Grafana as you, and until Grafana has reviewed a first submission and
+	@# granted a signature level it answers "Field is required: rootUrls" —
+	@# which is expected, not a failure to work around. A first submission is
+	@# allowed to be unsigned; every version after it is not.
+	@[ -n "$$GRAFANA_ACCESS_POLICY_TOKEN" ] || { \
+	  echo "GRAFANA_ACCESS_POLICY_TOKEN is not set - see dev/README.md" >&2; exit 1; }
+	$(COMPOSE) run --rm -e GRAFANA_ACCESS_POLICY_TOKEN tools \
+	  pnpm --filter tomzone-slurm-panel sign
+
+package: build ## Package dist/ as the archive a release publishes, with its SHA1
+	@# The archive holds exactly one top-level directory, named after the
+	@# plugin id: that is what Grafana unpacks into its plugins directory, and
+	@# the validator rejects any other shape. The version comes from
+	@# package.json rather than from a tag, so a tag that disagrees with it is
+	@# caught before a release is public rather than after.
+	@#
+	@# Run `make sign` first when signing: it writes MANIFEST.txt into dist/,
+	@# and a manifest added after the zip is built is a manifest nobody ships.
+	@#
+	@# The name is written to .artifacts/zipname because it carries the
+	@# version, and both `validate` below and the release workflow need to
+	@# name the file without recomputing how it is spelled.
 	$(RUN) sh -c 'cd plugins/nodegrid-panel \
+	  && version=$$(node -p "require(\"./package.json\").version") \
+	  && name="tomzone-slurm-panel-$$version.zip" \
 	  && rm -rf .artifacts tomzone-slurm-panel \
 	  && mkdir -p .artifacts \
 	  && cp -r dist tomzone-slurm-panel \
-	  && zip -qr .artifacts/plugin.zip tomzone-slurm-panel \
-	  && rm -rf tomzone-slurm-panel'
-	$(COMPOSE) run --rm validator /archive/plugin.zip
+	  && zip -qr ".artifacts/$$name" tomzone-slurm-panel \
+	  && rm -rf tomzone-slurm-panel \
+	  && (cd .artifacts && sha1sum "$$name" > "$$name.sha1") \
+	  && printf %s "$$name" > .artifacts/zipname \
+	  && echo "packaged plugins/nodegrid-panel/.artifacts/$$name"'
+
+validate: package ## Run Grafana's official plugin validator on that archive
+	@# On the archive a release would publish, not on a different one built
+	@# for the occasion: validating something other than what ships proves
+	@# nothing about what ships.
+	$(COMPOSE) run --rm validator "/archive/$$(cat plugins/nodegrid-panel/.artifacts/zipname)"
 
 clean: ## Remove the stack, the node_modules volumes and the build output
 	$(COMPOSE) down -v --remove-orphans

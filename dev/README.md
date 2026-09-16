@@ -302,6 +302,52 @@ bundle, which is the half we can act on. The warning is left visible rather
 than silenced with `--skipDependencies`, so that it stops appearing by itself
 the day either tool learns about the other.
 
+## Cutting a release
+
+Pushing a tag `v<version>` runs `.github/workflows/release.yml`, which builds
+in the same toolchain image as everything else, signs if it can, packages the
+archive with its SHA1, runs Grafana's validator against **that** archive, and
+publishes a GitHub release carrying both files. Every step of it is a `make`
+target you can run yourself:
+
+```bash
+make sign       # needs GRAFANA_ACCESS_POLICY_TOKEN; writes dist/MANIFEST.txt
+make package    # tomzone-slurm-panel-<version>.zip and its .sha1
+make validate   # Grafana's validator, on the archive a release would publish
+```
+
+The tag has to agree with `plugins/nodegrid-panel/package.json`; the workflow
+refuses the release otherwise, because the archive is named from package.json
+and a tag that disagrees publishes one version under another's name.
+
+### Signing, and why the first release is not signed
+
+`make sign` needs an Access Policy token from Grafana Cloud — *My Account >
+Security > Access Policies*, realm set to the organisation, scope
+`plugins:write`. Export it as `GRAFANA_ACCESS_POLICY_TOKEN`; it is never
+written to a file here and never reaches the repository.
+
+Signing a **public** plugin only works once Grafana has reviewed a first
+submission and granted a signature level. Before that the API answers
+
+```
+Field is required: rootUrls
+```
+
+which reads like a missing argument and is not one: it is Grafana saying it
+does not yet know this plugin as a public one. A first submission is allowed
+to be unsigned, so the release workflow publishes unsigned when the secret is
+absent and signs the moment it is present — no edit needed between the two.
+
+To sign in CI later, add the token as a repository secret named
+`GRAFANA_ACCESS_POLICY_TOKEN`. Nothing else changes.
+
+### Submitting to the catalogue
+
+*Grafana Cloud > Org Settings > My Plugins > Submit New Plugin* asks for the
+archive's URL and its SHA1. The release job prints both in its job summary and
+repeats them in the release notes.
+
 ## Versions are pinned, never floating
 
 `.env` pins `GRAFANA_VERSION`; `docker-compose.yml` pins Prometheus; the
