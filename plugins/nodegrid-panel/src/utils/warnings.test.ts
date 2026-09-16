@@ -240,6 +240,55 @@ describe('grouping warnings', () => {
   });
 });
 
+describe('blade warnings', () => {
+  const noGrouping: GroupingNotes = { source: { kind: 'none' }, orphans: [], emptyGroups: [], problems: [] };
+  const empty = { groups: [], nodeCount: 0, slotCount: 0, duplicated: false };
+
+  it('says nothing at all when there are no blade notes', () => {
+    // Every wrap-layout panel is this case, and it must stay silent.
+    expect(summarise(empty, [], [], noGrouping)).toEqual([]);
+  });
+
+  it('repeats problems from the parser verbatim', () => {
+    const lines = summarise(empty, [], [], noGrouping, {
+      problems: ['Line 2 has no "groups: count" separator.'],
+      undrawn: [],
+      squeezed: [],
+    });
+    expect(lines).toContain('Line 2 has no "groups: count" separator.');
+  });
+
+  it('collapses a hundred declared groups that are not drawn into one line', () => {
+    // rack[1-120] against a query that returned twenty is a hundred missing
+    // cabinets, and a hundred lines is a wall rather than a warning.
+    const undrawn = Array.from({ length: 100 }, (_, i) => `rack${i + 21}`);
+    const lines = summarise(empty, [], [], noGrouping, { problems: [], undrawn, squeezed: [] });
+    expect(lines).toEqual([
+      'Nodes per blade named 100 groups that are not drawn: rack[21-120].',
+    ]);
+  });
+
+  it('says "group that is" for a single one', () => {
+    const lines = summarise(empty, [], [], noGrouping, { problems: [], undrawn: ['rack9'], squeezed: [] });
+    expect(lines).toEqual(['Nodes per blade named 1 group that is not drawn: rack9.']);
+  });
+
+  it('collapses squeezed cabinets by blade size, naming the width once', () => {
+    // Every cabinet at the same blade size has the same sled width, because
+    // they all share the rack width. One line per size, not one per cabinet.
+    const squeezed = [
+      { key: 'rack1', blade: 4, width: 6 },
+      { key: 'rack2', blade: 4, width: 6 },
+      { key: 'gpu1', blade: 3, width: 8 },
+    ];
+    const lines = summarise(empty, [], [], noGrouping, { problems: [], undrawn: [], squeezed });
+    expect(lines).toEqual([
+      'A blade of 3 leaves each node 8px wide in gpu1. Raise Cell width.',
+      'A blade of 4 leaves each node 6px wide in rack[1-2]. Raise Cell width.',
+    ]);
+  });
+});
+
 describe('groupingNotes', () => {
   const mkNode = (name: string): SlurmNode => ({
     name, state: 'idle', partitions: [], labels: {}, facets: { gres: [] },

@@ -98,8 +98,23 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
     return { table, layout };
   }, [options.bladeOverrides, options.nodesPerBlade, options.cellWidth, model.groups]);
   const lines = useMemo(
-    () => summarise(model, warnings, unmapped, grouping),
-    [model, warnings, unmapped, grouping]
+    () =>
+      summarise(
+        model,
+        warnings,
+        unmapped,
+        grouping,
+        // Only in the rack layout: the options are hidden in Wrap, so warning
+        // about a table nobody can see would be warning about nothing.
+        options.layout === 'rack'
+          ? {
+              problems: blades.table.problems.map((p) => p.detail),
+              undrawn: blades.layout.undrawn,
+              squeezed: blades.layout.squeezed,
+            }
+          : undefined
+      ),
+    [model, warnings, unmapped, grouping, options.layout, blades]
   );
 
   if (model.groups.length === 0) {
