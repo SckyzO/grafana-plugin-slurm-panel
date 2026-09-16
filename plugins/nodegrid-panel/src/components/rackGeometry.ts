@@ -74,6 +74,14 @@ const RACK_PADDING = 4;
 const RACK_GAP = 2;
 
 /**
+ * The frame's own border, in pixels per side — the one `RackFrame` draws
+ * around the cabinet. The app runs under `box-sizing: border-box`, so this
+ * comes out of the same content box as the padding; leaving it out let a
+ * sled overflow the frame's right edge by exactly this many pixels.
+ */
+const RACK_BORDER = 1;
+
+/**
  * The narrowest a sled may be drawn and still be a hover target rather than a
  * hairline — the same floor the Cell width option's description already names.
  */
@@ -81,7 +89,7 @@ export const MIN_SLED_WIDTH = 10;
 
 /** One sled's width inside a rack of the given width, at the given blade size. */
 export function sledWidthFor(rackWidth: number, blade: number): number {
-  const inner = rackWidth - RACK_PADDING * 2 - (blade - 1) * RACK_GAP;
+  const inner = rackWidth - RACK_PADDING * 2 - RACK_BORDER * 2 - (blade - 1) * RACK_GAP;
   return Math.max(1, Math.floor(inner / blade));
 }
 
