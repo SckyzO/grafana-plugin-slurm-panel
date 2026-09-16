@@ -142,6 +142,28 @@ the cabinet. The default is 1 — a single-node server — and it draws one sled
 per node. Set it to 4 and a forty-node cabinet becomes ten rows instead of
 forty.
 
+**Slots per rack** says how tall a cabinet is drawn, in slots — chassis
+positions, not nodes and not rack units. A slot holds a whole blade, so a
+42-slot cabinet holds 42 nodes of single-node servers and 168 of quads, which
+is also true of the hardware. Leave it empty and every cabinet levels to the
+tallest one drawn, so a half-full rack stands on the floor instead of hanging
+from the ceiling.
+
+**Slots per rack, by group** overrides it per group, one line per declaration,
+the hostlist of group names on the left:
+
+```
+rack[1-120]: 42
+rack[121-125]: 47   # the row we inherited
+```
+
+A declared cabinet keeps its height even when its neighbours are taller — a
+declaration is an assertion about the hardware, and a genuinely small cabinet
+stays small. A cabinet holding more than it declares is still drawn in full:
+the rows that do not fit spill above the frame and the warnings strip names
+it. Nothing is ever hidden, because a node that exists and is not drawn is a
+node nobody is watching.
+
 **Nodes per blade, by group** overrides it for the groups it names, one line
 per declaration:
 

@@ -4,7 +4,7 @@ import { FieldType, getDisplayProcessor } from '@grafana/data';
 import type { Field, GrafanaTheme2, PanelProps } from '@grafana/data';
 import { getTemplateSrv } from '@grafana/runtime';
 import { useTheme2 } from '@grafana/ui';
-import { parseBladeTable } from '@slurm-views/core';
+import { parseBladeTable, parseSlotTable } from '@slurm-views/core';
 import type { SlurmNode } from '@slurm-views/core';
 import { useNodeModel } from '../hooks/useNodeModel';
 import { NodeGroup } from './NodeGroup';
@@ -106,21 +106,17 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
   // levelled height and the band every cabinet shares depend on every group
   // at once. Consumed only in Rack, computed in both — a conditional hook is
   // worse than a wasted one.
-  //
-  // Nothing is declared yet: an empty table and no panel-wide number is the
-  // levelling default, which is what makes a short cabinet stand on the floor
-  // without anyone configuring anything. Task 4 points these two at options.
-  const slots = useMemo(
-    () =>
-      layoutSlots({
-        groups: model.groups.map((g) => ({ key: g.key, nodes: g.nodes.length })),
-        blades: blades.layout,
-        declared: new Map<string, number>(),
-        fallback: undefined,
-        cellHeight: cell.height,
-      }),
-    [cell.height, model.groups, blades.layout]
-  );
+  const slots = useMemo(() => {
+    const table = parseSlotTable(options.slotOverrides);
+    const layout = layoutSlots({
+      groups: model.groups.map((g) => ({ key: g.key, nodes: g.nodes.length })),
+      blades: blades.layout,
+      declared: table.slots,
+      fallback: options.slotsPerRack,
+      cellHeight: cell.height,
+    });
+    return { table, layout };
+  }, [options.slotOverrides, options.slotsPerRack, cell.height, model.groups, blades.layout]);
   const lines = useMemo(
     () =>
       summarise(
@@ -166,7 +162,7 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
             hrefFor={hrefFor}
             options={options}
             blades={blades.layout}
-            slots={slots}
+            slots={slots.layout}
           />
         ))}
       </div>
