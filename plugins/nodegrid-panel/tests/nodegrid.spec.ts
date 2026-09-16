@@ -188,7 +188,7 @@ test.describe('the continuous colour modes', () => {
     const dashboardPage = await gotoDashboardPage(dashboard);
 
     // Every synthetic node reports cpu_alloc and cpu_total, so every cell has
-    // a value and none may be drawn empty — if the facet slots stopped being
+    // a value and none may be drawn empty — if the facet queries stopped being
     // read this would be 240, not 0.
     const cpu = (await gridIn(dashboardPage, 'CPU occupancy')).locator('[data-testid^="node-cell-"]');
     await expect.poll(() => cpu.count(), { timeout: 20_000 }).toBeGreaterThan(200);

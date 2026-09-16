@@ -130,7 +130,7 @@ Written out as the panel JSON actually carries it:
     { "id": "joinByField", "options": { "byField": "node", "mode": "outer" } }
   ],
   "options": {
-    "slots": { "state": "joinByField-A-B" },
+    "queries": { "state": "joinByField-A-B" },
     "grouping": { "kind": "label", "label": "zone" }
   }
 }

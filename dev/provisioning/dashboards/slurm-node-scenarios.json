@@ -48,7 +48,7 @@
           "gresType": "gres_type",
           "reason": "reason"
         },
-        "slots": {
+        "queries": {
           "state": "A"
         },
         "grouping": {
@@ -101,7 +101,7 @@
           "gresType": "gres_type",
           "reason": "reason"
         },
-        "slots": {
+        "queries": {
           "state": "A"
         },
         "grouping": {
@@ -154,7 +154,7 @@
           "gresType": "gres_type",
           "reason": "reason"
         },
-        "slots": {
+        "queries": {
           "state": "A"
         },
         "grouping": {
@@ -216,7 +216,7 @@
           "gresType": "gres_type",
           "reason": "reason"
         },
-        "slots": {
+        "queries": {
           "state": "A",
           "drainReason": "B"
         },
@@ -324,7 +324,7 @@
           "gresType": "gres_type",
           "reason": "reason"
         },
-        "slots": {
+        "queries": {
           "state": "A",
           "cpuAlloc": "B",
           "cpuTotal": "C",

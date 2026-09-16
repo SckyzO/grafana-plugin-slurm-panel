@@ -231,7 +231,7 @@ working chain is:
 4. **The joined frame's `refId` is not `A`.** `Join by field` names its
    output `joinByField-<refId>-<refId>-...` for every frame it joined — here,
    deterministically, `joinByField-A-B`. The panel's **State query** option
-   (Data > State query, `options.slots.state`) has to name that string, not
+   (Data > State query, `options.queries.state`) has to name that string, not
    the query's own `A`, or the panel reads zero frames and prints "No nodes"
    with no warning to explain why (ingest only warns about a query it can
    see and cannot read; a query it never receives is silent).
@@ -259,7 +259,7 @@ Written as the panel JSON actually carries it:
     { "id": "joinByField", "options": { "byField": "node", "mode": "outer" } }
   ],
   "options": {
-    "slots": { "state": "joinByField-A-B" },
+    "queries": { "state": "joinByField-A-B" },
     "grouping": { "kind": "label", "label": "zone" }
   }
 }

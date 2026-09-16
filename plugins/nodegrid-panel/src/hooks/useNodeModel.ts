@@ -33,7 +33,7 @@ export function useNodeModel(
 ): NodeModel {
   return useMemo(() => {
     const frames = data.series.map(toMinimal);
-    const { nodes, warnings } = ingest({ frames, slots: options.slots, labels: options.labels });
+    const { nodes, warnings } = ingest({ frames, queries: options.queries, labels: options.labels });
 
     // Interpolated once, here, so the key function, the declared order and the
     // warning lines all read the same table. Grafana documents
@@ -60,7 +60,7 @@ export function useNodeModel(
       stateLabel: options.labels.state,
     });
 
-    const stateFrame = data.series.find((f) => f.refId === options.slots.state);
+    const stateFrame = data.series.find((f) => f.refId === options.queries.state);
     const stateField =
       stateFrame?.fields.find((f) => f.name === options.labels.state) ??
       stateFrame?.fields.find((f) => f.type === FieldType.string);

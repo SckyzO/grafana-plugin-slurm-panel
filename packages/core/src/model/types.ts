@@ -19,7 +19,16 @@ export interface LabelNames {
   reason: string;
 }
 
-export interface SlotBindings {
+/**
+ * Each data role the panel can read, bound to the `refId` of the query that
+ * supplies it. `state` is the only required one; the rest are facets a reader
+ * binds when they want a colour mode or a tooltip line that needs them.
+ *
+ * Named for what it holds — queries — rather than for the places they plug
+ * into, because "slot" already means a position in a cabinet everywhere the
+ * rack layout is concerned.
+ */
+export interface QueryBindings {
   state: string;
   cpuAlloc?: string;
   cpuTotal?: string;
@@ -77,7 +86,7 @@ export interface IngestResult {
 
 export interface IngestInput {
   frames: MinimalFrame[];
-  slots: SlotBindings;
+  queries: QueryBindings;
   labels: LabelNames;
 }
 

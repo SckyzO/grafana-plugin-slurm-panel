@@ -3,8 +3,8 @@ import type {
   GresEntry, IngestInput, IngestResult, IngestWarning, MinimalFrame, NodeFacets, SlurmNode,
 } from '../model/types.js';
 
-type ScalarSlot = 'cpuAlloc' | 'cpuTotal' | 'memAlloc' | 'memTotal' | 'drainSince';
-const SCALAR_SLOTS: ScalarSlot[] = ['cpuAlloc', 'cpuTotal', 'memAlloc', 'memTotal', 'drainSince'];
+type ScalarFacet = 'cpuAlloc' | 'cpuTotal' | 'memAlloc' | 'memTotal' | 'drainSince';
+const SCALAR_FACETS: ScalarFacet[] = ['cpuAlloc', 'cpuTotal', 'memAlloc', 'memTotal', 'drainSince'];
 
 const framesFor = (frames: MinimalFrame[], refId: string | undefined): MinimalFrame[] =>
   refId === undefined ? [] : frames.filter((f) => f.refId === refId);
@@ -17,12 +17,12 @@ const emptyFacets = (): NodeFacets => ({ gres: [] });
 // `IngestWarning.refId` is optional, and under exactOptionalPropertyTypes an
 // optional property may not be explicitly set to `undefined` — it must be
 // present with a real value or left out entirely. `frame.refId` and
-// `slots[slot]` are both `string | undefined`, so build the warning through
+// `queries[facet]` are both `string | undefined`, so build the warning through
 // this helper instead of assigning the raw value into the object literal.
 const warn = (kind: IngestWarning['kind'], refId: string | undefined, detail: string): IngestWarning =>
   refId === undefined ? { kind, detail } : { kind, refId, detail };
 
-export function ingest({ frames, slots, labels }: IngestInput): IngestResult {
+export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
   const warnings: IngestWarning[] = [];
   const nodes = new Map<string, SlurmNode>();
   // Per-node set of label keys seen with more than one differing value;
@@ -30,7 +30,7 @@ export function ingest({ frames, slots, labels }: IngestInput): IngestResult {
   const ambiguousLabelKeys = new Map<string, Set<string>>();
 
   // --- identity and state -------------------------------------------------
-  for (const frame of framesFor(frames, slots.state)) {
+  for (const frame of framesFor(frames, queries.state)) {
     // Narrow to `{ sample, name: string }` here, in the same step that
     // filters, so a later edit to the filter can't silently invalidate a
     // separate `!` at the point of use — the compiler ties them together.
@@ -84,8 +84,8 @@ export function ingest({ frames, slots, labels }: IngestInput): IngestResult {
   }
 
   // --- scalar facets ------------------------------------------------------
-  for (const slot of SCALAR_SLOTS) {
-    const refId = slots[slot];
+  for (const facet of SCALAR_FACETS) {
+    const refId = queries[facet];
     const seen = new Map<string, Set<number>>();
 
     for (const frame of framesFor(frames, refId)) {
@@ -109,16 +109,16 @@ export function ingest({ frames, slots, labels }: IngestInput): IngestResult {
       if (values.size > 1) {
         // Keeping an arbitrary row here is how a panel reports a number
         // nobody can reproduce. Say so instead.
-        warnings.push(warn('ambiguous-scalar', refId, `${name} returned ${values.size} differing values for ${slot}`));
+        warnings.push(warn('ambiguous-scalar', refId, `${name} returned ${values.size} differing values for ${facet}`));
         continue;
       }
       // Under noUncheckedIndexedAccess, `[...values][0]` is `number | undefined`;
       // under exactOptionalPropertyTypes, assigning an explicit `undefined` to
-      // `facets[slot]?: number` is a type error. Narrow with a guard instead of
+      // `facets[facet]?: number` is a type error. Narrow with a guard instead of
       // asserting it away — size is always exactly 1 here, but TS can't see that.
       const value = [...values][0];
       if (value !== undefined) {
-        node.facets[slot] = value;
+        node.facets[facet] = value;
       }
     }
   }
@@ -146,14 +146,14 @@ export function ingest({ frames, slots, labels }: IngestInput): IngestResult {
       }
     }
   };
-  applyGres(slots.gresUsed, 'used');
-  applyGres(slots.gresTotal, 'total');
+  applyGres(queries.gresUsed, 'used');
+  applyGres(queries.gresTotal, 'total');
   for (const node of nodes.values()) {
     node.facets.gres.sort((a, b) => a.type.localeCompare(b.type));
   }
 
   // --- drain reason, which carries no partition label ---------------------
-  for (const frame of framesFor(frames, slots.drainReason)) {
+  for (const frame of framesFor(frames, queries.drainReason)) {
     for (const sample of toSamples(frame)) {
       const name = sample.labels[labels.node];
       const reason = sample.labels[labels.reason];

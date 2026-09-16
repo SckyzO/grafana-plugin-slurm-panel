@@ -50,10 +50,10 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
         category: ['Data'],
       })
       .addTextInput({
-        path: 'slots.state',
+        path: 'queries.state',
         name: 'State query',
         description: 'refId of the query returning slurm_node_status.',
-        defaultValue: DEFAULT_OPTIONS.slots.state,
+        defaultValue: DEFAULT_OPTIONS.queries.state,
         category: ['Data'],
       })
       .addRadio({

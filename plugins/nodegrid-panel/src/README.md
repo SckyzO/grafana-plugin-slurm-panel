@@ -12,10 +12,10 @@ disagree.
 
 ## Data
 
-One required query, plus a set of optional named facet slots. Each is bound
+One required query, plus a set of optional named facets. Each is bound
 to a query `refId`:
 
-| Slot | Query (default) | Notes |
+| Role | Query (default) | Notes |
 |---|---|---|
 | `state` (required) | `slurm_node_status` | node identity and Slurm state; drives colour in State mode |
 | `cpuAlloc` / `cpuTotal` | `slurm_node_cpu_alloc` / `slurm_node_cpu_total` | drives colour in CPU mode |
@@ -28,13 +28,13 @@ Label names (`node`, `state`, `partition`, `gresType`, `reason`) are options
 too, defaulting to what `slurm_exporter` emits.
 
 The **Data** section of the panel options covers the node label, the state
-label and the state query's `refId` — the required query. The optional facet
-slots above, and the `partition` / `gresType` / `reason` label names, have no
+label and the state query's `refId` — the required query. The optional facets
+above, and the `partition` / `gresType` / `reason` label names, have no
 field of their own in that editor; bind them by editing the panel's JSON
 model instead (panel menu ▸ **Edit panel JSON**) or in a dashboard's
 provisioning file. `dev/provisioning/dashboards/slurm-node-grid.json` in this
 plugin's repository is a complete worked example — its panel's
-`options.slots` and `options.labels` show every slot bound to a query.
+`options.queries` and `options.labels` show every role bound to a query.
 
 ## Grouping
 

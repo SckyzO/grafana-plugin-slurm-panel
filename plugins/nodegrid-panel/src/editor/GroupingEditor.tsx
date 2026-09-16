@@ -55,7 +55,7 @@ export function GroupingEditor({ value, onChange, context }: Props) {
       return [];
     }
     const frames: MinimalFrame[] = context.data.map(toMinimalFrame);
-    const { nodes } = ingest({ frames, slots: options.slots, labels: options.labels });
+    const { nodes } = ingest({ frames, queries: options.queries, labels: options.labels });
     // The panel gets `replaceVariables` on PanelProps; an options editor does
     // not, so it asks the same service directly. Without this the preview
     // reads "$racks" literally and claims the table matches nothing.

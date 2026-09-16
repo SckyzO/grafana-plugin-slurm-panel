@@ -1,11 +1,11 @@
-import type { KeySource, LabelNames, SlotBindings } from '@slurm-views/core';
+import type { KeySource, LabelNames, QueryBindings } from '@slurm-views/core';
 
 export type Layout = 'wrap' | 'rack';
 export type ColorMode = 'state' | 'cpu' | 'mem' | 'gres';
 
 export interface PanelOptions {
   labels: LabelNames;
-  slots: SlotBindings;
+  queries: QueryBindings;
   grouping: KeySource;
   multiValueLabel: boolean;
   layout: Layout;
@@ -34,7 +34,7 @@ export interface PanelOptions {
 
 export const DEFAULT_OPTIONS: PanelOptions = {
   labels: { node: 'node', state: 'status', partition: 'partition', gresType: 'gres_type', reason: 'reason' },
-  slots: { state: 'A' },
+  queries: { state: 'A' },
   grouping: { kind: 'none' },
   multiValueLabel: false,
   layout: 'wrap',

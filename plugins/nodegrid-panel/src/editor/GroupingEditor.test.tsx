@@ -14,7 +14,7 @@ import { fakeTemplateSrv } from '../testing/templateSrv';
 // same shape `toSamples` reads when a query returns node/status/partition as
 // columns rather than as per-series labels. See packages/core's ingest/labels.ts.
 const tableFrame = (rows: Array<{ node: string; status: string; partition: string }>): DataFrame => ({
-  refId: DEFAULT_OPTIONS.slots.state,
+  refId: DEFAULT_OPTIONS.queries.state,
   length: rows.length,
   fields: [
     { name: 'node', type: FieldType.string, config: {}, values: rows.map((r) => r.node) },

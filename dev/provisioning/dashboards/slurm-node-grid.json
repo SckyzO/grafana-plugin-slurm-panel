@@ -71,7 +71,7 @@
           "gresType": "gres_type",
           "reason": "reason"
         },
-        "slots": {
+        "queries": {
           "state": "A",
           "cpuAlloc": "B",
           "cpuTotal": "C",

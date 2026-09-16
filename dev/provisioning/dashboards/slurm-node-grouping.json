@@ -48,7 +48,7 @@
           "gresType": "gres_type",
           "reason": "reason"
         },
-        "slots": {
+        "queries": {
           "state": "A"
         },
         "grouping": {
@@ -101,7 +101,7 @@
           "gresType": "gres_type",
           "reason": "reason"
         },
-        "slots": {
+        "queries": {
           "state": "A"
         },
         "grouping": {
@@ -154,7 +154,7 @@
           "gresType": "gres_type",
           "reason": "reason"
         },
-        "slots": {
+        "queries": {
           "state": "A"
         },
         "grouping": {
@@ -207,7 +207,7 @@
           "gresType": "gres_type",
           "reason": "reason"
         },
-        "slots": {
+        "queries": {
           "state": "A"
         },
         "grouping": {
@@ -259,7 +259,7 @@
           "gresType": "gres_type",
           "reason": "reason"
         },
-        "slots": {
+        "queries": {
           "state": "A"
         },
         "grouping": {
@@ -282,7 +282,7 @@
       "id": 6,
       "type": "tomzone-slurm-panel",
       "title": "Rung 2 -- join, against an inventory the metrics do not carry",
-      "description": "Rung 2 of three routes to a topology, and the one available to anyone whose Prometheus carries no location dimension at all: query A reads slurm_node_status live with Format set to Table, so Prometheus hands back one row per node instead of one frame per series; query B is a hand-maintained CSV inventory (node,zone) against the TestData source, naming a zone that exists nowhere in the scraped metrics. The panel's own datasource is set to -- Mixed --, which is what makes Grafana actually run a query-B target when the panel datasource is Prometheus. Join by field (byField node, mode outer) merges the two into one frame, whose refId becomes \"joinByField-A-B\" -- not \"A\" -- which is why Grouping > Slots > State points at that name rather than the query's own refId. Grouping by \"zone\" rather than \"rack\" is deliberate: a value that only the join could have supplied is proof the join ran, not an assertion resting on which of two agreeing columns Grafana happened to keep.",
+      "description": "Rung 2 of three routes to a topology, and the one available to anyone whose Prometheus carries no location dimension at all: query A reads slurm_node_status live with Format set to Table, so Prometheus hands back one row per node instead of one frame per series; query B is a hand-maintained CSV inventory (node,zone) against the TestData source, naming a zone that exists nowhere in the scraped metrics. The panel's own datasource is set to -- Mixed --, which is what makes Grafana actually run a query-B target when the panel datasource is Prometheus. Join by field (byField node, mode outer) merges the two into one frame, whose refId becomes \"joinByField-A-B\" -- not \"A\" -- which is why Data > State query points at that name rather than the query's own refId. Grouping by \"zone\" rather than \"rack\" is deliberate: a value that only the join could have supplied is proof the join ran, not an assertion resting on which of two agreeing columns Grafana happened to keep.",
       "datasource": {
         "type": "datasource",
         "uid": "-- Mixed --"
@@ -322,7 +322,7 @@
           "gresType": "gres_type",
           "reason": "reason"
         },
-        "slots": {
+        "queries": {
           "state": "joinByField-A-B"
         },
         "grouping": {
@@ -384,7 +384,7 @@
           "gresType": "gres_type",
           "reason": "reason"
         },
-        "slots": {
+        "queries": {
           "state": "A"
         },
         "grouping": {
@@ -437,7 +437,7 @@
           "gresType": "gres_type",
           "reason": "reason"
         },
-        "slots": {
+        "queries": {
           "state": "A"
         },
         "grouping": {
@@ -487,7 +487,7 @@
           "gresType": "gres_type",
           "reason": "reason"
         },
-        "slots": {
+        "queries": {
           "state": "A"
         },
         "grouping": {

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { ingest } from '../src/ingest/frames.js';
-import type { LabelNames, MinimalFrame, SlotBindings } from '../src/model/types.js';
+import type { LabelNames, MinimalFrame, QueryBindings } from '../src/model/types.js';
 
 const load = (name: string): MinimalFrame[] => {
   const path = fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
@@ -19,13 +19,13 @@ const load = (name: string): MinimalFrame[] => {
 };
 
 const LABELS: LabelNames = { node: 'node', state: 'status', partition: 'partition', gresType: 'gres_type', reason: 'reason' };
-const SLOTS: SlotBindings = { state: 'A' };
+const QUERIES: QueryBindings = { state: 'A' };
 
 describe.each([
   ['numeric-multi', 'node-status.numeric-multi.json'],
   ['table', 'node-status.table.json'],
 ])('ingest reads the %s frame shape', (_shape, file) => {
-  const result = () => ingest({ frames: load(file), slots: SLOTS, labels: LABELS });
+  const result = () => ingest({ frames: load(file), queries: QUERIES, labels: LABELS });
 
   it('collapses the series of one node into a single node', () => {
     const { nodes } = result();
@@ -52,7 +52,7 @@ describe('ingest reports rather than guesses', () => {
     const frames: MinimalFrame[] = [
       { refId: 'A', fields: [{ name: 'Time', type: 'time', values: [1] }, { name: 'Value', type: 'number', values: [1] }] },
     ];
-    const { nodes, warnings } = ingest({ frames, slots: SLOTS, labels: LABELS });
+    const { nodes, warnings } = ingest({ frames, queries: QUERIES, labels: LABELS });
     expect(nodes).toEqual([]);
     expect(warnings).toEqual([{ kind: 'no-identity', refId: 'A', detail: 'no node label or column' }]);
   });
@@ -66,8 +66,8 @@ describe('ingest reports rather than guesses', () => {
     // and every assertion below would pass no matter what ingest() does.
     expect(reversedFrames).not.toEqual(forwardFrames);
 
-    const forward = ingest({ frames: forwardFrames, slots: SLOTS, labels: LABELS });
-    const reversed = ingest({ frames: reversedFrames, slots: SLOTS, labels: LABELS });
+    const forward = ingest({ frames: forwardFrames, queries: QUERIES, labels: LABELS });
+    const reversed = ingest({ frames: reversedFrames, queries: QUERIES, labels: LABELS });
 
     // ingest() sorts its output by node name unconditionally, so comparing
     // only the name lists would pass even if the internal collapsing were
@@ -101,7 +101,7 @@ describe('ingest joins the facets that carry no partition label', () => {
   it('attaches a drain reason to a node identified only by name', () => {
     const { nodes } = ingest({
       frames: [...stateFrames, drainFrame],
-      slots: { state: 'A', drainReason: 'B' },
+      queries: { state: 'A', drainReason: 'B' },
       labels: LABELS,
     });
     expect(nodes.find((n) => n.name === 'c9')?.facets.drainReason).toBe('GPU fell off the bus - RMA pending');
@@ -111,7 +111,7 @@ describe('ingest joins the facets that carry no partition label', () => {
   it('fans a GRES facet out per model rather than keeping one', () => {
     const { nodes } = ingest({
       frames: [...stateFrames, ...gresFrames],
-      slots: { state: 'A', gresUsed: 'C' },
+      queries: { state: 'A', gresUsed: 'C' },
       labels: LABELS,
     });
     expect(nodes.find((n) => n.name === 'g1')?.facets.gres).toEqual([
@@ -131,7 +131,7 @@ describe('ingest joins the facets that carry no partition label', () => {
     ];
     const { warnings } = ingest({
       frames: [...stateFrames, ...twice],
-      slots: { state: 'A', cpuAlloc: 'D' },
+      queries: { state: 'A', cpuAlloc: 'D' },
       labels: LABELS,
     });
     expect(warnings).toContainEqual({
