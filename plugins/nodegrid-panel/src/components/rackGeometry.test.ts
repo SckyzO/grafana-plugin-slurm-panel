@@ -175,6 +175,11 @@ describe('frameHeight', () => {
     expect(frameHeight(0, 7)).toBe(MIN_FRAME_HEIGHT);
     // An invisible cabinet is worse than a stubby one.
     expect(MIN_FRAME_HEIGHT).toBeGreaterThan(RACK_PADDING * 2 + RACK_BORDER * 2);
+    // Pinned rather than only compared to itself: 24 is theme.spacing(3), and
+    // that number is the whole point of having moved the floor out of the
+    // CSS and into this arithmetic. Without this, the constant could drift to
+    // 30 and every assertion above would still pass.
+    expect(MIN_FRAME_HEIGHT).toBe(24);
   });
 
   // The test that would have caught this from the start: relate the height to
