@@ -6,11 +6,10 @@ import baseConfig from './.config/playwright.config';
 /**
  * See https://playwright.dev/docs/test-configuration.
  *
- * This monorepo runs its dev stack from `dev/docker-compose.yml`, not the
- * scaffold's own `docker-compose.yaml`, and
+ * This monorepo runs its dev stack from `dev/docker-compose.yml`, so
  * `readProvisionedDashboard` / `readProvisionedDataSource` must resolve
- * against `dev/provisioning`, not the scaffold's own unused
- * `plugins/nodegrid-panel/provisioning/`.
+ * against `dev/provisioning`. The scaffold's own stack, and the provisioning
+ * directory beside this file that only it ever mounted, are gone.
  *
  * There are deliberately no Chromium launch flags here. An earlier revision
  * passed --no-sandbox, --disable-gpu, --disable-dev-shm-usage and
