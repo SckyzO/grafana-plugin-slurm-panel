@@ -277,6 +277,20 @@ not fully resolve:
   Group by > Label.` — measured, never acted on: the panel does not switch
   sources by itself.
 
+Four kinds of label are never proposed, however well they would score, so
+their absence from that line is not a bug:
+
+| Never proposed | Why |
+|---|---|
+| The **node label** | One group per node is not a grouping. |
+| The **state label** | It regroups the grid on every scrape. |
+| Any label with **as many distinct values as nodes it covers** | An identity in a different costume — `reason` on a set of drained nodes is one. |
+| Any label with **fewer than two distinct values** | One group for everything, which would win on coverage every single time. |
+
+Grouping set to **None** is also silent: it is a choice, not a failure to
+group. And a label speaks only when it would place *strictly more* nodes than
+the active source does — one that merely ties says nothing.
+
 A state matching no mapping keeps its raw text; Grafana would colour it with
 the threshold base colour (green, by default) rather than a mapped one, so
 the cell deliberately refuses that colour and draws a hollow ring instead.
