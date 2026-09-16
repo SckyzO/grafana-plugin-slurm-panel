@@ -6,9 +6,6 @@ colour, spacing and typography from theme variables rather than from literals,
 and the state colours come from the field config. See the *Colour and options*
 section of the spec.
 
-The companion review page is `nodegrid-mockups.html` — open it directly, add
-`?theme=dark` or `?vision=protan`.
-
 ## What the panel owns
 
 A Grafana panel inherits its background, its typeface and its theme. Grafana
