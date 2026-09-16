@@ -1,4 +1,4 @@
-import { rackWidthFor, resolveCellSize, sledHeightFor } from './rackGeometry';
+import { MIN_CELL_HEIGHT, rackWidthFor, resolveCellSize, sledHeightFor } from './rackGeometry';
 import { DEFAULT_OPTIONS } from '../types';
 
 describe('rackGeometry', () => {
@@ -46,10 +46,25 @@ describe('resolveCellSize', () => {
       .toEqual({ width: 30, height: 30 });
   });
 
+  // 6, not 4: what this asserts is that an explicit height wins over the
+  // derived one in both layouts, and 4 happened to sit under the floor, where
+  // the test below is the one that has something to say.
   it('uses an explicit height in either layout', () => {
-    expect(resolveCellSize({ ...DEFAULT_OPTIONS, layout: 'rack', cellWidth: 30, cellHeight: 4 }))
-      .toEqual({ width: 30, height: 4 });
-    expect(resolveCellSize({ ...DEFAULT_OPTIONS, layout: 'wrap', cellWidth: 30, cellHeight: 4 }))
-      .toEqual({ width: 30, height: 4 });
+    expect(resolveCellSize({ ...DEFAULT_OPTIONS, layout: 'rack', cellWidth: 30, cellHeight: 6 }))
+      .toEqual({ width: 30, height: 6 });
+    expect(resolveCellSize({ ...DEFAULT_OPTIONS, layout: 'wrap', cellWidth: 30, cellHeight: 6 }))
+      .toEqual({ width: 30, height: 6 });
+  });
+
+  // The derived path has always floored a sled at MIN_CELL_HEIGHT, because
+  // below it a cell stops being a hover target and becomes a hairline. A
+  // height typed into the option is the same pixel on the same screen, so it
+  // meets the same floor — otherwise the option quietly undoes the reason the
+  // floor exists. The editor's `min` reads this constant for the same reason.
+  it('floors an explicit cell height at the same pixel as a derived one', () => {
+    expect(resolveCellSize({ cellWidth: 14, cellHeight: 3, layout: 'wrap' }).height).toBe(MIN_CELL_HEIGHT);
+    expect(resolveCellSize({ cellWidth: 14, cellHeight: 3, layout: 'rack' }).height).toBe(MIN_CELL_HEIGHT);
+    // Above the floor the number is honoured exactly, in both layouts.
+    expect(resolveCellSize({ cellWidth: 14, cellHeight: 20, layout: 'rack' }).height).toBe(20);
   });
 });

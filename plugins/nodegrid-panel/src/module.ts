@@ -1,5 +1,6 @@
 import { FieldConfigProperty, PanelPlugin } from '@grafana/data';
 import { NodeGridPanel } from './components/NodeGridPanel';
+import { MIN_CELL_HEIGHT } from './components/rackGeometry';
 import { DEFAULT_MAPPINGS } from './defaults/mappings';
 import { GroupingEditor } from './editor/GroupingEditor';
 import { DEFAULT_OPTIONS } from './types';
@@ -77,7 +78,7 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
         path: 'cellHeight',
         name: 'Cell height',
         description: 'Leave empty to derive it: a square in Wrap, a sled in Rack.',
-        settings: { placeholder: 'auto', min: 3, max: 48 },
+        settings: { placeholder: 'auto', min: MIN_CELL_HEIGHT, max: 48 },
         category: ['Layout'],
       })
       .addSliderInput({

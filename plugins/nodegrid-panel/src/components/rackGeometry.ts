@@ -20,14 +20,17 @@ export function rackWidthFor(cellWidth: number): number {
   return Math.max(40, cellWidth * 4);
 }
 
+/** The smallest a cell may be drawn and still be a hover target rather than
+ * a hairline. The Cell height option in the editor carries the same floor. */
+export const MIN_CELL_HEIGHT = 5;
+
 /**
  * A sled's height in pixels: about half the cell width, so a sled is
  * unmistakably wider than it is tall — the whole reason to draw a rack
- * instead of a grid. The 5px floor keeps the smallest sled a usable hover
- * target instead of a hairline.
+ * instead of a grid.
  */
 export function sledHeightFor(cellWidth: number): number {
-  return Math.max(5, Math.round(cellWidth / 2));
+  return Math.max(MIN_CELL_HEIGHT, Math.round(cellWidth / 2));
 }
 
 export interface CellSize {
@@ -46,6 +49,9 @@ export interface CellSize {
  */
 export function resolveCellSize(options: { cellWidth?: number; cellHeight?: number; layout: Layout }): CellSize {
   const width = options.cellWidth ?? DEFAULT_OPTIONS.cellWidth;
-  const height = options.cellHeight ?? (options.layout === 'rack' ? sledHeightFor(width) : width);
+  const derived = options.layout === 'rack' ? sledHeightFor(width) : width;
+  // The floor belongs to the geometry, not to the path the number arrived by:
+  // a 3px cell is a hairline whether it was derived or typed.
+  const height = Math.max(MIN_CELL_HEIGHT, options.cellHeight ?? derived);
   return { width, height };
 }
