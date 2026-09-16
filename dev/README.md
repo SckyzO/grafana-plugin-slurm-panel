@@ -10,7 +10,7 @@ make e2e     # browser tests against it
 make down    # stop, keeping the volumes
 ```
 
-Grafana on <http://localhost:3000>, dashboard **Slurm / Slurm node grid**;
+Grafana on <http://localhost:3000>, dashboard **Slurm / Node grid**;
 Prometheus on <http://localhost:9090>. `make up` prints the address it
 actually published, which is not always that one — see below.
 
@@ -29,6 +29,21 @@ Nothing inside the compose network moves: Grafana still answers on 3000 and
 Prometheus on 9090 there, which is how the browser tests reach them. Only a
 host browser sees the difference, and `make up` reads the published port back
 from compose rather than assuming it.
+
+## A dashboard's uid and its panel ids are a contract
+
+The browser suite navigates by `uid` — `/d/slurm-node-grid/...` — and isolates a
+panel with `viewPanel=<id>`, which is the panel's own `id` field and not its
+position. That is deliberate: it is what let the grouping dashboard be resized
+and a ninth panel added without touching a test.
+
+So the titles here are free to change and the layout is free to move, but
+**renaming a `uid` or renumbering a panel `id` breaks the suite**. It breaks
+loudly, which is the point — but do it knowing that, and update the specs that
+name them in the same commit.
+
+None of these files carries a numeric `id` at dashboard level, and none should:
+Grafana assigns that, and `allowUiUpdates: false` makes the file the truth.
 
 ## The services
 
@@ -52,10 +67,10 @@ dev cluster's live Prometheus.
 
 | Dashboard | Source | What it is for |
 |---|---|---|
-| Slurm node grid | Prometheus | The overview: one panel, every node, grouped by the `rack` label `make scrape` relabels in (falls back to a capture, a join or a range table on a Prometheus without that relabelling) |
-| Slurm node grid - utilisation | Prometheus | State beside CPU, memory and GPU occupancy, driven by Thresholds |
-| Slurm node grid - scenarios | CSV + Prometheus | Hand-written situations that render identically every time, plus one live panel showing what a real, unstaged distribution looks like |
-| Slurm node grid - grouping and layout | CSV + Prometheus | The same nodes grouped four ways on a hand-written CSV, plus the three live routes to a real topology proven against this dev cluster, plus one panel that deliberately covers less, to prove the coverage warning |
+| Node grid | Prometheus | The overview: one panel, every node, grouped by the `rack` label `make scrape` relabels in (falls back to a capture, a join or a range table on a Prometheus without that relabelling) |
+| Utilisation | Prometheus | State beside CPU, memory and GPU occupancy, driven by Thresholds |
+| Scenarios | CSV + Prometheus | Hand-written situations that render identically every time, plus one live panel showing what a real, unstaged distribution looks like |
+| Grouping and layout | CSV + Prometheus | The same nodes grouped four ways on a hand-written CSV, plus the three live routes to a real topology proven against this dev cluster, plus one panel that deliberately covers less, to prove the coverage warning |
 
 The **scenarios** dashboard uses Grafana's built-in TestData source for its
 first four panels, so there is no exporter, no Prometheus and no scrape

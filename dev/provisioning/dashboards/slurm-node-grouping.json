@@ -1,14 +1,13 @@
 {
   "uid": "slurm-node-grouping",
-  "title": "Slurm node grid - grouping and layout",
+  "title": "Grouping and layout",
   "description": "Four ways of deciding what a group is, against a hand-written CSV (top row), plus the three routes to a real topology proven against the live dev cluster (label, join, ranges), and a panel that is deliberately incomplete to exercise the coverage warning.",
   "tags": [
     "slurm",
-    "reference"
+    "grouping"
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 13,
   "refresh": "",
   "time": {
     "from": "now-5m",
