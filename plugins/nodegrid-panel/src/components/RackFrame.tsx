@@ -4,7 +4,7 @@ import type { GrafanaTheme2 } from '@grafana/data';
 import { useTheme2 } from '@grafana/ui';
 import { RACK_BORDER, RACK_GAP, RACK_PADDING } from './rackGeometry';
 
-const getStyles = (theme: GrafanaTheme2, width: number, dashed: boolean) => ({
+const getStyles = (theme: GrafanaTheme2, width: number, height: number, dashed: boolean) => ({
   rack: css({
     display: 'flex',
     // A row that wraps, with the cross axis reversed: rows fill left to right
@@ -17,9 +17,14 @@ const getStyles = (theme: GrafanaTheme2, width: number, dashed: boolean) => ({
     // cabinet fills from the floor rather than hanging from the ceiling.
     alignContent: 'flex-start',
     width,
+    // An explicit height, not a min-height: rows that do not fit then spill
+    // past the cross-end — the top — outside the frame's border, rather than
+    // growing the cabinet silently past what was declared.
+    height,
     // Sourced from rackGeometry rather than hardcoded here a second time —
-    // sledWidthFor assumes these same three numbers, and the two disagreeing
-    // is exactly what let a sled overflow the frame before 5ebb879.
+    // sledWidthFor and frameHeight assume these same three numbers, and the
+    // two disagreeing is exactly what let a sled overflow the frame before
+    // 5ebb879.
     gap: RACK_GAP,
     padding: RACK_PADDING,
     minHeight: theme.spacing(3),
@@ -35,12 +40,14 @@ export interface RackFrameProps {
   children: React.ReactNode;
   /** The cabinet's width in pixels, resolved by layoutBlades. */
   width: number;
+  /** The cabinet's height in pixels, resolved by layoutSlots. */
+  height: number;
   dashed?: boolean;
 }
 
-export function RackFrame({ children, width, dashed = false }: RackFrameProps) {
+export function RackFrame({ children, width, height, dashed = false }: RackFrameProps) {
   const theme = useTheme2();
-  const styles = getStyles(theme, width, dashed);
+  const styles = getStyles(theme, width, height, dashed);
   return (
     <div className={styles.rack} data-testid="rack-frame" data-dashed={dashed}>
       {children}

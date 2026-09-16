@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { RackFrame } from './RackFrame';
-import { rackWidthFor } from './rackGeometry';
+import { frameHeight, rackWidthFor } from './rackGeometry';
 
 // jsdom has no layout engine, but it does parse Emotion's injected
 // stylesheet, so getComputedStyle sees literal property values (verified
@@ -15,7 +15,7 @@ import { rackWidthFor } from './rackGeometry';
 describe('RackFrame', () => {
   it('fills bottom-up by a reversed cross axis, gives the cabinet a heavier foot, and sizes it from the cell size', () => {
     render(
-      <RackFrame width={rackWidthFor(14)}>
+      <RackFrame width={rackWidthFor(14)} height={frameHeight(4, 7)}>
         <button type="button">slot</button>
       </RackFrame>
     );
@@ -37,10 +37,22 @@ describe('RackFrame', () => {
 
   it('tracks a different cell size, rather than a value fixed at build time', () => {
     render(
-      <RackFrame width={rackWidthFor(20)}>
+      <RackFrame width={rackWidthFor(20)} height={frameHeight(4, 7)}>
         <button type="button">slot</button>
       </RackFrame>
     );
     expect(getComputedStyle(screen.getByTestId('rack-frame')).width).toBe(`${rackWidthFor(20)}px`);
+  });
+
+  it('is drawn at the height it is handed, not at the height of its contents', () => {
+    // The cabinet's height is a panel-wide decision — a declaration, or the
+    // tallest cabinet on the floor. A frame that sized itself to its contents
+    // is what made short racks hang from the ceiling.
+    render(
+      <RackFrame width={rackWidthFor(14)} height={frameHeight(12, 7)}>
+        <button type="button">slot</button>
+      </RackFrame>
+    );
+    expect(getComputedStyle(screen.getByTestId('rack-frame')).height).toBe(`${frameHeight(12, 7)}px`);
   });
 });
