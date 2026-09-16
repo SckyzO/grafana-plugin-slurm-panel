@@ -44,6 +44,21 @@ design exists to remove.
 For the 95% of clusters that never leave `Nodes per blade` at 1, the two units
 coincide and the distinction costs nothing.
 
+## The word was freed before it was used
+
+"Slot" already meant two other things here: the binding of a data role to a
+query `refId` (`options.slots`, `SlotBindings`) and a drawn grid position
+(`GroupedModel.slotCount`, and the `40 nodes drawn in 38 slots` warning). The
+second was visible to operators, in the same warning strip these new lines
+land in.
+
+Both were renamed first, in their own commits, before this design claimed the
+word: `cellCount` for the drawn position — its doc comment already read "Cells
+drawn" — and `QueryBindings` / `options.queries` for the bindings, whose
+option label has always read "State query". Renaming a stored option path
+stops being free at publication, so the window for the second one closed with
+this release.
+
 ## The rule
 
 > **A declaration wins. What is not declared levels to the tallest cabinet on
@@ -155,7 +170,7 @@ in `rackGeometry.ts` exactly as its width already is, so the property can be
 asserted as plain arithmetic by a test runner with no layout engine.
 
 ```
-frameHeight(rows) =
+frameHeight(rows, cellHeight) =
     rows === 0 ? RACK_PADDING * 2 + RACK_BORDER * 2
                : rows * cellHeight
                  + (rows - 1) * RACK_GAP
@@ -174,7 +189,7 @@ Unlike the width, the height has no `floor()` in it, so every term of the
 formula is visible in the result and a literal assertion detects a missing one.
 
 `RackFrame` keeps `minHeight: theme.spacing(3)`, which takes over for a group
-with no nodes: `frameHeight(0)` is ten pixels of chrome, and an invisible
+with no nodes: `frameHeight(0, cellHeight)` is ten pixels of chrome, and an invisible
 cabinet is worse than a stubby one.
 
 ### The band, and why declared-shorter cabinets still stand on the floor
@@ -188,11 +203,12 @@ the frame aligned to the band's bottom:
 
 ```
 bandRows   = max over drawn groups of max(slotsOf(key), rowsNeeded(key))
-bandHeight = frameHeight(bandRows)
+bandHeight = frameHeight(bandRows, cellHeight)
 ```
 
-Group headers then align because every group is the same total height, and
-every cabinet sits on a common floor. `bandRows` counts overflow as well as
+The band exists only in the rack layout; the wrap layout draws no cabinet and
+is untouched by any of this. Group headers then align because every group is
+the same total height, and every cabinet sits on a common floor. `bandRows` counts overflow as well as
 declared slots, so a cabinet that spills past its declaration has room to do
 so by construction rather than by luck.
 
@@ -207,10 +223,13 @@ cascading through `NodeGroup`, `RackFrame` and their tests.
 
 ```ts
 export interface SlotLayoutInput {
-  /** The groups the panel is actually drawing, in draw order. */
-  groupKeys: string[];
-  /** Node count per drawn group. */
-  nodeCounts: Map<string, number>;
+  /**
+   * The groups the panel is actually drawing, in draw order, each with its
+   * node count — one structure rather than a key list beside a count map.
+   * Two structures that must cover the same keys, with nothing forcing them
+   * to, is how a `?? 0` ends up drawing a silently empty cabinet.
+   */
+  groups: Array<{ key: string; nodes: number }>;
   /** Resolved blade layout, for sizeOf. */
   blades: BladeLayout;
   /** Declared group name to slot count, from parseSlotTable. */
@@ -238,11 +257,11 @@ export function layoutSlots(input: SlotLayoutInput): SlotLayout;
 
 Resolution order:
 
-1. `rowsNeeded(key) = ceil(nodeCounts(key) / blades.sizeOf(key))`
+1. `rowsNeeded(key) = ceil(group.nodes / blades.sizeOf(group.key))`
 2. `declaredFor(key) = declared.get(key) ?? fallback` — may be `undefined`
 3. `panelRows = max over drawn groups of (declaredFor(key) ?? rowsNeeded(key))`
 4. `slotsOf(key) = declaredFor(key) ?? panelRows`
-5. `heightOf(key) = frameHeight(slotsOf(key))`
+5. `heightOf(key) = frameHeight(slotsOf(key), cellHeight)`
 6. `overflowing` collects every key where `rowsNeeded(key) > slotsOf(key)`
 
 Step 3 is what makes an undeclared cabinet level to a *declared* neighbour as
@@ -268,6 +287,13 @@ into a silent blind spot. Growing in silence was rejected because a cabinet
 that is taller than declared then looks like a declaration rather than an
 anomaly.
 
+Overflow is **unbounded by design**, and that is the price of refusing to
+truncate. A group declared at ten slots whose query returns two hundred rows
+makes `bandRows` two hundred, so every cabinet's band — and the panel — grows
+to match. The drawing is then ugly and the warning says why, which is the
+correct order: a panel that is hard to look at because the declaration is
+wrong beats a panel that looks right by hiding nodes.
+
 Two properties here cannot be seen by any unit test and must be verified in a
 real browser before the work is called done:
 
@@ -278,7 +304,7 @@ real browser before the work is called done:
 
 ## Warnings
 
-`summarise` gains a **sixth optional parameter**, leaving its twenty-two
+`summarise` gains a **sixth optional parameter**, leaving its twenty-eight
 existing call sites untouched:
 
 ```ts
@@ -331,8 +357,8 @@ comparison the panel actually made.
 - **`rackGeometry` unit tests** — `layoutSlots` resolution, the levelling rule,
   the declared-wins rule, and the only-declared-can-overflow invariant. At
   least two **literal** height assertions, chosen so that dropping any term of
-  the formula changes the number: at `cellHeight` 7, `frameHeight(4)` is 44 and
-  `frameHeight(1)` is 17. A suite whose every expectation is computed by the
+  the formula changes the number: at `cellHeight` 7, `frameHeight(4, 7)` is 44 and
+  `frameHeight(1, 7)` is 17. A suite whose every expectation is computed by the
   formula under test cannot detect an error in that formula, which is precisely
   how the two-pixel width defect survived.
 - **A browser test** for the two overflow properties above, reading geometry
