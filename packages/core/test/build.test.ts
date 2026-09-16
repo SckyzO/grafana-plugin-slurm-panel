@@ -14,7 +14,7 @@ describe('buildGroups', () => {
     );
     expect(model.groups.map((g) => g.key)).toEqual(['r01', 'r02']);
     expect(model.nodeCount).toBe(2);
-    expect(model.slotCount).toBe(2);
+    expect(model.cellCount).toBe(2);
     expect(model.duplicated).toBe(false);
   });
 
@@ -37,7 +37,7 @@ describe('buildGroups', () => {
     );
     expect(model.groups.map((g) => g.key)).toEqual(['cpu', 'debug', 'high']);
     expect(model.nodeCount).toBe(2);
-    expect(model.slotCount).toBe(4);
+    expect(model.cellCount).toBe(4);
     expect(model.duplicated).toBe(true);
   });
 
@@ -61,7 +61,7 @@ describe('buildGroups', () => {
 
   it('returns an empty model for no nodes rather than one empty group', () => {
     expect(buildGroups([], { kind: 'none' })).toEqual({
-      groups: [], nodeCount: 0, slotCount: 0, duplicated: false,
+      groups: [], nodeCount: 0, cellCount: 0, duplicated: false,
     });
   });
 });
@@ -92,7 +92,7 @@ describe('declared order', () => {
     const nodes = [rackNode('c1', 'rack1')];
     const model = buildGroups(nodes, source, { order: ['rack1', 'rack2'] });
     expect(model.nodeCount).toBe(1);
-    expect(model.slotCount).toBe(1);
+    expect(model.cellCount).toBe(1);
   });
 
   it('sorts an undeclared group naturally, after every declared one', () => {

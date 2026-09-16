@@ -14,7 +14,7 @@ export interface GroupedModel {
   /** Distinct nodes. */
   nodeCount: number;
   /** Cells drawn. Larger than nodeCount when a node sits in several groups. */
-  slotCount: number;
+  cellCount: number;
   duplicated: boolean;
 }
 
@@ -51,12 +51,12 @@ export function buildGroups(
   opts: BuildOptions = {}
 ): GroupedModel {
   if (nodes.length === 0) {
-    return { groups: [], nodeCount: 0, slotCount: 0, duplicated: false };
+    return { groups: [], nodeCount: 0, cellCount: 0, duplicated: false };
   }
 
   const keyFn = makeKeyFn(source);
   const buckets = new Map<string, { nodes: SlurmNode[]; assumed: boolean }>();
-  let slotCount = 0;
+  let cellCount = 0;
 
   // Seeded before the node loop so a declared group that matched nothing is
   // still emitted: an empty rack is information, not an absence.
@@ -71,7 +71,7 @@ export function buildGroups(
     bucket.nodes.push(node);
     bucket.assumed = bucket.assumed || assumed;
     buckets.set(key, bucket);
-    slotCount++;
+    cellCount++;
   };
 
   const multiValued = opts.multiValueLabel === true && source.kind === 'label';
@@ -106,5 +106,5 @@ export function buildGroups(
       return collator.compare(a.key, b.key);
     });
 
-  return { groups, nodeCount: nodes.length, slotCount, duplicated: slotCount > nodes.length };
+  return { groups, nodeCount: nodes.length, cellCount, duplicated: cellCount > nodes.length };
 }

@@ -41,12 +41,12 @@ describe('collectUnmapped', () => {
 });
 
 describe('summarise', () => {
-  const model = (nodeCount: number, slotCount: number): GroupedModel => ({
-    groups: [], nodeCount, slotCount, duplicated: slotCount > nodeCount,
+  const model = (nodeCount: number, cellCount: number): GroupedModel => ({
+    groups: [], nodeCount, cellCount, duplicated: cellCount > nodeCount,
   });
 
   it('reports both counts when grouping duplicated nodes', () => {
-    expect(summarise(model(20, 25), [], [], notes())).toContain('20 nodes drawn in 25 slots');
+    expect(summarise(model(20, 25), [], [], notes())).toContain('20 nodes drawn in 25 cells');
   });
 
   it('says nothing about counts when they agree', () => {
@@ -151,7 +151,7 @@ const notes = (over: Partial<GroupingNotes> = {}): GroupingNotes => ({
 
 describe('grouping warnings', () => {
   const model = (nodeCount: number): GroupedModel => ({
-    groups: [], nodeCount, slotCount: nodeCount, duplicated: false,
+    groups: [], nodeCount, cellCount: nodeCount, duplicated: false,
   });
 
   it('names orphan nodes collapsed back to hostlist syntax', () => {
@@ -242,7 +242,7 @@ describe('grouping warnings', () => {
 
 describe('blade warnings', () => {
   const noGrouping: GroupingNotes = { source: { kind: 'none' }, orphans: [], emptyGroups: [], problems: [] };
-  const empty = { groups: [], nodeCount: 0, slotCount: 0, duplicated: false };
+  const empty = { groups: [], nodeCount: 0, cellCount: 0, duplicated: false };
 
   it('says nothing at all when there are no blade notes', () => {
     // Every wrap-layout panel is this case, and it must stay silent.
@@ -304,7 +304,7 @@ describe('groupingNotes', () => {
         { key: 'rack1', nodes: [mkNode('c1')], assumed: false },
         { key: UNGROUPED, nodes: [mkNode('c9')], assumed: false },
       ],
-      nodeCount: 2, slotCount: 2, duplicated: false,
+      nodeCount: 2, cellCount: 2, duplicated: false,
     };
     const notes = groupingNotes({ model, nodes: [mkNode('c1'), mkNode('c9')], source: ranges, ...args });
     expect(notes.orphans).toEqual(['c9']);
@@ -313,7 +313,7 @@ describe('groupingNotes', () => {
   it('reports no orphans when nothing landed in the ungrouped bucket', () => {
     const model: GroupedModel = {
       groups: [{ key: 'rack1', nodes: [mkNode('c1')], assumed: false }],
-      nodeCount: 1, slotCount: 1, duplicated: false,
+      nodeCount: 1, cellCount: 1, duplicated: false,
     };
     expect(groupingNotes({ model, nodes: [mkNode('c1')], source: ranges, ...args }).orphans).toEqual([]);
   });
@@ -324,7 +324,7 @@ describe('groupingNotes', () => {
         { key: 'rack1', nodes: [mkNode('c1')], assumed: false },
         { key: 'rack7', nodes: [], assumed: false },
       ],
-      nodeCount: 1, slotCount: 1, duplicated: false,
+      nodeCount: 1, cellCount: 1, duplicated: false,
     };
     const notes = groupingNotes({
       model, nodes: [mkNode('c1')], source: ranges,
@@ -334,7 +334,7 @@ describe('groupingNotes', () => {
   });
 
   it('carries the table problems through', () => {
-    const model: GroupedModel = { groups: [], nodeCount: 0, slotCount: 0, duplicated: false };
+    const model: GroupedModel = { groups: [], nodeCount: 0, cellCount: 0, duplicated: false };
     const notes = groupingNotes({
       model, nodes: [], source: { kind: 'ranges', table: 'broken line' },
       table: parseRangeTable('broken line'), ...args,
@@ -346,7 +346,7 @@ describe('groupingNotes', () => {
   it('has no problems and no empty groups when there is no table', () => {
     const model: GroupedModel = {
       groups: [{ key: 'p1', nodes: [mkNode('c1')], assumed: false }],
-      nodeCount: 1, slotCount: 1, duplicated: false,
+      nodeCount: 1, cellCount: 1, duplicated: false,
     };
     const notes = groupingNotes({
       model, nodes: [mkNode('c1')], source: { kind: 'label', label: 'partition' }, ...args,

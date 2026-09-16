@@ -201,7 +201,7 @@ export function summarise(
 
   if (model.duplicated) {
     // A count that silently disagrees with sinfo is worse than no count.
-    lines.push(`${model.nodeCount} nodes drawn in ${model.slotCount} slots`);
+    lines.push(`${model.nodeCount} nodes drawn in ${model.cellCount} cells`);
   }
 
   if (unmapped.length > 0) {
