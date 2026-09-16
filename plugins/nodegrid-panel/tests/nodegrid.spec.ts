@@ -233,12 +233,24 @@ test.describe('the continuous colour modes', () => {
 
 test.describe('the options editor', () => {
   test('exposes the standard sections, which proves useFieldConfig is wired', async ({
-    panelEditPage,
-    readProvisionedDataSource,
+    gotoPanelEditPage,
+    readProvisionedDashboard,
   }) => {
-    const ds = await readProvisionedDataSource({ fileName: 'prometheus.yml' });
-    await panelEditPage.datasource.set(ds.name);
-    await panelEditPage.setVisualization('Slurm Node Grid');
+    // Deliberately a provisioned panel rather than a new one built through
+    // `panelEditPage.setVisualization()`. That helper picks its code path from
+    // the Grafana version and gets 12.4.x wrong: it takes the >= 12.4.0 branch,
+    // opens the picker, then clicks an "All visualizations" tab that only
+    // exists from 13.x, so it retries for its full 15s and gives up. 12.3 takes
+    // the older branch and passes, 13.x has the tab and passes, and every
+    // 12.4.x in the CI matrix failed here — on a helper that had not yet
+    // reached any assertion about this panel.
+    //
+    // The panel type is what is under test, not the route taken to reach the
+    // editor. A provisioned panel of that type opens the same options pane on
+    // every version in the matrix, and the panel being installed at all is
+    // already proven by the fifteen other tests that render it.
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-grid.json' });
+    const panelEditPage = await gotoPanelEditPage({ dashboard, id: '1' });
 
     // A bare `getByRole('button', { name: /Value mappings/i })` is ambiguous:
     // once the group is expanded it also matches the "Add value mappings"
