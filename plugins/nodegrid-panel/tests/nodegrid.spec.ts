@@ -513,9 +513,17 @@ test.describe('cabinet height, against the same live data', () => {
     // jsdom has no layout engine, so only this can see it: under border-box a
     // frame whose arithmetic under-counts its own border hands the rows a
     // content box smaller than they need, and they leave through the top.
-    await gotoPanelWithData(page, 9, 'rack1');
+    //
+    // Panel 1 rather than panel 9: this needs a group with nothing spare
+    // above its rows, and every cabinet on panel 9 is deliberately declared
+    // taller than it needs, which leaves room above the stack that would
+    // swamp a two-pixel shortfall and make the assertion pass whether the
+    // border term is right or not. r001 is undeclared but ties for the
+    // tallest group on panel 1, so its height is set by its own row count —
+    // no slack, and the row a real regression has nowhere to hide behind.
+    await gotoPanelWithData(page, 1, 'r001');
 
-    const gap = await page.getByTestId('node-group-rack1').evaluate((group) => {
+    const gap = await page.getByTestId('node-group-r001').evaluate((group) => {
       const frame = group.querySelector('[data-testid="rack-frame"]');
       const style = getComputedStyle(frame);
       const tops = [...frame.querySelectorAll('[data-testid^="node-cell-"]')].map(
