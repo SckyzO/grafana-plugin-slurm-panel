@@ -132,9 +132,16 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
               undrawn: blades.layout.undrawn,
               squeezed: blades.layout.squeezed,
             }
+          : undefined,
+        options.layout === 'rack'
+          ? {
+              problems: slots.table.problems.map((p) => p.detail),
+              undrawn: slots.layout.undrawn,
+              overflowing: slots.layout.overflowing,
+            }
           : undefined
       ),
-    [model, warnings, unmapped, grouping, options.layout, blades]
+    [model, warnings, unmapped, grouping, options.layout, blades, slots]
   );
 
   if (model.groups.length === 0) {

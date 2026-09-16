@@ -2,7 +2,7 @@ import { collectUnmapped, summarise, ruleFor, groupingNotes } from './warnings';
 import type { DisplayProcessor } from '@grafana/data';
 import { buildGroups, parseRangeTable, UNGROUPED } from '@slurm-views/core';
 import type { GroupedModel, SlurmNode } from '@slurm-views/core';
-import type { GroupingNotes } from './warnings';
+import type { GroupingNotes, SlotNotes } from './warnings';
 
 const node = (name: string, state: string): SlurmNode => ({
   name, state, partitions: [], labels: {}, facets: { gres: [] },
@@ -138,6 +138,77 @@ describe('summarise', () => {
   it('passes an ingest warning through with its refId', () => {
     expect(summarise(model(0, 0), [{ kind: 'no-identity', refId: 'B', detail: 'no node label or column' }], [], notes()))
       .toContain('Query B skipped: no node label or column');
+  });
+
+  describe('summarise, slot notes', () => {
+    const slotNotes = (over: Partial<SlotNotes> = {}): SlotNotes => ({
+      problems: [],
+      undrawn: [],
+      overflowing: [],
+      ...over,
+    });
+
+    it('carries the slot table parser problems through as written', () => {
+      const lines = summarise(model(4, 4), [], [], notes(), undefined, slotNotes({
+        problems: ['Line 2 is missing a count.'],
+      }));
+      expect(lines).toContain('Line 2 is missing a count.');
+    });
+
+    it('collapses declared groups that are not drawn into one line', () => {
+      // rack9 and rack10 are consecutive, so listOf's hostlist collapsing
+      // (see packages/core/test/hostlist.test.ts) folds them into one range
+      // rather than joining them with a comma.
+      const lines = summarise(model(4, 4), [], [], notes(), undefined, slotNotes({
+        undrawn: ['rack9', 'rack10'],
+      }));
+      expect(lines).toContain('Slots per rack named 2 groups that are not drawn: rack[9-10].');
+    });
+
+    it('says "group that is" for a single undrawn declaration', () => {
+      const lines = summarise(model(4, 4), [], [], notes(), undefined, slotNotes({ undrawn: ['rack9'] }));
+      expect(lines).toContain('Slots per rack named 1 group that is not drawn: rack9.');
+    });
+
+    it('names a cabinet that holds more than it declares, in slots on both sides', () => {
+      // Stated in slots rather than nodes so it stays in the unit the option is
+      // written in: under quads "45 nodes but 42 slots" is arithmetic the reader
+      // has to redo, where "12 slots but 10" is the comparison the panel made.
+      const lines = summarise(model(45, 45), [], [], notes(), undefined, slotNotes({
+        overflowing: [{ key: 'rack1', needed: 45, declared: 42 }],
+      }));
+      expect(lines).toContain('rack1 needs 45 slots but 42 were declared.');
+    });
+
+    it('groups cabinets that outgrew the same declaration by the same amount into one line', () => {
+      // A row of identical cabinets that all outgrew the same declaration is one
+      // fact, not three sentences.
+      const lines = summarise(model(36, 36), [], [], notes(), undefined, slotNotes({
+        overflowing: [
+          { key: 'rack7', needed: 12, declared: 10 },
+          { key: 'rack8', needed: 12, declared: 10 },
+          { key: 'rack9', needed: 12, declared: 10 },
+        ],
+      }));
+      expect(lines).toContain('rack[7-9] need 12 slots but 10 were declared.');
+    });
+
+    it('keeps cabinets that overflowed by different amounts on their own lines', () => {
+      const lines = summarise(model(20, 20), [], [], notes(), undefined, slotNotes({
+        overflowing: [
+          { key: 'rack1', needed: 12, declared: 10 },
+          { key: 'rack2', needed: 20, declared: 10 },
+        ],
+      }));
+      expect(lines).toContain('rack1 needs 12 slots but 10 were declared.');
+      expect(lines).toContain('rack2 needs 20 slots but 10 were declared.');
+    });
+
+    it('says nothing at all outside the rack layout', () => {
+      // The options are hidden in Wrap, so warning about a table nobody can see
+      // would be warning about nothing.
+      expect(summarise(model(4, 4), [], [], notes())).toEqual([]);
+    });
   });
 });
 
