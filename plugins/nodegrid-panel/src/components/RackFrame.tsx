@@ -2,6 +2,7 @@ import React from 'react';
 import { css } from '@emotion/css';
 import type { GrafanaTheme2 } from '@grafana/data';
 import { useTheme2 } from '@grafana/ui';
+import { RACK_BORDER, RACK_GAP, RACK_PADDING } from './rackGeometry';
 
 const getStyles = (theme: GrafanaTheme2, width: number, dashed: boolean) => ({
   rack: css({
@@ -16,13 +17,16 @@ const getStyles = (theme: GrafanaTheme2, width: number, dashed: boolean) => ({
     // cabinet fills from the floor rather than hanging from the ceiling.
     alignContent: 'flex-start',
     width,
-    gap: 2,
-    padding: theme.spacing(0.5),
+    // Sourced from rackGeometry rather than hardcoded here a second time —
+    // sledWidthFor assumes these same three numbers, and the two disagreeing
+    // is exactly what let a sled overflow the frame before 5ebb879.
+    gap: RACK_GAP,
+    padding: RACK_PADDING,
     minHeight: theme.spacing(3),
     // A cabinet frame, heavier at the foot, unless the panel could not resolve
     // what belongs in it: it refuses to draw a solid cabinet around a claim it
     // did not resolve.
-    border: `1px ${dashed ? 'dashed' : 'solid'} ${theme.colors.border.medium}`,
+    border: `${RACK_BORDER}px ${dashed ? 'dashed' : 'solid'} ${theme.colors.border.medium}`,
     borderBottomWidth: dashed ? 1 : 3,
   }),
 });

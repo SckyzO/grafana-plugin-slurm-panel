@@ -63,15 +63,19 @@ export function resolveCellSize(options: { cellWidth?: number; cellHeight?: numb
   return { width, height };
 }
 
-/** The frame's own padding, `theme.spacing(0.5)` on each side, in pixels. */
-const RACK_PADDING = 4;
+/**
+ * The frame's own padding, `theme.spacing(0.5)` on each side, in pixels.
+ * Exported so `RackFrame` draws from the same number this geometry assumes,
+ * rather than the two agreeing by coincidence — they already disagreed once.
+ */
+export const RACK_PADDING = 4;
 
 /**
  * The frame's own gap between sleds, in pixels. Deliberately not
  * `options.gap`: that one belongs to the wrap layout, and a cabinet's
  * internal spacing is not the reader's to set.
  */
-const RACK_GAP = 2;
+export const RACK_GAP = 2;
 
 /**
  * The frame's own border, in pixels per side — the one `RackFrame` draws
@@ -79,7 +83,7 @@ const RACK_GAP = 2;
  * comes out of the same content box as the padding; leaving it out let a
  * sled overflow the frame's right edge by exactly this many pixels.
  */
-const RACK_BORDER = 1;
+export const RACK_BORDER = 1;
 
 /**
  * The narrowest a sled may be drawn and still be a hover target rather than a
