@@ -1,5 +1,7 @@
 import {
+  frameHeight,
   layoutBlades,
+  layoutSlots,
   MIN_CELL_HEIGHT,
   MIN_SLED_WIDTH,
   rackWidthFor,
@@ -142,5 +144,182 @@ describe('layoutBlades', () => {
     expect(l.sizeOf.size).toBe(0);
     expect(l.squeezed).toEqual([]);
     expect(l.rackWidth).toBe(rackWidthFor(14, 1));
+  });
+});
+
+describe('frameHeight', () => {
+  // Literal on purpose, the same reason sledWidthFor's assertions are literal.
+  // Every other number in this file is produced by the formula it checks, and
+  // that is exactly how a missing border term survived a full review and 97
+  // green tests. Unlike the width there is no floor() here, so dropping any
+  // one term changes these numbers: without the border 44 reads 42, without
+  // the padding it reads 36, without the inter-row gaps it reads 38.
+  it('counts the rows, the gaps between them, the padding and the border', () => {
+    expect(frameHeight(4, 7)).toBe(44);
+    expect(frameHeight(1, 7)).toBe(17);
+  });
+
+  it('is bare chrome with no rows at all', () => {
+    // RackFrame's minHeight takes over from here: an invisible cabinet is
+    // worse than a stubby one.
+    expect(frameHeight(0, 7)).toBe(10);
+  });
+});
+
+describe('layoutSlots', () => {
+  const CELL = 7;
+
+  // Every cabinet at one node per blade, which is the default and the case
+  // 95% of clusters are in.
+  const flat = (entries: Array<[string, number]>) => {
+    const groups = entries.map(([key, nodes]) => ({ key, nodes }));
+    const blades = layoutBlades({
+      groupKeys: groups.map((g) => g.key),
+      sizes: new Map(),
+      fallback: 1,
+      cellWidth: 14,
+    });
+    return { groups, blades };
+  };
+
+  it('levels an undeclared floor to the tallest cabinet filled', () => {
+    // The default, and the whole point: a 20-node cabinet beside a 40-node one
+    // stands on the floor instead of hanging from the ceiling.
+    const { groups, blades } = flat([['rack1', 40], ['rack2', 20]]);
+    const l = layoutSlots({ groups, blades, declared: new Map(), fallback: undefined, cellHeight: CELL });
+    expect(l.slotsOf.get('rack1')).toBe(40);
+    expect(l.slotsOf.get('rack2')).toBe(40);
+    expect(l.heightOf.get('rack2')).toBe(frameHeight(40, CELL));
+  });
+
+  it('honours a declaration even when it is shorter than its neighbours', () => {
+    // A declaration is an assertion about the hardware. A genuinely small
+    // cabinet stays small rather than being levelled up into a claim about
+    // empty slots that do not exist.
+    const { groups, blades } = flat([['rack1', 40], ['rack2', 20]]);
+    const l = layoutSlots({
+      groups, blades,
+      declared: new Map([['rack2', 20]]),
+      fallback: undefined,
+      cellHeight: CELL,
+    });
+    expect(l.slotsOf.get('rack1')).toBe(40);
+    expect(l.slotsOf.get('rack2')).toBe(20);
+  });
+
+  it('levels an undeclared cabinet up to a declared neighbour, not only to a filled one', () => {
+    // rack1 is nearly empty but declared tall; rack2 declares nothing. The
+    // floor stays flat because the levelling height is the tallest cabinet
+    // drawn, whatever made it tall.
+    const { groups, blades } = flat([['rack1', 10], ['rack2', 20]]);
+    const l = layoutSlots({
+      groups, blades,
+      declared: new Map([['rack1', 42]]),
+      fallback: undefined,
+      cellHeight: CELL,
+    });
+    expect(l.slotsOf.get('rack1')).toBe(42);
+    expect(l.slotsOf.get('rack2')).toBe(42);
+  });
+
+  it('uses the panel-wide number where the table is silent', () => {
+    const { groups, blades } = flat([['rack1', 40], ['rack2', 20]]);
+    const l = layoutSlots({
+      groups, blades,
+      declared: new Map([['rack1', 24]]),
+      fallback: 42,
+      cellHeight: CELL,
+    });
+    expect(l.slotsOf.get('rack1')).toBe(24);
+    expect(l.slotsOf.get('rack2')).toBe(42);
+  });
+
+  it('counts rows through the blade, not nodes', () => {
+    // Forty nodes of quads occupy ten slots. Declaring a height in nodes
+    // would draw this cabinet four times taller than it stands, which is the
+    // defect the slot unit exists to avoid.
+    const groups = [{ key: 'rack1', nodes: 40 }];
+    const blades = layoutBlades({
+      groupKeys: ['rack1'],
+      sizes: new Map([['rack1', 4]]),
+      fallback: 1,
+      cellWidth: 14,
+    });
+    const l = layoutSlots({ groups, blades, declared: new Map(), fallback: undefined, cellHeight: CELL });
+    expect(l.slotsOf.get('rack1')).toBe(10);
+  });
+
+  it('names a cabinet that holds more than it declares, and only a declared one', () => {
+    // The invariant: a levelled cabinet takes panelRows, which is at least its
+    // own rowsNeeded by construction, so it cannot overflow. Only a
+    // declaration can be too small.
+    const { groups, blades } = flat([['rack1', 45], ['rack2', 20]]);
+    const l = layoutSlots({
+      groups, blades,
+      declared: new Map([['rack1', 42]]),
+      fallback: undefined,
+      cellHeight: CELL,
+    });
+    expect(l.overflowing).toEqual([{ key: 'rack1', needed: 45, declared: 42 }]);
+  });
+
+  it('grows the band to clear whatever is actually drawn, overflow included', () => {
+    // If the band only cleared the declared height, the rows that spill above
+    // the frame would paint over the group header.
+    const { groups, blades } = flat([['rack1', 45]]);
+    const l = layoutSlots({
+      groups, blades,
+      declared: new Map([['rack1', 10]]),
+      fallback: undefined,
+      cellHeight: CELL,
+    });
+    expect(l.heightOf.get('rack1')).toBe(frameHeight(10, CELL));
+    expect(l.bandHeight).toBe(frameHeight(45, CELL));
+  });
+
+  it('gives every cabinet the same band, so headers align and cabinets share a floor', () => {
+    const { groups, blades } = flat([['rack1', 40], ['rack2', 20]]);
+    const l = layoutSlots({
+      groups, blades,
+      declared: new Map([['rack2', 20]]),
+      fallback: undefined,
+      cellHeight: CELL,
+    });
+    expect(l.bandHeight).toBe(frameHeight(40, CELL));
+  });
+
+  it('names the groups a declaration claims that are not drawn', () => {
+    const { groups, blades } = flat([['rack1', 40]]);
+    const l = layoutSlots({
+      groups, blades,
+      declared: new Map([['rack1', 42], ['rack9', 42]]),
+      fallback: undefined,
+      cellHeight: CELL,
+    });
+    expect(l.undrawn).toEqual(['rack9']);
+  });
+
+  it('does not let an undrawn declaration raise the cabinets that are drawn', () => {
+    const { groups, blades } = flat([['rack1', 10]]);
+    const l = layoutSlots({
+      groups, blades,
+      declared: new Map([['rack9', 64]]),
+      fallback: undefined,
+      cellHeight: CELL,
+    });
+    expect(l.slotsOf.get('rack1')).toBe(10);
+  });
+
+  it('is empty and silent with no groups drawn', () => {
+    const l = layoutSlots({
+      groups: [],
+      blades: layoutBlades({ groupKeys: [], sizes: new Map(), fallback: 1, cellWidth: 14 }),
+      declared: new Map(),
+      fallback: undefined,
+      cellHeight: CELL,
+    });
+    expect(l.slotsOf.size).toBe(0);
+    expect(l.overflowing).toEqual([]);
+    expect(l.bandHeight).toBe(frameHeight(0, CELL));
   });
 });

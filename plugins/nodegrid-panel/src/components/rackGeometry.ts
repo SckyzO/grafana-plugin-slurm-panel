@@ -156,3 +156,111 @@ export function layoutBlades({ groupKeys, sizes, fallback, cellWidth }: BladeLay
 
   return { rackWidth, sizeOf, sledWidthOf, undrawn, squeezed };
 }
+
+/**
+ * A cabinet frame's height in pixels, for a given number of rows.
+ *
+ * The padding and border terms are here for the same reason they are in
+ * `sledWidthFor`: the app runs under `box-sizing: border-box`, so an explicit
+ * height includes both. Leaving the border out of the width formula is what
+ * let a sled overflow its frame by exactly two pixels, undetected by a full
+ * review and ninety-seven unit tests — this is that trap on the other axis.
+ *
+ * Unlike the width there is no `floor()` here, so every term of the formula is
+ * visible in the result and a literal assertion detects a missing one.
+ */
+export function frameHeight(rows: number, cellHeight: number): number {
+  const chrome = RACK_PADDING * 2 + RACK_BORDER * 2;
+  return rows <= 0 ? chrome : rows * cellHeight + (rows - 1) * RACK_GAP + chrome;
+}
+
+export interface SlotLayoutInput {
+  /**
+   * The groups the panel is actually drawing, in draw order, each with its
+   * node count — one structure rather than a key list beside a count map.
+   * Two structures that must cover the same keys, with nothing forcing them
+   * to, is how a `?? 0` ends up drawing a silently empty cabinet.
+   */
+  groups: Array<{ key: string; nodes: number }>;
+  /** Resolved blade layout, for `sizeOf`. Built from the same group list. */
+  blades: BladeLayout;
+  /** Declared group name to slot count, from parseSlotTable. */
+  declared: Map<string, number>;
+  /** The panel-wide Slots per rack, where the table is silent. Absent means level. */
+  fallback: number | undefined;
+  cellHeight: number;
+}
+
+export interface SlotLayout {
+  /** Shared by every cabinet, so headers align and cabinets share a floor. */
+  bandHeight: number;
+  /** Rows the frame is drawn at, per drawn group. */
+  slotsOf: Map<string, number>;
+  /** Frame height in pixels, per drawn group. */
+  heightOf: Map<string, number>;
+  /** Declared groups the panel is not drawing. */
+  undrawn: string[];
+  /** Drawn groups whose content needs more rows than the frame has. */
+  overflowing: Array<{ key: string; needed: number; declared: number }>;
+}
+
+/**
+ * How tall each cabinet is drawn, resolved once for the whole panel.
+ *
+ * A declaration wins; what is not declared levels to the tallest cabinet on
+ * the floor, declared or filled. Pure, and outside the component on purpose:
+ * the levelled height and the shared band depend on every group at once, which
+ * no single group can work out for itself.
+ */
+export function layoutSlots({ groups, blades, declared, fallback, cellHeight }: SlotLayoutInput): SlotLayout {
+  const neededOf = new Map<string, number>();
+  for (const { key, nodes } of groups) {
+    // blades.sizeOf is keyed by every group layoutBlades was given, and the
+    // panel builds both from the same list, so the key is always present.
+    // A fallback here would silently draw a cabinet at the wrong row count.
+    const blade = blades.sizeOf.get(key)!;
+    neededOf.set(key, Math.ceil(nodes / blade));
+  }
+
+  const declaredFor = (key: string): number | undefined => declared.get(key) ?? fallback;
+
+  // The tallest cabinet on the floor, whatever made it tall. Taking a declared
+  // neighbour into account here is what keeps the floor flat when one cabinet
+  // is declared tall and nearly empty.
+  let panelRows = 0;
+  for (const { key } of groups) {
+    const rows = declaredFor(key) ?? neededOf.get(key)!;
+    if (rows > panelRows) {
+      panelRows = rows;
+    }
+  }
+
+  const slotsOf = new Map<string, number>();
+  const heightOf = new Map<string, number>();
+  const overflowing: SlotLayout['overflowing'] = [];
+  let bandRows = 0;
+
+  for (const { key } of groups) {
+    const rows = declaredFor(key) ?? panelRows;
+    slotsOf.set(key, rows);
+    heightOf.set(key, frameHeight(rows, cellHeight));
+
+    const needed = neededOf.get(key)!;
+    if (needed > rows) {
+      overflowing.push({ key, needed, declared: rows });
+    }
+    // The band has to clear whatever is actually drawn, overflow included —
+    // otherwise the rows that spill above the frame paint over the header.
+    const drawn = Math.max(rows, needed);
+    if (drawn > bandRows) {
+      bandRows = drawn;
+    }
+  }
+
+  // A declaration for a cabinet the query did not return is worth saying, and
+  // must not raise the ones it did: only drawn groups feed panelRows above.
+  const drawn = new Set(groups.map((g) => g.key));
+  const undrawn = [...declared.keys()].filter((key) => !drawn.has(key));
+
+  return { bandHeight: frameHeight(bandRows, cellHeight), slotsOf, heightOf, undrawn, overflowing };
+}
