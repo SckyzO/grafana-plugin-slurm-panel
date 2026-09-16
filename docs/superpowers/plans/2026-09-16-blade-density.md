@@ -516,77 +516,109 @@ legibility floor the Cell width description already names."
 **Files:**
 - Modify: `plugins/nodegrid-panel/src/components/RackFrame.tsx`
 - Modify: `plugins/nodegrid-panel/src/components/RackFrame.test.tsx`
+- Modify: `plugins/nodegrid-panel/src/components/NodeCell.tsx`
 - Modify: `plugins/nodegrid-panel/src/components/NodeGroup.tsx`
 - Modify: `plugins/nodegrid-panel/src/components/NodeGroup.test.tsx`
 
 **Interfaces:**
-- Consumes: `BladeLayout` from Task 2.
-- Produces: `RackFrameProps` now takes `width: number` instead of `cellWidth: number`; `NodeGroupProps` gains an optional `blades?: BladeLayout`. Task 4 passes `blades` in from the panel.
+- Consumes: `layoutBlades`, `BladeLayout`, `rackWidthFor`, `sledWidthFor` from Task 2.
+- Produces: `RackFrameProps` takes `width: number` instead of `cellWidth: number`; `NodeCellProps` loses its `sled?: boolean`; `NodeGroupProps` gains `blades?: BladeLayout`. Task 4 passes `blades` in from the panel.
 
-- [ ] **Step 1: Write the failing test**
+**Why `sled` goes.** `NodeCell` currently draws a sled with `width: 'auto'` and
+`alignSelf: 'stretch'`, which fills the cabinet only because the frame is a
+`column-reverse` column. In a wrapping row, `auto` sizes to content and
+`stretch` works on the vertical axis — so the prop stops meaning anything the
+moment the frame changes. Every cell now receives an explicit width, which
+`sledWidthFor(rackWidth, 1)` makes identical to what `auto` produced, and the
+prop is removed rather than left inert.
 
-In `plugins/nodegrid-panel/src/components/NodeGroup.test.tsx`, add inside the existing top-level `describe`:
+- [ ] **Step 1: Write the failing tests**
 
-```ts
-it('gives each sled a share of the cabinet when a blade holds several nodes', () => {
-  // Assert the geometry, not a count of cells: eight nodes are eight cells at
-  // any blade size, so counting them would pass whatever the layout did.
-  const group = { key: 'rack1', assumed: false, nodes: nodesNamed(['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8']) };
-  const blades = layoutBlades({ groupKeys: ['rack1'], sizes: new Map([['rack1', 4]]), fallback: 1, cellWidth: 20 });
+In `plugins/nodegrid-panel/src/components/NodeGroup.test.tsx`, add `layoutBlades` and `sledWidthFor` to the existing `./rackGeometry` import, then add inside the existing `describe('NodeGroup', ...)`:
 
-  render(<NodeGroup {...baseProps} group={group} options={{ ...baseOptions, layout: 'rack' }} blades={blades} />);
+```tsx
+  it('splits the cabinet between the nodes sharing a blade', () => {
+    // Assert the geometry, not a count of cells: eight nodes are eight cells
+    // at any blade size, so counting them would pass whatever the layout did.
+    const eight: NodeGroupModel = {
+      key: 'rack1',
+      assumed: false,
+      nodes: ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8'].map(mkNode),
+    };
+    const blades = layoutBlades({
+      groupKeys: ['rack1'],
+      sizes: new Map([['rack1', 4]]),
+      fallback: 1,
+      cellWidth: 20,
+    });
 
-  const cells = screen.getAllByTestId(/^node-cell-/);
-  expect(cells).toHaveLength(8);
-  for (const cell of cells) {
-    expect(cell).toHaveStyle({ width: `${blades.sledWidthOf.get('rack1')}px` });
-  }
-  expect(screen.getByTestId('rack-frame')).toHaveStyle({ width: `${blades.rackWidth}px` });
-});
+    renderGroup(eight, { ...DEFAULT_OPTIONS, layout: 'rack' }, { blades });
 
-it('uses the blade declared for this group, not the one next to it', () => {
-  // Different values on purpose: equal ones would pass just as well with the
-  // two lookups swapped, which is how a width/height inversion once survived
-  // review on this panel.
-  const blades = layoutBlades({
-    groupKeys: ['rack1', 'rack2'],
-    sizes: new Map([['rack1', 4], ['rack2', 2]]),
-    fallback: 1,
-    cellWidth: 20,
+    expect(getComputedStyle(screen.getByTestId('rack-frame')).width).toBe(`${blades.rackWidth}px`);
+    expect(screen.getByTestId('node-cell-c1').style.width).toBe(`${blades.sledWidthOf.get('rack1')}px`);
   });
-  const group = { key: 'rack2', assumed: false, nodes: nodesNamed(['c1', 'c2']) };
 
-  render(<NodeGroup {...baseProps} group={group} options={{ ...baseOptions, layout: 'rack' }} blades={blades} />);
+  it('uses the blade declared for this group, not the one next to it', () => {
+    // Four and two on purpose: two equal blades would pass just as well with
+    // the lookups swapped, which is how a width/height inversion once
+    // survived review on this panel.
+    const blades = layoutBlades({
+      groupKeys: ['rack1', 'rack2'],
+      sizes: new Map([
+        ['rack1', 4],
+        ['rack2', 2],
+      ]),
+      fallback: 1,
+      cellWidth: 20,
+    });
+    const duo: NodeGroupModel = { key: 'rack2', assumed: false, nodes: [mkNode('c1'), mkNode('c2')] };
 
-  expect(screen.getAllByTestId(/^node-cell-/)[0]).toHaveStyle({
-    width: `${blades.sledWidthOf.get('rack2')}px`,
+    renderGroup(duo, { ...DEFAULT_OPTIONS, layout: 'rack' }, { blades });
+
+    expect(screen.getByTestId('node-cell-c1').style.width).toBe(`${blades.sledWidthOf.get('rack2')}px`);
+    expect(blades.sledWidthOf.get('rack2')).not.toBe(blades.sledWidthOf.get('rack1'));
   });
-  expect(blades.sledWidthOf.get('rack2')).not.toBe(blades.sledWidthOf.get('rack1'));
-});
 
-it('ignores blades entirely in the wrap layout', () => {
-  const blades = layoutBlades({ groupKeys: ['rack1'], sizes: new Map([['rack1', 4]]), fallback: 1, cellWidth: 20 });
-  const group = { key: 'rack1', assumed: false, nodes: nodesNamed(['c1', 'c2']) };
+  it('ignores blades entirely in the wrap layout', () => {
+    const blades = layoutBlades({
+      groupKeys: ['rack-1'],
+      sizes: new Map([['rack-1', 4]]),
+      fallback: 1,
+      cellWidth: 20,
+    });
 
-  render(<NodeGroup {...baseProps} group={group} options={{ ...baseOptions, layout: 'wrap' }} blades={blades} />);
+    renderGroup(group, { ...DEFAULT_OPTIONS, layout: 'wrap', cellWidth: 20 }, { blades });
 
-  expect(screen.queryByTestId('rack-frame')).toBeNull();
-  expect(screen.getAllByTestId(/^node-cell-/)[0]).toHaveStyle({ width: '20px' });
-});
+    expect(screen.queryByTestId('rack-frame')).toBeNull();
+    expect(screen.getByTestId('node-cell-node-a').style.width).toBe('20px');
+  });
 ```
 
-Add to that file's imports:
+In the same file, amend the existing `draws a rack frame of sleds when layout is rack` test. Replace its last three lines — the comment about `auto` and the `expect(cell.style.width).toBe('auto')` — with:
 
-```ts
-import { layoutBlades } from './rackGeometry';
+```tsx
+    // A sled fills the cabinet's inner width when one node has the blade to
+    // itself. That width is resolved by NodeGroup and handed over, rather
+    // than a stretch NodeCell decides for itself: `auto` only filled a
+    // cabinet while the frame was a column.
+    const cell = screen.getByTestId('node-cell-node-a');
+    const width = rackWidthFor(resolveCellSize(DEFAULT_OPTIONS).width);
+    expect(cell.style.width).toBe(`${sledWidthFor(width, 1)}px`);
 ```
 
-If `nodesNamed`, `baseProps` and `baseOptions` are not already helpers in this file, read what the existing tests use and follow it exactly rather than introducing a second style.
+In `plugins/nodegrid-panel/src/components/RackFrame.test.tsx`, replace both `cellWidth={N}` props with `width={rackWidthFor(N)}`, and replace the `flexDirection` assertion with these two:
 
-- [ ] **Step 2: Run the test and watch it fail**
+```tsx
+    expect(computed.flexDirection).toBe('row');
+    expect(computed.flexWrap).toBe('wrap-reverse');
+```
+
+Amend that test's name and its leading comment to say the slots fill bottom-up by a reversed cross axis rather than by a reversed column.
+
+- [ ] **Step 2: Run the tests and watch them fail**
 
 Run: `make test`
-Expected: FAIL — `NodeGroup` has no `blades` prop, and every cell is the full rack width.
+Expected: FAIL — `NodeGroup` has no `blades` prop, the frame is still a column, and every sled is still `auto`.
 
 - [ ] **Step 3: Make the frame a wrapping row**
 
@@ -603,8 +635,8 @@ const getStyles = (theme: GrafanaTheme2, width: number, dashed: boolean) => ({
     display: 'flex',
     // A row that wraps, with the cross axis reversed: rows fill left to right
     // and the first one sits at the bottom, so node 1 is at the foot of the
-    // cabinet, which is how a rack is read. At one node per blade this is a
-    // single sled per row and draws what column-reverse drew before it.
+    // cabinet, which is how a rack is read. At one node per blade this is one
+    // sled per row, which is what column-reverse drew before it.
     flexDirection: 'row',
     flexWrap: 'wrap-reverse',
     // With the cross axis reversed, flex-start is the bottom: a half-full
@@ -640,16 +672,33 @@ export function RackFrame({ children, width, dashed = false }: RackFrameProps) {
 }
 ```
 
-In `RackFrame.test.tsx`, change every `cellWidth={N}` prop to `width={rackWidthFor(N)}` and import `rackWidthFor` from `./rackGeometry`, so the test keeps asserting the same rendered width through the new prop.
+- [ ] **Step 4: Give every cell an explicit width**
 
-- [ ] **Step 4: Give NodeGroup the blade layout**
+In `plugins/nodegrid-panel/src/components/NodeCell.tsx`:
+
+- delete the `sled?: boolean` field and its doc comment from `NodeCellProps`;
+- delete `sled,` from the destructured parameters;
+- replace these two style lines
+
+```tsx
+          width: sled ? 'auto' : width,
+          alignSelf: sled ? 'stretch' : undefined,
+```
+
+with
+
+```tsx
+          width,
+```
+
+- [ ] **Step 5: Give NodeGroup the blade layout**
 
 In `plugins/nodegrid-panel/src/components/NodeGroup.tsx`:
 
-Add to the imports:
+Replace the `./rackGeometry` import with:
 
 ```tsx
-import { resolveCellSize, rackWidthFor } from './rackGeometry';
+import { rackWidthFor, resolveCellSize, sledWidthFor } from './rackGeometry';
 import type { BladeLayout } from './rackGeometry';
 ```
 
@@ -657,54 +706,63 @@ Add to `NodeGroupProps`:
 
 ```tsx
   /**
-   * Rack geometry for the whole panel, resolved once by the panel. Absent
-   * only where no rack is drawn, which is every wrap-layout test.
+   * Rack geometry for the whole panel, resolved once by the panel because the
+   * width every cabinet shares depends on the densest blade across all of
+   * them. Absent wherever no rack is drawn.
    */
   blades?: BladeLayout;
 ```
 
-Inside the component, after `const cell = resolveCellSize(options);`:
+Add `blades` to the destructured props, and after `const cell = resolveCellSize(options);`:
 
 ```tsx
-  // In a rack a sled is as wide as its share of the cabinet; everywhere else
-  // a cell is the width the reader asked for.
-  const rack = options.layout === 'rack';
+  // In a cabinet a cell is as wide as its share of the slot; everywhere else
+  // it is the width the reader asked for. The fallback covers a NodeGroup
+  // rendered without a layout — every wrap-layout test, and any caller that
+  // draws a single group on its own.
   const rackWidth = blades?.rackWidth ?? rackWidthFor(cell.width);
-  const cellWidth = rack ? blades?.sledWidthOf.get(group.key) ?? rackWidth - 8 : cell.width;
+  const cellWidth =
+    options.layout === 'rack' ? blades?.sledWidthOf.get(group.key) ?? sledWidthFor(rackWidth, 1) : cell.width;
 ```
 
-Change the `NodeCell` width prop from `width={cell.width}` to `width={cellWidth}`, and the `RackFrame` call from `<RackFrame cellWidth={cell.width} dashed={unresolved}>` to `<RackFrame width={rackWidth} dashed={unresolved}>`.
+Change `width={cell.width}` on `NodeCell` to `width={cellWidth}`, delete the `sled={options.layout === 'rack'}` prop, and change the `RackFrame` call to `<RackFrame width={rackWidth} dashed={unresolved}>`.
 
-- [ ] **Step 5: Run the tests and watch them pass**
+- [ ] **Step 6: Run the tests and watch them pass**
 
 Run: `make test`
-Expected: PASS, including every existing rack test unedited apart from `RackFrame.test.tsx`'s prop rename.
+Expected: PASS. Every other rack test in the suite must pass unedited — the two files named in Step 1 are the only test files this task may touch.
 
-- [ ] **Step 6: Look at it**
+- [ ] **Step 7: Look at it**
 
-Run: `make up`, then open the address `make up` prints and load **Slurm / Slurm node grid**. The six cabinets must look exactly as they did before this task — one sled per node, node 1 at the foot. Nothing is configurable yet, so any visible change here is a regression.
+Run: `make up`, then open the address it prints and load **Slurm / Slurm node grid**. The six cabinets must look exactly as they did before this task: one sled per node, full cabinet width, node 1 at the foot. Nothing is configurable yet, so any visible difference here is a regression rather than a feature.
 
-- [ ] **Step 7: Lint and typecheck**
+- [ ] **Step 8: Lint and typecheck**
 
 Run: `make lint && make typecheck`
 Expected: both exit 0.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
-git add plugins/nodegrid-panel/src/components/RackFrame.tsx plugins/nodegrid-panel/src/components/RackFrame.test.tsx plugins/nodegrid-panel/src/components/NodeGroup.tsx plugins/nodegrid-panel/src/components/NodeGroup.test.tsx
+git add plugins/nodegrid-panel/src/components/RackFrame.tsx plugins/nodegrid-panel/src/components/RackFrame.test.tsx plugins/nodegrid-panel/src/components/NodeCell.tsx plugins/nodegrid-panel/src/components/NodeGroup.tsx plugins/nodegrid-panel/src/components/NodeGroup.test.tsx
 git commit -m "feat(panel): draw a cabinet as a wrapping row of sleds
 
 flexDirection row with wrap-reverse: rows fill left to right and the reversed
 cross axis puts the first row at the bottom, so node 1 stays at the foot of
 the cabinet. At one node per blade that is one sled per row, which is what
-column-reverse drew before it — the existing rack tests pass unedited.
+column-reverse drew before it.
 
-RackFrame now takes the width it should be rather than the cell width it
-should compute one from. The cabinet's width depends on the densest blade
-across the whole panel, so the decision belongs where that is known, and a
-component that is handed its width cannot disagree with the one the panel
-warned about."
+NodeCell loses its sled flag. It drew a sled as width auto with alignSelf
+stretch, which filled the cabinet only because the frame was a column: in a
+wrapping row auto sizes to content and stretch works on the other axis, so
+the flag stops meaning anything the moment the frame changes. Every cell now
+takes an explicit width, and at one node per blade that width is the one auto
+produced.
+
+RackFrame takes the width it should be rather than a cell width to compute one
+from. The cabinet's width depends on the densest blade across the whole panel,
+so the decision belongs where that is known, and a component handed its width
+cannot disagree with the one the panel warned about."
 ```
 
 ---
@@ -719,34 +777,79 @@ warned about."
 - Modify: `plugins/nodegrid-panel/src/components/NodeGridPanel.test.tsx`
 
 **Interfaces:**
-- Consumes: `parseBladeTable` (Task 1), `layoutBlades` and `BladeLayout` (Task 2), the `blades` prop on `NodeGroup` (Task 3).
-- Produces: `PanelOptions.nodesPerBlade: number` and `PanelOptions.bladeOverrides: string`, both with defaults in `DEFAULT_OPTIONS`. Task 5 consumes the parsed table and the resolved layout for its warnings.
+- Consumes: `parseBladeTable`, `MIN_BLADE`, `MAX_BLADE` (Task 1); `layoutBlades`, `rackWidthFor`, `sledWidthFor` (Task 2); the `blades` prop on `NodeGroup` (Task 3).
+- Produces: `PanelOptions.nodesPerBlade: number` and `PanelOptions.bladeOverrides: string`, both with defaults in `DEFAULT_OPTIONS`; a `blades` memo in `NodeGridPanel` shaped `{ table: BladeTable; layout: BladeLayout }`. Task 5 reads both halves of that memo.
 
 - [ ] **Step 1: Write the failing test**
 
-In `plugins/nodegrid-panel/src/components/NodeGridPanel.test.tsx`, add:
+In `plugins/nodegrid-panel/src/components/NodeGridPanel.test.tsx`, add to the imports:
 
-```ts
-it('draws one sled per node when nothing is declared', () => {
-  // The whole default-unchanged promise, asserted rather than assumed.
-  renderPanel({ ...baseOptions, layout: 'rack' });
-  const cells = screen.getAllByTestId(/^node-cell-/);
-  expect(cells[0]).toHaveStyle({ width: '48px' });
-});
-
-it('resolves a declared blade through to the drawn cell', () => {
-  renderPanel({ ...baseOptions, layout: 'rack', nodesPerBlade: 1, bladeOverrides: 'rack1: 4' });
-  const cells = screen.getAllByTestId(/^node-cell-/);
-  expect(cells[0]).toHaveStyle({ width: '10px' });
-});
+```tsx
+import { rackWidthFor, sledWidthFor } from './rackGeometry';
 ```
 
-Follow the file's existing `renderPanel` helper and fixture exactly; if the fixture's group is not named `rack1`, use whatever name it does produce and keep the two expectations. `48px` is `rackWidthFor(14) - 8`; `10px` is `sledWidthFor(56, 4)`. Compute both with the imported helpers rather than hardcoding if the fixture's cell width differs.
+and add inside `describe('NodeGridPanel', ...)`:
+
+```tsx
+  // One node per frame, the same shape the other tests in this file build.
+  const nodeFrame = (node: string, rack: string) =>
+    createDataFrame({
+      refId: 'A',
+      fields: [
+        { name: 'Value', type: FieldType.number, values: [1], labels: { node, status: 'idle', rack } },
+      ],
+    });
+
+  const rackData = (): PanelData => ({
+    state: LoadingState.Done,
+    series: [nodeFrame('c1', 'rack1')],
+    timeRange: getDefaultTimeRange(),
+  });
+
+  const plainConfig: FieldConfigSource = {
+    defaults: {
+      mappings: DEFAULT_MAPPINGS,
+      thresholds: { mode: ThresholdsMode.Absolute, steps: [{ value: -Infinity, color: 'green' }] },
+    },
+    overrides: [],
+  };
+
+  const rackOptions: PanelOptions = {
+    ...DEFAULT_OPTIONS,
+    layout: 'rack',
+    grouping: { kind: 'label', label: 'rack' },
+  };
+
+  it('draws one sled per node when nothing is declared', () => {
+    // The default-unchanged promise, asserted rather than assumed: a reader
+    // who never opens the option gets the cabinet the panel always drew.
+    render(<NodeGridPanel {...baseProps} data={rackData()} options={rackOptions} fieldConfig={plainConfig} />);
+
+    const width = rackWidthFor(DEFAULT_OPTIONS.cellWidth);
+    expect(screen.getByTestId('node-cell-c1').style.width).toBe(`${sledWidthFor(width, 1)}px`);
+  });
+
+  it('resolves a group named in the blade table through to the drawn cell', () => {
+    render(
+      <NodeGridPanel
+        {...baseProps}
+        data={rackData()}
+        options={{ ...rackOptions, bladeOverrides: 'rack1: 4' }}
+        fieldConfig={plainConfig}
+      />
+    );
+
+    // The panel-wide count is still 1; only the table names rack1, which is
+    // what proves the override is read rather than the slider.
+    const width = rackWidthFor(DEFAULT_OPTIONS.cellWidth, 4);
+    expect(screen.getByTestId('node-cell-c1').style.width).toBe(`${sledWidthFor(width, 4)}px`);
+  });
+```
 
 - [ ] **Step 2: Run the test and watch it fail**
 
 Run: `make test`
-Expected: FAIL — `nodesPerBlade` and `bladeOverrides` are not on `PanelOptions`.
+Expected: FAIL — `bladeOverrides` is not a property of `PanelOptions`.
 
 - [ ] **Step 3: Add the options to the type**
 
@@ -765,7 +868,7 @@ In `plugins/nodegrid-panel/src/types.ts`, add to `PanelOptions` after `cellHeigh
   bladeOverrides: string;
 ```
 
-And to `DEFAULT_OPTIONS`, after `cellWidth`:
+and to `DEFAULT_OPTIONS`, after `cellWidth`:
 
 ```ts
   // 1, not 0 and not a flag: "one node per blade" is a true statement about
@@ -790,8 +893,9 @@ import { TextArea } from '@grafana/ui';
  * Grafana's option builder has no textarea — addTextInput is one line — so a
  * table that wants several needs a custom editor. Same construction as the
  * Ranges table in GroupingEditor, and deliberately nothing more than a
- * textarea: this option edits a string, and the parser reports what it cannot
- * read in the panel's own warnings strip, where the reader is already looking.
+ * textarea: this option edits a string, and what the parser cannot read is
+ * reported in the panel's own warnings strip, where the reader is already
+ * looking.
  */
 export function BladeEditor({ value, onChange }: StandardEditorProps<string>) {
   return (
@@ -855,7 +959,7 @@ Add after the `unmapped` memo:
 ```tsx
   // Resolved once for the whole panel, because the width every cabinet shares
   // depends on the densest blade across all of them. Computed in both layouts
-  // and consumed only in Rack: the cost is a map over the groups, and a
+  // and consumed only in Rack: the cost is one pass over the groups, and a
   // conditional hook is worse than a wasted one.
   const blades = useMemo(() => {
     const table = parseBladeTable(options.bladeOverrides);
@@ -869,7 +973,7 @@ Add after the `unmapped` memo:
   }, [options.bladeOverrides, options.nodesPerBlade, options.cellWidth, model.groups]);
 ```
 
-and pass it to `NodeGroup`:
+and pass it to `NodeGroup` alongside the props already there:
 
 ```tsx
             blades={blades.layout}
@@ -882,10 +986,10 @@ Expected: PASS.
 
 - [ ] **Step 8: Look at it**
 
-Run: `make up`, open **Slurm / Slurm node grid**, edit the panel, and check in the editor that:
-- **Nodes per blade** and **Nodes per blade, by group** appear under Layout when the layout is Rack, and disappear when it is Wrap.
+Run: `make up`, open **Slurm / Slurm node grid**, edit the panel, and check that:
+- **Nodes per blade** and **Nodes per blade, by group** appear under Layout while the layout is Rack, and disappear when it is set to Wrap.
 - Setting Nodes per blade to 4 turns each forty-node cabinet from forty rows into ten.
-- Typing `rack1: 2` in the table leaves rack1 at twenty rows while the others stay at ten.
+- Typing `rack1: 2` in the table leaves rack1 at twenty rows while the other five stay at ten.
 
 Discard the edit rather than saving it.
 
