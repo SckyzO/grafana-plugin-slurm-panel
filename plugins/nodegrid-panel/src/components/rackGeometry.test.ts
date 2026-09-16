@@ -14,6 +14,7 @@ import {
   sledHeightFor,
   sledWidthFor,
 } from './rackGeometry';
+import { MAX_SLOT, MIN_SLOT } from '@slurm-views/core';
 import { DEFAULT_OPTIONS } from '../types';
 
 describe('rackGeometry', () => {
@@ -346,5 +347,15 @@ describe('layoutSlots', () => {
     expect(l.slotsOf.size).toBe(0);
     expect(l.overflowing).toEqual([]);
     expect(l.bandHeight).toBe(frameHeight(0, CELL));
+  });
+
+  it('clamps a panel-wide slot count that arrived past the editor', () => {
+    const { groups, blades } = flat([['rack1', 8]]);
+    const high = layoutSlots({ groups, blades, declared: new Map(), fallback: 400, cellHeight: CELL });
+    expect(high.slotsOf.get('rack1')).toBe(MAX_SLOT);
+    const low = layoutSlots({ groups, blades, declared: new Map(), fallback: 0, cellHeight: CELL });
+    expect(low.slotsOf.get('rack1')).toBe(MIN_SLOT);
+    const fractional = layoutSlots({ groups, blades, declared: new Map(), fallback: 12.5, cellHeight: CELL });
+    expect(fractional.slotsOf.get('rack1')).toBe(12);
   });
 });

@@ -6,6 +6,7 @@
  * without a layout engine cannot see.
  */
 
+import { MAX_SLOT, MIN_SLOT } from '@slurm-views/core';
 import { DEFAULT_OPTIONS } from '../types';
 import type { Layout } from '../types';
 
@@ -256,7 +257,17 @@ export function layoutSlots({ groups, blades, declared, fallback, cellHeight }: 
     neededOf.set(key, Math.ceil(nodes / blade));
   }
 
-  const declaredFor = (key: string): number | undefined => declared.get(key) ?? fallback;
+  // The editor's min/max are widget constraints; a provisioned dashboard or a
+  // hand-edited panel JSON goes straight past them. The table's own bound
+  // exists to stop a typo turning one cabinet into a column of a thousand
+  // rows, and the panel-wide number is the one path around it. Clamped rather
+  // than reported, the way an out-of-range Cell height already is.
+  const panelWide =
+    fallback === undefined
+      ? undefined
+      : Math.min(MAX_SLOT, Math.max(MIN_SLOT, Math.floor(fallback)));
+
+  const declaredFor = (key: string): number | undefined => declared.get(key) ?? panelWide;
 
   // The tallest cabinet on the floor, whatever made it tall. Taking a declared
   // neighbour into account here is what keeps the floor flat when one cabinet
