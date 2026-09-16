@@ -61,6 +61,21 @@ CI (`.github/workflows/ci.yml`) builds the same image and runs the same `make`
 targets. It installs no Node of its own, deliberately: a second toolchain is
 the thing that drifts.
 
+## Where the design decisions are written down
+
+Three design documents in `docs/superpowers/specs/`, one per slice, each written
+before its code and each answering *why* rather than *what*:
+
+| | |
+|---|---|
+| `2026-09-12-slurm-node-grid-design.md` | The panel itself: what a cell is, where colour comes from, why the plugin hardcodes none of it |
+| `2026-09-15-node-grouping-design.md` | How a node finds its group. Three routes separated by the privilege each needs — Prometheus relabelling, a join transformation, a declared range table — and why the panel is never the source of the topology |
+| `2026-09-16-blade-density-design.md` | Several nodes in one cabinet slot, and why a blade here is a count rather than a shape |
+
+Read the relevant one before changing behaviour it covers. They record the
+alternatives that were rejected and what it would cost to revisit them, which is
+the part that does not survive in the code.
+
 ## Why `packages/core` imports nothing from Grafana
 
 `@grafana/data` touches `window` and `document` at import time and throws
