@@ -63,7 +63,7 @@ the thing that drifts.
 
 ## Where the design decisions are written down
 
-Three design documents in `docs/superpowers/specs/`, one per slice, each written
+Three design documents in `docs/specs/`, one per slice, each written
 before its code and each answering *why* rather than *what*:
 
 | | |
