@@ -8,6 +8,7 @@ import { GroupHeader } from './GroupHeader';
 import { NodeCell } from './NodeCell';
 import { RackFrame } from './RackFrame';
 import { resolveCellSize } from './rackGeometry';
+import type { BladeLayout } from './rackGeometry';
 import type { ColorMode, PanelOptions } from '../types';
 
 const getStyles = (theme: GrafanaTheme2, gap: number) => ({
@@ -28,9 +29,19 @@ export interface NodeGroupProps {
   /** Resolves the first data link's interpolated URL for a node, if the field config carries one. */
   hrefFor: (node: SlurmNode) => string | undefined;
   options: PanelOptions;
+  /**
+   * Rack geometry for the whole panel, resolved once by the panel because the
+   * width every cabinet shares depends on the densest blade across all of
+   * them. NodeGridPanel is the only production caller and always resolves
+   * and passes one — a caller that draws a rack without it would have
+   * nothing honest to fall back to, so this is required rather than
+   * reimplementing rackWidthFor/sledWidthFor here for a caller that does not
+   * exist.
+   */
+  blades: BladeLayout;
 }
 
-export function NodeGroup({ group, stateDisplay, valueDisplay, colorMode, hrefFor, options }: NodeGroupProps) {
+export function NodeGroup({ group, stateDisplay, valueDisplay, colorMode, hrefFor, options, blades }: NodeGroupProps) {
   const theme = useTheme2();
   const styles = getStyles(theme, options.gap);
 
@@ -41,18 +52,26 @@ export function NodeGroup({ group, stateDisplay, valueDisplay, colorMode, hrefFo
   const unresolved = unplaced || empty;
   const cell = resolveCellSize(options);
 
+  // In a cabinet a cell is as wide as its share of the slot; everywhere else
+  // it is the width the reader asked for. blades.sledWidthOf is keyed by
+  // every group layoutBlades was given, and the panel always builds it from
+  // the same group list it renders, so group.key is always present here —
+  // guessing a blade-1 width for a missing key would contradict this panel's
+  // rule that it names what it cannot resolve rather than guessing.
+  const rackWidth = blades.rackWidth;
+  const cellWidth = options.layout === 'rack' ? blades.sledWidthOf.get(group.key)! : cell.width;
+
   const cells = group.nodes.map((node) => (
     <NodeCell
       key={node.name}
       node={node}
-      width={cell.width}
+      width={cellWidth}
       height={cell.height}
       stateDisplay={stateDisplay}
       valueDisplay={valueDisplay}
       colorMode={colorMode}
       shapeChannel={options.shapeChannel}
       href={hrefFor(node)}
-      sled={options.layout === 'rack'}
     />
   ));
 
@@ -66,7 +85,7 @@ export function NodeGroup({ group, stateDisplay, valueDisplay, colorMode, hrefFo
     >
       <GroupHeader group={group} unplaced={unplaced} />
       {options.layout === 'rack' ? (
-        <RackFrame cellWidth={cell.width} dashed={unresolved}>{cells}</RackFrame>
+        <RackFrame width={rackWidth} dashed={unresolved}>{cells}</RackFrame>
       ) : (
         // A dashed box round what the panel did not resolve, the same idiom as
         // the hollow ring on a state with no value mapping.

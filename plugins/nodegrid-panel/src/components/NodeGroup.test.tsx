@@ -5,7 +5,7 @@ import type { DisplayProcessor } from '@grafana/data';
 import type { NodeGroup as NodeGroupModel, SlurmNode } from '@slurm-views/core';
 import { NodeGroup } from './NodeGroup';
 import type { NodeGroupProps } from './NodeGroup';
-import { rackWidthFor, resolveCellSize } from './rackGeometry';
+import { layoutBlades, rackWidthFor, resolveCellSize, sledWidthFor } from './rackGeometry';
 import { DEFAULT_MAPPINGS } from '../defaults/mappings';
 import { DEFAULT_OPTIONS } from '../types';
 import type { PanelOptions } from '../types';
@@ -39,8 +39,21 @@ const renderGroup = (
   group: NodeGroupModel,
   options: PanelOptions,
   overrides: Partial<NodeGroupProps> = {}
-) =>
-  render(
+) => {
+  // blades became a required prop once NodeGroup stopped reimplementing
+  // rackWidthFor/sledWidthFor as its own fallback (NodeGridPanel is the only
+  // production caller and always resolves one). This default mirrors that
+  // removed fallback exactly — a single blade of one, sized from this
+  // group's own cell width — so every test written before blades existed
+  // still reads the same.
+  const defaultBlades = layoutBlades({
+    groupKeys: [group.key],
+    sizes: new Map(),
+    fallback: 1,
+    cellWidth: resolveCellSize(options).width,
+  });
+
+  return render(
     <NodeGroup
       group={group}
       stateDisplay={display}
@@ -48,9 +61,11 @@ const renderGroup = (
       colorMode="state"
       hrefFor={noLink}
       options={options}
+      blades={defaultBlades}
       {...overrides}
     />
   );
+};
 
 const group: NodeGroupModel = {
   key: 'rack-1',
@@ -69,10 +84,69 @@ describe('NodeGroup', () => {
     // than computing (or hardcoding) the rack's width itself.
     expect(getComputedStyle(rack).width).toBe(`${rackWidthFor(resolveCellSize(DEFAULT_OPTIONS).width)}px`);
 
-    // A sled is wide and short, not a square: NodeCell only stretches to fill
-    // the rack's width (auto) when it received sled={true}.
+    // A sled fills the cabinet's inner width when one node has the blade to
+    // itself. That width is resolved by NodeGroup and handed over, rather
+    // than a stretch NodeCell decides for itself: `auto` only filled a
+    // cabinet while the frame was a column.
     const cell = screen.getByTestId('node-cell-node-a');
-    expect(cell.style.width).toBe('auto');
+    const width = rackWidthFor(resolveCellSize(DEFAULT_OPTIONS).width);
+    expect(cell.style.width).toBe(`${sledWidthFor(width, 1)}px`);
+  });
+
+  it('splits the cabinet between the nodes sharing a blade', () => {
+    // Assert the geometry, not a count of cells: eight nodes are eight cells
+    // at any blade size, so counting them would pass whatever the layout did.
+    const eight: NodeGroupModel = {
+      key: 'rack1',
+      assumed: false,
+      nodes: ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8'].map(mkNode),
+    };
+    const blades = layoutBlades({
+      groupKeys: ['rack1'],
+      sizes: new Map([['rack1', 4]]),
+      fallback: 1,
+      cellWidth: 20,
+    });
+
+    renderGroup(eight, { ...DEFAULT_OPTIONS, layout: 'rack' }, { blades });
+
+    expect(getComputedStyle(screen.getByTestId('rack-frame')).width).toBe(`${blades.rackWidth}px`);
+    expect(screen.getByTestId('node-cell-c1').style.width).toBe(`${blades.sledWidthOf.get('rack1')}px`);
+  });
+
+  it('uses the blade declared for this group, not the one next to it', () => {
+    // Four and two on purpose: two equal blades would pass just as well with
+    // the lookups swapped, which is how a width/height inversion once
+    // survived review on this panel.
+    const blades = layoutBlades({
+      groupKeys: ['rack1', 'rack2'],
+      sizes: new Map([
+        ['rack1', 4],
+        ['rack2', 2],
+      ]),
+      fallback: 1,
+      cellWidth: 20,
+    });
+    const duo: NodeGroupModel = { key: 'rack2', assumed: false, nodes: [mkNode('c1'), mkNode('c2')] };
+
+    renderGroup(duo, { ...DEFAULT_OPTIONS, layout: 'rack' }, { blades });
+
+    expect(screen.getByTestId('node-cell-c1').style.width).toBe(`${blades.sledWidthOf.get('rack2')}px`);
+    expect(blades.sledWidthOf.get('rack2')).not.toBe(blades.sledWidthOf.get('rack1'));
+  });
+
+  it('ignores blades entirely in the wrap layout', () => {
+    const blades = layoutBlades({
+      groupKeys: ['rack-1'],
+      sizes: new Map([['rack-1', 4]]),
+      fallback: 1,
+      cellWidth: 20,
+    });
+
+    renderGroup(group, { ...DEFAULT_OPTIONS, layout: 'wrap', cellWidth: 20 }, { blades });
+
+    expect(screen.queryByTestId('rack-frame')).toBeNull();
+    expect(screen.getByTestId('node-cell-node-a').style.width).toBe('20px');
   });
 
   it('lays cells out in a wrapping row, with no rack frame, when layout is wrap', () => {

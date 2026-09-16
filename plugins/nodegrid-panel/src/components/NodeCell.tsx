@@ -40,8 +40,6 @@ export interface NodeCellProps {
   colorMode: ColorMode;
   shapeChannel: boolean;
   href?: string;
-  /** Inside a rack a slot is wide and short — a 1U sled, not a square. */
-  sled?: boolean;
 }
 
 /**
@@ -68,7 +66,6 @@ export function NodeCell({
   colorMode,
   shapeChannel,
   href,
-  sled,
 }: NodeCellProps) {
   const theme = useTheme2();
   const styles = getStyles(theme);
@@ -110,8 +107,7 @@ export function NodeCell({
         // carries utilisation instead of state.
         aria-label={`${node.name}, ${dv.text}`}
         style={{
-          width: sled ? 'auto' : width,
-          alignSelf: sled ? 'stretch' : undefined,
+          width,
           height,
           background,
           clipPath: shapeChannel ? shapeFor(dv.text) : undefined,

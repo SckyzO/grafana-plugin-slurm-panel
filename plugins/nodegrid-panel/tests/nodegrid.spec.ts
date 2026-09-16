@@ -400,3 +400,59 @@ test.describe('the coverage signal, proven by a source that deliberately covers 
     await expect(strip).toContainText('Label "rack" would group all 240');
   });
 });
+
+test.describe('a cabinet holds every sled it draws', () => {
+  test("the widest sled's right edge never crosses the frame's content-box edge", async ({
+    gotoDashboardPage,
+    readProvisionedDashboard,
+    page,
+  }) => {
+    // sledWidthFor once forgot the frame's own border: under
+    // box-sizing: border-box the border comes out of the same content box as
+    // the padding, and a sled sized without it overflowed the cabinet's right
+    // edge by exactly the border pixels it left out. jsdom has no layout
+    // engine so no unit test can see this, and a unit test that hardcoded the
+    // border and padding to compute its own expectation would only prove the
+    // formula agrees with itself. This reads both back from the frame's own
+    // computed style instead, against a real Chromium layout.
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-grid.json' });
+    await gotoDashboardPage(dashboard);
+
+    const frame = page.getByTestId('node-group-rack1').getByTestId('rack-frame');
+    await expect(frame).toBeVisible({ timeout: 15_000 });
+    const cells = frame.locator('[data-testid^="node-cell-"]');
+    await expect.poll(() => cells.count(), { timeout: 15_000 }).toBeGreaterThan(0);
+
+    const overflow = await frame.evaluate((el) => {
+      const style = getComputedStyle(el);
+      const contentRight =
+        el.getBoundingClientRect().right - parseFloat(style.borderRightWidth) - parseFloat(style.paddingRight);
+      const rights = Array.from(el.querySelectorAll('[data-testid^="node-cell-"]')).map(
+        (cell) => cell.getBoundingClientRect().right
+      );
+      return Math.max(...rights) - contentRight;
+    });
+
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+});
+
+test.describe('blades, against the same live data', () => {
+  test('draws a quad cabinet four sleds wide and a duo cabinet two', async ({ page }) => {
+    // getBoundingClientRect, not toBeVisible: the question is where these
+    // cells actually are, and toBeVisible passes for anything mounted.
+    await gotoPanelWithData(page, 9, 'rack1');
+
+    const rows = async (group: string) => {
+      const boxes = await page
+        .getByTestId(`node-group-${group}`)
+        .locator('[data-testid^="node-cell-"]')
+        .evaluateAll((cells) => cells.map((c) => Math.round(c.getBoundingClientRect().top)));
+      return new Set(boxes).size;
+    };
+
+    // Forty nodes: ten rows at four per blade, twenty at two.
+    expect(await rows('rack1')).toBe(10);
+    expect(await rows('gpu1')).toBe(20);
+  });
+});

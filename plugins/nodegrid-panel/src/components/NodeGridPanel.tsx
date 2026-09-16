@@ -4,10 +4,12 @@ import { FieldType, getDisplayProcessor } from '@grafana/data';
 import type { Field, GrafanaTheme2, PanelProps } from '@grafana/data';
 import { getTemplateSrv } from '@grafana/runtime';
 import { useTheme2 } from '@grafana/ui';
+import { parseBladeTable } from '@slurm-views/core';
 import type { SlurmNode } from '@slurm-views/core';
 import { useNodeModel } from '../hooks/useNodeModel';
 import { NodeGroup } from './NodeGroup';
 import { PanelWarnings } from './PanelWarnings';
+import { layoutBlades, resolveCellSize } from './rackGeometry';
 import { collectUnmapped, summarise } from '../utils/warnings';
 import type { PanelOptions } from '../types';
 
@@ -81,9 +83,43 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
     () => collectUnmapped(model.groups.flatMap((g) => g.nodes), stateDisplay),
     [model.groups, stateDisplay]
   );
+  // Resolved once for the whole panel, because the width every cabinet shares
+  // depends on the densest blade across all of them. Computed in both layouts
+  // and consumed only in Rack: the cost is one pass over the groups, and a
+  // conditional hook is worse than a wasted one.
+  // Goes through the same resolution as every other consumer of cell width,
+  // rather than reading options.cellWidth directly: two paths that can read
+  // the same number differently is the defect class the border fix
+  // (5ebb879) already fell into once.
+  const cellWidth = resolveCellSize(options).width;
+  const blades = useMemo(() => {
+    const table = parseBladeTable(options.bladeOverrides);
+    const layout = layoutBlades({
+      groupKeys: model.groups.map((g) => g.key),
+      sizes: table.sizes,
+      fallback: options.nodesPerBlade,
+      cellWidth,
+    });
+    return { table, layout };
+  }, [options.bladeOverrides, options.nodesPerBlade, cellWidth, model.groups]);
   const lines = useMemo(
-    () => summarise(model, warnings, unmapped, grouping),
-    [model, warnings, unmapped, grouping]
+    () =>
+      summarise(
+        model,
+        warnings,
+        unmapped,
+        grouping,
+        // Only in the rack layout: the options are hidden in Wrap, so warning
+        // about a table nobody can see would be warning about nothing.
+        options.layout === 'rack'
+          ? {
+              problems: blades.table.problems.map((p) => p.detail),
+              undrawn: blades.layout.undrawn,
+              squeezed: blades.layout.squeezed,
+            }
+          : undefined
+      ),
+    [model, warnings, unmapped, grouping, options.layout, blades]
   );
 
   if (model.groups.length === 0) {
@@ -110,6 +146,7 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
             colorMode={options.colorMode}
             hrefFor={hrefFor}
             options={options}
+            blades={blades.layout}
           />
         ))}
       </div>

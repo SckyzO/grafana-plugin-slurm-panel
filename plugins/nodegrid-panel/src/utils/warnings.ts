@@ -108,6 +108,16 @@ export interface GroupingNotes {
   suggestion?: CoverageSuggestion;
 }
 
+/** Everything the blade layout could not honour. Absent outside the rack layout. */
+export interface BladeNotes {
+  /** Already-worded problems from the blade table parser. */
+  problems: string[];
+  /** Declared groups the panel is not drawing. */
+  undrawn: string[];
+  /** Drawn groups whose sled falls under the legibility floor. */
+  squeezed: Array<{ key: string; blade: number; width: number }>;
+}
+
 export interface GroupingNotesInput {
   model: GroupedModel;
   nodes: SlurmNode[];
@@ -184,7 +194,8 @@ export function summarise(
   model: GroupedModel,
   warnings: IngestWarning[],
   unmapped: string[],
-  grouping: GroupingNotes
+  grouping: GroupingNotes,
+  blades?: BladeNotes
 ): string[] {
   const lines: string[] = [];
 
@@ -247,6 +258,33 @@ export function summarise(
   }
 
   lines.push(...grouping.problems);
+
+  if (blades !== undefined) {
+    lines.push(...blades.problems);
+
+    if (blades.undrawn.length > 0) {
+      const n = blades.undrawn.length;
+      lines.push(
+        `Nodes per blade named ${n} ${n === 1 ? 'group that is' : 'groups that are'} not drawn: ${listOf(blades.undrawn)}.`
+      );
+    }
+
+    // One line per blade size, not one per cabinet: every cabinet at a given
+    // size has the same sled width, because they all share the rack width, so
+    // a hundred squeezed cabinets would print a hundred identical sentences.
+    const bySize = new Map<number, { keys: string[]; width: number }>();
+    for (const { key, blade, width } of blades.squeezed) {
+      const seen = bySize.get(blade);
+      if (seen === undefined) {
+        bySize.set(blade, { keys: [key], width });
+      } else {
+        seen.keys.push(key);
+      }
+    }
+    for (const [blade, { keys, width }] of [...bySize].sort((a, b) => a[0] - b[0])) {
+      lines.push(`A blade of ${blade} leaves each node ${width}px wide in ${listOf(keys)}. Raise Cell width.`);
+    }
+  }
 
   if (grouping.suggestion !== undefined) {
     const { label, covered, total } = grouping.suggestion;

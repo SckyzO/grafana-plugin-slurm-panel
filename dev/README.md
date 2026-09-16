@@ -166,7 +166,7 @@ layout** provisions one panel per rung, all three read from a Prometheus
 query on that live cluster, and the panel plugin's own e2e suite
 (`the three ways to get a topology`) asserts each of them.
 
-The dashboard's eight panels, in provisioned order:
+The dashboard's nine panels, in provisioned order:
 
 | # | Panel | Grouping | Data |
 |---|---|---|---|
@@ -178,6 +178,7 @@ The dashboard's eight panels, in provisioned order:
 | 6 | Rung 2 — join, against an inventory the metrics do not carry | Label `zone` | Prometheus (query A) joined to a CSV inventory (query B) |
 | 7 | Rung 3 — ranges, against live Prometheus | Ranges, `$racks` dashboard variable | Prometheus |
 | 8 | Deliberately incomplete — a range table covering one rack of six | Ranges, `rack1: c[1-40]` | Prometheus, the full 240-node cluster |
+| 9 | Blades -- a mixed floor | Label `rack` | Prometheus, with `rack[1-4]: 4` and `gpu[1-2]: 2` declared per group |
 
 Panels 1-4 are the same 20-node CSV, grouped four ways, and need nothing
 running but Grafana. Panels 5-8 are rungs 1-3 plus the coverage signal,

@@ -1,7 +1,9 @@
 import { FieldConfigProperty, PanelPlugin } from '@grafana/data';
+import { MAX_BLADE, MIN_BLADE } from '@slurm-views/core';
 import { NodeGridPanel } from './components/NodeGridPanel';
 import { MIN_CELL_HEIGHT } from './components/rackGeometry';
 import { DEFAULT_MAPPINGS } from './defaults/mappings';
+import { BladeEditor } from './editor/BladeEditor';
 import { GroupingEditor } from './editor/GroupingEditor';
 import { DEFAULT_OPTIONS } from './types';
 import type { PanelOptions } from './types';
@@ -80,6 +82,28 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
         description: 'Leave empty to derive it: a square in Wrap, a sled in Rack.',
         settings: { placeholder: 'auto', min: MIN_CELL_HEIGHT, max: 48 },
         category: ['Layout'],
+      })
+      .addSliderInput({
+        path: 'nodesPerBlade',
+        name: 'Nodes per blade',
+        description:
+          'How many nodes share one slot in the cabinet. 1 is a single-node server, and draws one sled per node.',
+        defaultValue: DEFAULT_OPTIONS.nodesPerBlade,
+        settings: { min: MIN_BLADE, max: MAX_BLADE, step: 1 },
+        category: ['Layout'],
+        // A blade means nothing outside a cabinet.
+        showIf: (options) => options.layout === 'rack',
+      })
+      .addCustomEditor({
+        id: 'bladeOverrides',
+        path: 'bladeOverrides',
+        name: 'Nodes per blade, by group',
+        description:
+          'One line per declaration: a hostlist of group names, a colon, a count. Note the mirror of Ranges — the hostlist is on the left here, and names groups rather than nodes. # comments to end of line.',
+        editor: BladeEditor,
+        defaultValue: DEFAULT_OPTIONS.bladeOverrides,
+        category: ['Layout'],
+        showIf: (options) => options.layout === 'rack',
       })
       .addSliderInput({
         path: 'gap',
