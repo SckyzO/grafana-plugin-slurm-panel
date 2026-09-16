@@ -319,7 +319,15 @@ export function summarise(
         seen.keys.push(key);
       }
     }
-    for (const { keys, needed, declared } of byPair.values()) {
+    // Worst first, by how far the declaration is from the truth. The strip's
+    // line cap is applied once at the end over every source, so these lines
+    // are the ones truncation reaches — which makes this order load-bearing
+    // rather than cosmetic: the cabinet whose table is most wrong is the one
+    // worth keeping. Ties break by size so the order is total.
+    const worstFirst = [...byPair.values()].sort(
+      (a, b) => b.needed - b.declared - (a.needed - a.declared) || b.needed - a.needed
+    );
+    for (const { keys, needed, declared } of worstFirst) {
       // Slots on both sides, not nodes: under quads "45 nodes but 42 slots"
       // is arithmetic the reader has to redo.
       const verb = keys.length === 1 ? 'needs' : 'need';

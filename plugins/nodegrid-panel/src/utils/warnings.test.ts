@@ -204,6 +204,24 @@ describe('summarise', () => {
       expect(lines).toContain('rack2 needs 20 slots but 10 were declared.');
     });
 
+    it('puts the cabinet whose declaration is most wrong first', () => {
+      // The strip's line cap is applied over every source at the end, so these
+      // are the lines truncation reaches. Order decides which one survives.
+      const lines = summarise(model(60, 60), [], [], notes(), undefined, slotNotes({
+        overflowing: [
+          { key: 'rack1', needed: 45, declared: 42 },  // short by 3
+          { key: 'rack2', needed: 30, declared: 10 },  // short by 20
+          { key: 'rack3', needed: 14, declared: 10 },  // short by 4
+        ],
+      }));
+      const only = lines.filter((l) => l.includes('were declared.'));
+      expect(only).toEqual([
+        'rack2 needs 30 slots but 10 were declared.',
+        'rack3 needs 14 slots but 10 were declared.',
+        'rack1 needs 45 slots but 42 were declared.',
+      ]);
+    });
+
     it('says nothing at all outside the rack layout', () => {
       // The options are hidden in Wrap, so warning about a table nobody can see
       // would be warning about nothing.
