@@ -1,4 +1,11 @@
-import { MIN_CELL_HEIGHT, rackWidthFor, resolveCellSize, sledHeightFor } from './rackGeometry';
+import {
+  layoutBlades,
+  MIN_CELL_HEIGHT,
+  MIN_SLED_WIDTH,
+  rackWidthFor,
+  resolveCellSize,
+  sledHeightFor,
+} from './rackGeometry';
 import { DEFAULT_OPTIONS } from '../types';
 
 describe('rackGeometry', () => {
@@ -66,5 +73,61 @@ describe('resolveCellSize', () => {
     expect(resolveCellSize({ cellWidth: 14, cellHeight: 3, layout: 'rack' }).height).toBe(MIN_CELL_HEIGHT);
     // Above the floor the number is honoured exactly, in both layouts.
     expect(resolveCellSize({ cellWidth: 14, cellHeight: 20, layout: 'rack' }).height).toBe(20);
+  });
+});
+
+describe('layoutBlades', () => {
+  const sizes = (entries: Array<[string, number]>) => new Map(entries);
+
+  it('falls back to the panel-wide count for a group with no declaration', () => {
+    const l = layoutBlades({ groupKeys: ['rack1', 'rack2'], sizes: sizes([['rack1', 4]]), fallback: 2, cellWidth: 14 });
+    expect(l.sizeOf.get('rack1')).toBe(4);
+    expect(l.sizeOf.get('rack2')).toBe(2);
+  });
+
+  it('gives every rack the same width, taken from the densest blade in the panel', () => {
+    // Not from each rack's own blade: a floor plan whose cabinets have
+    // different widths does not read as a floor plan. A duo's sleds are
+    // simply wider than a quad's, which is also true of the hardware.
+    const l = layoutBlades({ groupKeys: ['rack1', 'rack2'], sizes: sizes([['rack1', 6], ['rack2', 2]]), fallback: 1, cellWidth: 14 });
+    expect(l.rackWidth).toBe(rackWidthFor(14, 6));
+    expect(l.sledWidthOf.get('rack1')).toBeLessThan(l.sledWidthOf.get('rack2')!);
+  });
+
+  it('draws the same rack it drew before blades existed when every blade is one', () => {
+    // The whole non-regression argument in one assertion: max(4, 1) is 4, so
+    // the width expression is the one the panel already used.
+    const l = layoutBlades({ groupKeys: ['rack1'], sizes: new Map(), fallback: 1, cellWidth: 14 });
+    expect(l.rackWidth).toBe(56);
+    expect(l.sizeOf.get('rack1')).toBe(1);
+  });
+
+  it('names the groups a declaration claims that are not drawn', () => {
+    const l = layoutBlades({ groupKeys: ['rack1'], sizes: sizes([['rack1', 4], ['rack9', 4]]), fallback: 1, cellWidth: 14 });
+    expect(l.undrawn).toEqual(['rack9']);
+  });
+
+  it('names a group whose sled falls under the legibility floor', () => {
+    // At six pixels a cell the rack cannot hold four legible sleds. The panel
+    // says so rather than drawing four hairlines.
+    const l = layoutBlades({ groupKeys: ['rack1'], sizes: sizes([['rack1', 4]]), fallback: 1, cellWidth: 6 });
+    expect(l.squeezed).toEqual([{ key: 'rack1', blade: 4, width: l.sledWidthOf.get('rack1') }]);
+    expect(l.sledWidthOf.get('rack1')).toBeLessThan(MIN_SLED_WIDTH);
+  });
+
+  it('says nothing about a quad at the default cell width', () => {
+    // 14px cells give a 56px rack and 10px sleds, which is the floor exactly
+    // rather than under it. A warning on the first thing a reader tries would
+    // train them to ignore the strip.
+    const l = layoutBlades({ groupKeys: ['rack1'], sizes: sizes([['rack1', 4]]), fallback: 1, cellWidth: 14 });
+    expect(l.sledWidthOf.get('rack1')).toBe(10);
+    expect(l.squeezed).toEqual([]);
+  });
+
+  it('is empty and silent with no groups drawn', () => {
+    const l = layoutBlades({ groupKeys: [], sizes: new Map(), fallback: 4, cellWidth: 14 });
+    expect(l.sizeOf.size).toBe(0);
+    expect(l.squeezed).toEqual([]);
+    expect(l.rackWidth).toBe(rackWidthFor(14, 1));
   });
 });
