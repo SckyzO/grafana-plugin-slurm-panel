@@ -39,8 +39,21 @@ const renderGroup = (
   group: NodeGroupModel,
   options: PanelOptions,
   overrides: Partial<NodeGroupProps> = {}
-) =>
-  render(
+) => {
+  // blades became a required prop once NodeGroup stopped reimplementing
+  // rackWidthFor/sledWidthFor as its own fallback (NodeGridPanel is the only
+  // production caller and always resolves one). This default mirrors that
+  // removed fallback exactly — a single blade of one, sized from this
+  // group's own cell width — so every test written before blades existed
+  // still reads the same.
+  const defaultBlades = layoutBlades({
+    groupKeys: [group.key],
+    sizes: new Map(),
+    fallback: 1,
+    cellWidth: resolveCellSize(options).width,
+  });
+
+  return render(
     <NodeGroup
       group={group}
       stateDisplay={display}
@@ -48,9 +61,11 @@ const renderGroup = (
       colorMode="state"
       hrefFor={noLink}
       options={options}
+      blades={defaultBlades}
       {...overrides}
     />
   );
+};
 
 const group: NodeGroupModel = {
   key: 'rack-1',

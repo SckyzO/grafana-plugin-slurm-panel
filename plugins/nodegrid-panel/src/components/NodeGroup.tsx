@@ -7,7 +7,7 @@ import { UNGROUPED } from '@slurm-views/core';
 import { GroupHeader } from './GroupHeader';
 import { NodeCell } from './NodeCell';
 import { RackFrame } from './RackFrame';
-import { rackWidthFor, resolveCellSize, sledWidthFor } from './rackGeometry';
+import { resolveCellSize } from './rackGeometry';
 import type { BladeLayout } from './rackGeometry';
 import type { ColorMode, PanelOptions } from '../types';
 
@@ -32,9 +32,13 @@ export interface NodeGroupProps {
   /**
    * Rack geometry for the whole panel, resolved once by the panel because the
    * width every cabinet shares depends on the densest blade across all of
-   * them. Absent wherever no rack is drawn.
+   * them. NodeGridPanel is the only production caller and always resolves
+   * and passes one — a caller that draws a rack without it would have
+   * nothing honest to fall back to, so this is required rather than
+   * reimplementing rackWidthFor/sledWidthFor here for a caller that does not
+   * exist.
    */
-  blades?: BladeLayout;
+  blades: BladeLayout;
 }
 
 export function NodeGroup({ group, stateDisplay, valueDisplay, colorMode, hrefFor, options, blades }: NodeGroupProps) {
@@ -49,12 +53,13 @@ export function NodeGroup({ group, stateDisplay, valueDisplay, colorMode, hrefFo
   const cell = resolveCellSize(options);
 
   // In a cabinet a cell is as wide as its share of the slot; everywhere else
-  // it is the width the reader asked for. The fallback covers a NodeGroup
-  // rendered without a layout — every wrap-layout test, and any caller that
-  // draws a single group on its own.
-  const rackWidth = blades?.rackWidth ?? rackWidthFor(cell.width);
-  const cellWidth =
-    options.layout === 'rack' ? blades?.sledWidthOf.get(group.key) ?? sledWidthFor(rackWidth, 1) : cell.width;
+  // it is the width the reader asked for. blades.sledWidthOf is keyed by
+  // every group layoutBlades was given, and the panel always builds it from
+  // the same group list it renders, so group.key is always present here —
+  // guessing a blade-1 width for a missing key would contradict this panel's
+  // rule that it names what it cannot resolve rather than guessing.
+  const rackWidth = blades.rackWidth;
+  const cellWidth = options.layout === 'rack' ? blades.sledWidthOf.get(group.key)! : cell.width;
 
   const cells = group.nodes.map((node) => (
     <NodeCell
