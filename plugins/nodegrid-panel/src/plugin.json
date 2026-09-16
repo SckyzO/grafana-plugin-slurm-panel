@@ -14,7 +14,11 @@
       "large": "img/logo.svg"
     },
     "links": [{ "name": "sponsorship", "url": "https://github.com/sponsors/SckyzO" }],
-    "screenshots": [],
+    "screenshots": [
+      { "name": "A cluster of six racks, coloured by node state", "path": "img/node-grid-by-rack.png" },
+      { "name": "Every Slurm state, coloured before anything is configured", "path": "img/node-grid-states.png" },
+      { "name": "GPU occupancy: a node with no GPU is drawn empty, not coloured", "path": "img/node-grid-gpu.png" }
+    ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },
