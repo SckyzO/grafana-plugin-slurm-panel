@@ -86,6 +86,23 @@ export const RACK_GAP = 2;
 export const RACK_BORDER = 1;
 
 /**
+ * The cabinet's foot, in pixels — the heavier bottom edge that makes a frame
+ * read as a rack standing on a floor rather than as a box.
+ *
+ * Exported for the same reason RACK_PADDING and RACK_GAP are: `frameHeight`
+ * has to charge for the border the frame actually draws, and a solid cabinet's
+ * vertical borders are 1 on top and this at the foot. Charging RACK_BORDER
+ * twice under-counted the chrome by exactly two pixels, which is the same
+ * arithmetic slip as the missing border term in the width formula, on the
+ * other axis.
+ *
+ * A dashed frame draws a 1px foot, so it gets two pixels more room than it
+ * needs. Nothing depends on a dashed cabinet being tight, and one constant is
+ * worth more than that precision.
+ */
+export const RACK_FOOT = 3;
+
+/**
  * The narrowest a sled may be drawn and still be a hover target rather than a
  * hairline — the same floor the Cell width option's description already names.
  */
@@ -178,13 +195,15 @@ export const MIN_FRAME_HEIGHT = 24;
  * height includes both. Leaving the border out of the width formula is what
  * let a sled overflow its frame by exactly two pixels, undetected by a full
  * review and ninety-seven unit tests — this is that trap on the other axis.
+ * The vertical borders are asymmetric, unlike the width's: `RACK_BORDER` on
+ * top and the heavier `RACK_FOOT` at the bottom, not `RACK_BORDER` twice.
  *
  * Unlike the width there is no `floor()` here, so every term of the formula is
  * visible in the result and a literal assertion detects a missing one. The
  * result is never below `MIN_FRAME_HEIGHT`.
  */
 export function frameHeight(rows: number, cellHeight: number): number {
-  const chrome = RACK_PADDING * 2 + RACK_BORDER * 2;
+  const chrome = RACK_PADDING * 2 + RACK_BORDER + RACK_FOOT;
   const content = rows <= 0 ? 0 : rows * cellHeight + (rows - 1) * RACK_GAP;
   return Math.max(MIN_FRAME_HEIGHT, content + chrome);
 }

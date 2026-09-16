@@ -7,6 +7,8 @@ import {
   MIN_SLED_WIDTH,
   rackWidthFor,
   RACK_BORDER,
+  RACK_FOOT,
+  RACK_GAP,
   RACK_PADDING,
   resolveCellSize,
   sledHeightFor,
@@ -154,12 +156,14 @@ describe('frameHeight', () => {
   // Literal on purpose, the same reason sledWidthFor's assertions are literal.
   // Every other number in this file is produced by the formula it checks, and
   // that is exactly how a missing border term survived a full review and 97
-  // green tests. Both of these sit above the floor, so every term of the
-  // formula shows in the result: without the border 44 reads 42 and 35 reads
-  // 33, without the padding 36 and 27, without the inter-row gaps 38 and 31.
+  // green tests — and how charging the foot as RACK_BORDER rather than
+  // RACK_FOOT survived after it. Both of these sit above the floor, so every
+  // term of the formula shows in the result: without the border 46 reads 42
+  // and 37 reads 33, without the padding 38 and 29, without the inter-row
+  // gaps 40 and 33.
   it('counts the rows, the gaps between them, the padding and the border', () => {
-    expect(frameHeight(4, 7)).toBe(44);
-    expect(frameHeight(3, 7)).toBe(35);
+    expect(frameHeight(4, 7)).toBe(46);
+    expect(frameHeight(3, 7)).toBe(37);
   });
 
   // The floor lives here rather than in RackFrame's CSS. A stylesheet
@@ -170,6 +174,20 @@ describe('frameHeight', () => {
     expect(frameHeight(0, 7)).toBe(MIN_FRAME_HEIGHT);
     // An invisible cabinet is worse than a stubby one.
     expect(MIN_FRAME_HEIGHT).toBeGreaterThan(RACK_PADDING * 2 + RACK_BORDER * 2);
+  });
+
+  // The test that would have caught this from the start: relate the height to
+  // the box the browser will give the rows, not to the formula that produced
+  // it. Under box-sizing: border-box the content box is the height minus the
+  // padding and minus the borders the frame actually draws — 1 on top and
+  // RACK_FOOT below, not RACK_BORDER twice. Charging the foot as 1px left
+  // every solid cabinet two pixels short and the rows leaked out of the top.
+  it('leaves a content box exactly as tall as the rows it was sized for', () => {
+    const rows = 8;
+    const cellHeight = 9;
+    const stack = rows * cellHeight + (rows - 1) * RACK_GAP;
+    const contentBox = frameHeight(rows, cellHeight) - RACK_PADDING * 2 - RACK_BORDER - RACK_FOOT;
+    expect(contentBox).toBe(stack);
   });
 });
 

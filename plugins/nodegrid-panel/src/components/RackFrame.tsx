@@ -2,7 +2,7 @@ import React from 'react';
 import { css } from '@emotion/css';
 import type { GrafanaTheme2 } from '@grafana/data';
 import { useTheme2 } from '@grafana/ui';
-import { RACK_BORDER, RACK_GAP, RACK_PADDING } from './rackGeometry';
+import { RACK_BORDER, RACK_FOOT, RACK_GAP, RACK_PADDING } from './rackGeometry';
 
 const getStyles = (theme: GrafanaTheme2, width: number, height: number, dashed: boolean) => ({
   rack: css({
@@ -31,7 +31,7 @@ const getStyles = (theme: GrafanaTheme2, width: number, height: number, dashed: 
     // what belongs in it: it refuses to draw a solid cabinet around a claim it
     // did not resolve.
     border: `${RACK_BORDER}px ${dashed ? 'dashed' : 'solid'} ${theme.colors.border.medium}`,
-    borderBottomWidth: dashed ? 1 : 3,
+    borderBottomWidth: dashed ? RACK_BORDER : RACK_FOOT,
   }),
 });
 

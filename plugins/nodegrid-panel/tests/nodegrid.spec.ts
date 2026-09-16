@@ -508,4 +508,25 @@ test.describe('cabinet height, against the same live data', () => {
     await gotoPanelWithData(page, 40, 'rack1');
     await expect(page.getByText('rack1 needs 40 slots but 4 were declared.')).toBeVisible();
   });
+
+  test('gives the rows the whole content box, with nothing leaking past the padding', async ({ page }) => {
+    // jsdom has no layout engine, so only this can see it: under border-box a
+    // frame whose arithmetic under-counts its own border hands the rows a
+    // content box smaller than they need, and they leave through the top.
+    await gotoPanelWithData(page, 9, 'rack1');
+
+    const gap = await page.getByTestId('node-group-rack1').evaluate((group) => {
+      const frame = group.querySelector('[data-testid="rack-frame"]');
+      const style = getComputedStyle(frame);
+      const tops = [...frame.querySelectorAll('[data-testid^="node-cell-"]')].map(
+        (cell) => cell.getBoundingClientRect().top
+      );
+      return {
+        actual: Math.round(Math.min(...tops) - frame.getBoundingClientRect().top),
+        expected: Math.round(parseFloat(style.borderTopWidth) + parseFloat(style.paddingTop)),
+      };
+    });
+
+    expect(gap.actual).toBe(gap.expected);
+  });
 });
