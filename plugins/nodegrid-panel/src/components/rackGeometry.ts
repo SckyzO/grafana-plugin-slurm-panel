@@ -158,6 +158,19 @@ export function layoutBlades({ groupKeys, sizes, fallback, cellWidth }: BladeLay
 }
 
 /**
+ * The shortest a cabinet may be drawn, in pixels — `theme.spacing(3)`, which
+ * `RackFrame` used to apply as a CSS `min-height`.
+ *
+ * It belongs in the arithmetic rather than in the stylesheet because a CSS
+ * floor is a second path to the frame's height, and `layoutSlots` cannot see
+ * it: a one-row cabinet would render at 24px while its band was sized at 17,
+ * and the frame would overflow the band it is meant to sit in. Two paths
+ * reading the same number differently is the defect class the missing border
+ * term already produced once on this file.
+ */
+export const MIN_FRAME_HEIGHT = 24;
+
+/**
  * A cabinet frame's height in pixels, for a given number of rows.
  *
  * The padding and border terms are here for the same reason they are in
@@ -167,11 +180,13 @@ export function layoutBlades({ groupKeys, sizes, fallback, cellWidth }: BladeLay
  * review and ninety-seven unit tests — this is that trap on the other axis.
  *
  * Unlike the width there is no `floor()` here, so every term of the formula is
- * visible in the result and a literal assertion detects a missing one.
+ * visible in the result and a literal assertion detects a missing one. The
+ * result is never below `MIN_FRAME_HEIGHT`.
  */
 export function frameHeight(rows: number, cellHeight: number): number {
   const chrome = RACK_PADDING * 2 + RACK_BORDER * 2;
-  return rows <= 0 ? chrome : rows * cellHeight + (rows - 1) * RACK_GAP + chrome;
+  const content = rows <= 0 ? 0 : rows * cellHeight + (rows - 1) * RACK_GAP;
+  return Math.max(MIN_FRAME_HEIGHT, content + chrome);
 }
 
 export interface SlotLayoutInput {

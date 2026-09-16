@@ -3,8 +3,11 @@ import {
   layoutBlades,
   layoutSlots,
   MIN_CELL_HEIGHT,
+  MIN_FRAME_HEIGHT,
   MIN_SLED_WIDTH,
   rackWidthFor,
+  RACK_BORDER,
+  RACK_PADDING,
   resolveCellSize,
   sledHeightFor,
   sledWidthFor,
@@ -151,18 +154,22 @@ describe('frameHeight', () => {
   // Literal on purpose, the same reason sledWidthFor's assertions are literal.
   // Every other number in this file is produced by the formula it checks, and
   // that is exactly how a missing border term survived a full review and 97
-  // green tests. Unlike the width there is no floor() here, so dropping any
-  // one term changes these numbers: without the border 44 reads 42, without
-  // the padding it reads 36, without the inter-row gaps it reads 38.
+  // green tests. Both of these sit above the floor, so every term of the
+  // formula shows in the result: without the border 44 reads 42 and 35 reads
+  // 33, without the padding 36 and 27, without the inter-row gaps 38 and 31.
   it('counts the rows, the gaps between them, the padding and the border', () => {
     expect(frameHeight(4, 7)).toBe(44);
-    expect(frameHeight(1, 7)).toBe(17);
+    expect(frameHeight(3, 7)).toBe(35);
   });
 
-  it('is bare chrome with no rows at all', () => {
-    // RackFrame's minHeight takes over from here: an invisible cabinet is
-    // worse than a stubby one.
-    expect(frameHeight(0, 7)).toBe(10);
+  // The floor lives here rather than in RackFrame's CSS. A stylesheet
+  // min-height is a second path to the frame's height that layoutSlots cannot
+  // see, so a short cabinet would render taller than the band sized for it.
+  it('never returns less than the floor, so the band and the frame agree', () => {
+    expect(frameHeight(1, 7)).toBe(MIN_FRAME_HEIGHT);
+    expect(frameHeight(0, 7)).toBe(MIN_FRAME_HEIGHT);
+    // An invisible cabinet is worse than a stubby one.
+    expect(MIN_FRAME_HEIGHT).toBeGreaterThan(RACK_PADDING * 2 + RACK_BORDER * 2);
   });
 });
 

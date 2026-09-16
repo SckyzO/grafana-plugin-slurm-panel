@@ -171,11 +171,10 @@ asserted as plain arithmetic by a test runner with no layout engine.
 
 ```
 frameHeight(rows, cellHeight) =
-    rows === 0 ? RACK_PADDING * 2 + RACK_BORDER * 2
-               : rows * cellHeight
-                 + (rows - 1) * RACK_GAP
-                 + RACK_PADDING * 2
-                 + RACK_BORDER * 2
+    content = rows <= 0 ? 0
+                        : rows * cellHeight
+                          + (rows - 1) * RACK_GAP
+    max(MIN_FRAME_HEIGHT, content + RACK_PADDING * 2 + RACK_BORDER * 2)
 ```
 
 The padding and border terms are present for the same reason they are present
@@ -185,12 +184,16 @@ let a sled overflow the frame by exactly two pixels, undetected by ninety-seven
 unit tests, a screenshot suite and an e2e suite. This is the same trap on the
 other axis.
 
-Unlike the width, the height has no `floor()` in it, so every term of the
-formula is visible in the result and a literal assertion detects a missing one.
+Unlike the width, the height has no `floor()` on the row content, so every
+term of that part of the formula is visible in the result and a literal
+assertion detects a missing one.
 
-`RackFrame` keeps `minHeight: theme.spacing(3)`, which takes over for a group
-with no nodes: `frameHeight(0, cellHeight)` is ten pixels of chrome, and an invisible
-cabinet is worse than a stubby one.
+The result never falls below `MIN_FRAME_HEIGHT`, 24 pixels — `theme.spacing(3)`
+— so a cabinet with one node, or none, is still a cabinet rather than a hairline.
+That floor lives in the arithmetic rather than in `RackFrame`'s stylesheet on
+purpose: a CSS `min-height` is a second path to the frame's height that
+`layoutSlots` cannot see, and a one-row cabinet rendered at 24 inside a band
+sized at 17 would overflow the band this design exists to seat it in.
 
 ### The band, and why declared-shorter cabinets still stand on the floor
 

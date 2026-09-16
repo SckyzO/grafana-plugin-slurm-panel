@@ -53,6 +53,23 @@ describe('RackFrame', () => {
         <button type="button">slot</button>
       </RackFrame>
     );
+    // This equality proves the height prop reaches the rendered CSS — both
+    // sides go through frameHeight(12, 7), so it proves nothing about that
+    // formula's own geometry, which is rackGeometry.test.ts's job instead.
     expect(getComputedStyle(screen.getByTestId('rack-frame')).height).toBe(`${frameHeight(12, 7)}px`);
+  });
+
+  it('applies no height floor of its own, so a cabinet cannot outgrow its band', () => {
+    // A CSS min-height larger than the height it was handed would win at
+    // render time, and layoutSlots — which sized the band — would never know.
+    render(
+      <RackFrame width={rackWidthFor(14)} height={frameHeight(1, 7)}>
+        <button type="button">slot</button>
+      </RackFrame>
+    );
+    const computed = getComputedStyle(screen.getByTestId('rack-frame'));
+    expect(computed.height).toBe(`${frameHeight(1, 7)}px`);
+    const floor = computed.minHeight;
+    expect(floor === '' || parseInt(floor, 10) <= frameHeight(1, 7)).toBe(true);
   });
 });

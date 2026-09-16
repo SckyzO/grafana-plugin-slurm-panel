@@ -27,7 +27,6 @@ const getStyles = (theme: GrafanaTheme2, width: number, height: number, dashed: 
     // 5ebb879.
     gap: RACK_GAP,
     padding: RACK_PADDING,
-    minHeight: theme.spacing(3),
     // A cabinet frame, heavier at the foot, unless the panel could not resolve
     // what belongs in it: it refuses to draw a solid cabinet around a claim it
     // did not resolve.
