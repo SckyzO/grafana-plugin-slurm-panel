@@ -11,9 +11,15 @@ From the repository root, and only from there:
 
 ```bash
 make check   # lint, typecheck, tests, build
-make up      # Grafana on http://localhost:3001 with this panel loaded
+make up      # Grafana on http://localhost:3000 with this panel loaded
 make e2e     # Playwright against that stack
 ```
+
+The scaffold's own `pnpm server` flow is deliberately not wired up here, and
+neither is the `docker-compose.yaml` it ran: that stack publishes Grafana on a
+port this repository does not control, and `extends` concatenates port lists
+rather than replacing them, so it could not be moved out of the way either.
+`make up` at the root is the only way to run this panel.
 
 Everything runs inside the toolchain container. There is no `pnpm install`
 step and no `node_modules` in this directory — see
