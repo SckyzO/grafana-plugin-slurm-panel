@@ -54,11 +54,11 @@ export function parseBladeTable(table: string): BladeTable {
 
     const expr = text.slice(0, colon).trim();
     const countText = text.slice(colon + 1).trim();
-    if (expr === '' || countText === '') {
-      problems.push({
-        line,
-        detail: `Line ${line} is missing a ${expr === '' ? 'group list' : 'count'}.`,
-      });
+    // expr cannot be empty here: text is already trimmed and colon < 1 above
+    // has already returned, so at least one non-space character sits before
+    // the colon.
+    if (countText === '') {
+      problems.push({ line, detail: `Line ${line} is missing a count.` });
       return;
     }
 

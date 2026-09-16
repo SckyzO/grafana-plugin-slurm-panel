@@ -37,6 +37,14 @@ describe('parseBladeTable', () => {
     expect(problems).toEqual([{ line: 2, detail: 'Line 2 has no "groups: count" separator.' }]);
   });
 
+  it('reports a missing count and skips it', () => {
+    // e.g. "rack1:" with nothing after the colon. expr is always non-empty by
+    // the time this guard runs, so count is the only thing this can report.
+    const { sizes, problems } = parseBladeTable('rack1:');
+    expect(sizes.size).toBe(0);
+    expect(problems).toEqual([{ line: 1, detail: 'Line 1 is missing a count.' }]);
+  });
+
   it('reports a count that is not a whole number and skips it', () => {
     const { sizes, problems } = parseBladeTable('rack1: two');
     expect(sizes.size).toBe(0);
