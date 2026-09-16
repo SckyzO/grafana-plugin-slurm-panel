@@ -13,8 +13,8 @@ describe('rackGeometry', () => {
   // nothing at all, since a formula change that kept those two outputs by
   // coincidence would still slip through.
   it('keeps every sled materially wider than it is tall, across the supported cell-size range', () => {
-    for (let cellSize = 6; cellSize <= 48; cellSize++) {
-      const ratio = rackWidthFor(cellSize) / sledHeightFor(cellSize);
+    for (let cellWidth = 6; cellWidth <= 48; cellWidth++) {
+      const ratio = rackWidthFor(cellWidth) / sledHeightFor(cellWidth);
       expect(ratio).toBeGreaterThan(4);
     }
   });
