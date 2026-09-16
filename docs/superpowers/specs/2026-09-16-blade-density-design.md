@@ -122,13 +122,16 @@ maximum as an argument, and sled width is derived per group:
 
 ```
 rackWidth   = max(40, cellWidth * max(4, maxBladeInPanel))
-sledWidth   = floor((rackWidth - 8 - (n - 1) * 2) / n)
+sledWidth   = floor((rackWidth - 8 - 2 - (n - 1) * 2) / n)
 sledHeight  = sledHeightFor(cellWidth)     // unchanged
 ```
 
-The two constants are the cabinet's own, not the reader's: `8` is
-`theme.spacing(0.5)` of padding on each side and `2` is the frame's fixed
-inter-sled gap, both already in `RackFrame`. Neither is `options.gap`, which
+The three constants are the cabinet's own, not the reader's: the first `8` is
+`theme.spacing(0.5)` of padding on each side, the second `2` is the frame's
+own 1px border on each side, and the trailing `2` is the frame's fixed
+inter-sled gap — all three already in `RackFrame`, and exported from
+`rackGeometry.ts` (`RACK_PADDING`, `RACK_BORDER`, `RACK_GAP`) so the two files
+cannot disagree about them again. None of the three is `options.gap`, which
 belongs to the wrap layout and must not be reached for here. With the default
 `nodesPerBlade` of 1, `max(4, 1)` is 4 and `rackWidth` is `max(40, cellWidth *
 4)` — the expression the panel uses today, unchanged, which is what makes the
