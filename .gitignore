@@ -16,3 +16,6 @@ dev/prometheus/scrape/
 
 # Scratch fixtures the contract tests write and remove around themselves.
 tests/contract/.tmp/
+
+# Scratch for the plan-execution tooling: ledgers, briefs, review packages.
+.superpowers/
