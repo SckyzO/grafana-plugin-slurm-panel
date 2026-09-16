@@ -24,7 +24,14 @@ describe('RackFrame', () => {
 
     expect(computed.flexDirection).toBe('row');
     expect(computed.flexWrap).toBe('wrap-reverse');
+    // Load-bearing together with the reversed cross axis above: flex-start
+    // is what makes a half-full cabinet fill from the floor rather than hang
+    // from the ceiling.
+    expect(computed.alignContent).toBe('flex-start');
     expect(computed.borderBottomWidth).toBe('3px');
+    // This equality proves the width prop reaches the rendered CSS — both
+    // sides go through rackWidthFor(14), so it proves nothing about that
+    // formula's own geometry, which is rackGeometry.test.ts's job instead.
     expect(computed.width).toBe(`${rackWidthFor(14)}px`);
   });
 
