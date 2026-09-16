@@ -5,6 +5,7 @@ import {
   rackWidthFor,
   resolveCellSize,
   sledHeightFor,
+  sledWidthFor,
 } from './rackGeometry';
 import { DEFAULT_OPTIONS } from '../types';
 
@@ -73,6 +74,18 @@ describe('resolveCellSize', () => {
     expect(resolveCellSize({ cellWidth: 14, cellHeight: 3, layout: 'rack' }).height).toBe(MIN_CELL_HEIGHT);
     // Above the floor the number is honoured exactly, in both layouts.
     expect(resolveCellSize({ cellWidth: 14, cellHeight: 20, layout: 'rack' }).height).toBe(20);
+  });
+});
+
+describe('sledWidthFor', () => {
+  // Literal on purpose. Every other number in this file is derived from the
+  // same formula it is checking, which is why a missing border term — 2px on
+  // every sled in the panel — survived a full review and 97 green tests. These
+  // two are the sizes that can tell the two formulas apart: without the border
+  // they would read 48 and 23.
+  it('subtracts the cabinet frame’s border as well as its padding', () => {
+    expect(sledWidthFor(56, 1)).toBe(46);
+    expect(sledWidthFor(56, 2)).toBe(22);
   });
 });
 
