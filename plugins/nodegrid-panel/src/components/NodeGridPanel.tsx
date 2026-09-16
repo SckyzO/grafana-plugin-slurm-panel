@@ -9,7 +9,7 @@ import type { SlurmNode } from '@slurm-views/core';
 import { useNodeModel } from '../hooks/useNodeModel';
 import { NodeGroup } from './NodeGroup';
 import { PanelWarnings } from './PanelWarnings';
-import { layoutBlades } from './rackGeometry';
+import { layoutBlades, resolveCellSize } from './rackGeometry';
 import { collectUnmapped, summarise } from '../utils/warnings';
 import type { PanelOptions } from '../types';
 
@@ -87,16 +87,21 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
   // depends on the densest blade across all of them. Computed in both layouts
   // and consumed only in Rack: the cost is one pass over the groups, and a
   // conditional hook is worse than a wasted one.
+  // Goes through the same resolution as every other consumer of cell width,
+  // rather than reading options.cellWidth directly: two paths that can read
+  // the same number differently is the defect class the border fix
+  // (5ebb879) already fell into once.
+  const cellWidth = resolveCellSize(options).width;
   const blades = useMemo(() => {
     const table = parseBladeTable(options.bladeOverrides);
     const layout = layoutBlades({
       groupKeys: model.groups.map((g) => g.key),
       sizes: table.sizes,
       fallback: options.nodesPerBlade,
-      cellWidth: options.cellWidth,
+      cellWidth,
     });
     return { table, layout };
-  }, [options.bladeOverrides, options.nodesPerBlade, options.cellWidth, model.groups]);
+  }, [options.bladeOverrides, options.nodesPerBlade, cellWidth, model.groups]);
   const lines = useMemo(
     () =>
       summarise(
