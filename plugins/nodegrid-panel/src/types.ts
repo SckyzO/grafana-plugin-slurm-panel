@@ -63,6 +63,12 @@ export const DEFAULT_OPTIONS: PanelOptions = {
   // field is a real state — "level to the tallest" — rather than a sentinel.
   slotOverrides: '',
   gap: 2,
-  shapeChannel: false,
+  // On by default, and not as a courtesy. Six theme hues cannot separate
+  // twenty-one states safely: measured on this palette, "not responding"
+  // against "allocated" is Delta E 4.8 under protanopia, below any legal
+  // floor, and no reshuffle of the six fixed it. The shape is what makes the
+  // colour safe, so it ships on and a reader turns it off rather than
+  // discovering they needed it.
+  shapeChannel: true,
   colorMode: 'state',
 };
