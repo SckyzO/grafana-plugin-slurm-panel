@@ -135,6 +135,39 @@ def _pick_state(rng, name):
     return _weighted_choice(rng, table) + _weighted_choice(rng, PRODUCTION_MODIFIER_WEIGHTS)
 
 
+def _cpus_state(rng, state, total):
+    """One node's CPUsState the way `sinfo -O CPUsState` reports it: A/I/O/T,
+    with A + I + O == T always.
+
+    `Other` is sinfo's bucket for cores on a node that cannot take work --
+    drained, down, reserved, powering off. It is the reason a drained node
+    reads zero allocated without being idle, and drawing it beside the state
+    rather than from it is what produced twenty-nine `allocated` nodes holding
+    nothing at all in this fixture. A stand-in easier than the cluster teaches
+    a shape no cluster can produce.
+
+    The suffix never changes the arithmetic: `allocated*` is a node that stopped
+    answering while fully allocated, and its cores are still allocated.
+    """
+    base = state.rstrip("*~#!%$@^-")
+    if base in ("idle", "planned", "plnd"):
+        return 0, total, 0
+    if base in ("allocated", "alloc"):
+        return total, 0, 0
+    if base in ("mixed", "mix"):
+        alloc = rng.choice([16, 32, 64, 96])
+        return alloc, total - alloc, 0
+    if base in ("completing", "comp"):
+        alloc = rng.choice([16, 64])
+        return alloc, total - alloc, 0
+    if base in ("draining", "drng"):
+        # Still finishing what it was given; the rest is already withdrawn.
+        alloc = rng.choice([16, 64])
+        return alloc, 0, total - alloc
+    # Everything left is a node that cannot take work at all.
+    return 0, 0, total
+
+
 def cluster():
     rng = random.Random(SEED)
     nodes = []
@@ -156,16 +189,24 @@ def cluster():
             name = "c%d" % cpu_count
 
         state = _pick_state(rng, name)
+        cpus = 128
+        cpu_alloc, cpu_idle, cpu_other = _cpus_state(rng, state, cpus)
+        mem = 512000
         nodes.append({
             "name": name,
             "state": state,
             "partitions": sorted(set(parts)),
-            "cpus": 128,
-            "cpu_alloc": rng.choice([0, 16, 64, 128]),
-            "mem": 512000,
-            "mem_alloc": rng.choice([0, 64000, 256000]),
+            "cpus": cpus,
+            "cpu_alloc": cpu_alloc,
+            "cpu_idle": cpu_idle,
+            "cpu_other": cpu_other,
+            "mem": mem,
+            # Memory follows the cores: a node holding half its cores is
+            # holding roughly half its memory, and a node holding none is
+            # holding none.
+            "mem_alloc": mem * cpu_alloc // cpus,
             "gpus": 8 if is_gpu else 0,
-            "gpu_used": rng.choice([0, 2, 8]) if is_gpu else 0,
+            "gpu_used": (rng.choice([2, 4, 8]) if cpu_alloc > 0 else 0) if is_gpu else 0,
             "drained": state.startswith("drain"),
             "drain_reason": rng.choice(DRAIN_REASONS),
         })
@@ -183,7 +224,8 @@ def render():
     teaches a shape no real cluster can produce:
 
         slurm_node_status                         node, status, partition
-        slurm_node_cpu_alloc / cpu_total          node, status, partition
+        slurm_node_cpu_alloc / cpu_idle / cpu_other / cpu_total
+                                                  node, status, partition
         slurm_node_mem_alloc / mem_total          node, status, partition
         slurm_node_gres_used / gres_total         node, status, partition, gres_type
         slurm_node_drain_reason_info              node, reason
@@ -210,6 +252,8 @@ def render():
     # look correct here and break on a real cluster.
     for metric, key in (
         ("slurm_node_cpu_alloc", "cpu_alloc"),
+        ("slurm_node_cpu_idle", "cpu_idle"),
+        ("slurm_node_cpu_other", "cpu_other"),
         ("slurm_node_cpu_total", "cpus"),
         ("slurm_node_mem_alloc", "mem_alloc"),
         ("slurm_node_mem_total", "mem"),
