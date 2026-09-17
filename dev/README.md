@@ -60,13 +60,14 @@ hosting several repositories nor recognisable in `docker compose ls`.
 
 ## The dashboards
 
-Four, provisioned into the **Slurm** folder. Two read Prometheus outright,
+Five, provisioned into the **Slurm** folder. Three read Prometheus outright,
 one carries its own data and needs nothing running but Grafana, and one
 mixes both — four panels on a hand-written CSV, plus four that read this
 dev cluster's live Prometheus.
 
 | Dashboard | Source | What it is for |
 |---|---|---|
+| Production | Prometheus | What a floor looks like on an ordinary day, and the one to open first: the number you check before anything else, the states under it, the two resources that run out, the floor itself in duo blades, and the drain reasons no stock panel can join. Every count goes through `count by (node)` before it is counted |
 | Node grid | Prometheus | The overview: one panel, every node, grouped by the `rack` label `make scrape` relabels in (falls back to a capture, a join or a range table on a Prometheus without that relabelling) |
 | Utilisation | Prometheus | State beside CPU, memory and GPU occupancy, driven by Thresholds |
 | Scenarios | CSV + Prometheus | Hand-written situations that render identically every time, plus one live panel showing what a real, unstaged distribution looks like |
