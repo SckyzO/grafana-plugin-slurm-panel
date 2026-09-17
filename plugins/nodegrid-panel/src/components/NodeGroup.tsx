@@ -95,7 +95,12 @@ export function NodeGroup({ group, stateDisplay, valueDisplay, colorMode, hrefFo
       data-unplaced={unplaced}
       data-empty={empty}
     >
-      <GroupHeader group={group} unplaced={unplaced} />
+      <GroupHeader
+        group={group}
+        unplaced={unplaced}
+        stacked={options.layout === 'rack'}
+        showCount={options.showNodeCount}
+      />
       {options.layout === 'rack' ? (
         <div className={styles.band} data-testid="rack-band">
           {/* slots.heightOf is keyed by every group layoutSlots was given, and

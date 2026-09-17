@@ -40,6 +40,10 @@ export interface PanelOptions {
    */
   slotOverrides: string;
   gap: number;
+  /** Show the node count under each group name. */
+  showNodeCount: boolean;
+  /** Centre the row of cabinets in the panel instead of packing it left. */
+  centreRacks: boolean;
   shapeChannel: boolean;
   colorMode: ColorMode;
 }
@@ -63,6 +67,10 @@ export const DEFAULT_OPTIONS: PanelOptions = {
   // field is a real state — "level to the tallest" — rather than a sentinel.
   slotOverrides: '',
   gap: 2,
+  // Both true to the panel as it drew before the options existed: the count
+  // was always shown, and the cabinets always packed from the left.
+  showNodeCount: true,
+  centreRacks: false,
   // On by default, and not as a courtesy. Six theme hues cannot separate
   // twenty-one states safely: measured on this palette, "not responding"
   // against "allocated" is Delta E 4.8 under protanopia, below any legal

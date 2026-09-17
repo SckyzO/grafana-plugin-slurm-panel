@@ -276,4 +276,28 @@ describe('groups the panel could not resolve', () => {
     expect(group).toHaveAttribute('data-empty', 'true');
     expect(screen.getByText('0 nodes')).toBeInTheDocument();
   });
+
+  it('stacks the group name over its count and centres them on the cabinet', () => {
+    // A long name beside a count decides the group's width, and in the rack
+    // layout the group's width is what pushes a cabinet onto the next line.
+    renderGroup({ key: 'rack1', nodes: [mkNode('c1')], assumed: false }, { ...DEFAULT_OPTIONS, layout: 'rack' });
+    const header = screen.getByText('rack1').parentElement!;
+    expect(getComputedStyle(header).flexDirection).toBe('column');
+    expect(getComputedStyle(header).alignItems).toBe('center');
+  });
+
+  it('keeps the name beside the count in the wrap layout, where the group owns the row', () => {
+    renderGroup({ key: 'rack1', nodes: [mkNode('c1')], assumed: false }, { ...DEFAULT_OPTIONS, layout: 'wrap' });
+    expect(getComputedStyle(screen.getByText('rack1').parentElement!).flexDirection).toBe('row');
+  });
+
+  it('hides the count when the reader asks, and never the name', () => {
+    renderGroup(
+      { key: 'rack1', nodes: [mkNode('c1'), mkNode('c2')], assumed: false },
+      { ...DEFAULT_OPTIONS, layout: 'rack', showNodeCount: false }
+    );
+    expect(screen.getByText('rack1')).toBeInTheDocument();
+    expect(screen.queryByText('2 nodes')).toBeNull();
+  });
+
 });

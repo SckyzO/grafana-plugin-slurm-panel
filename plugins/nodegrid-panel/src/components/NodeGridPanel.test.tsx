@@ -148,4 +148,30 @@ describe('NodeGridPanel', () => {
     const cell = resolveCellSize(rackOptions);
     expect(getComputedStyle(screen.getByTestId('rack-frame')).height).toBe(`${frameHeight(20, cell.height)}px`);
   });
+
+  it('packs the cabinets left by default and centres them only when asked', () => {
+    const frame = createDataFrame({
+      refId: 'A',
+      fields: [
+        { name: 'Time', type: FieldType.time, values: [0] },
+        { name: 'status', type: FieldType.number, values: [1], labels: { node: 'c1', status: 'idle' } },
+      ],
+    });
+    const data: PanelData = { state: LoadingState.Done, series: [frame], timeRange: getDefaultTimeRange() };
+    const fieldConfig: FieldConfigSource = {
+      defaults: { mappings: DEFAULT_MAPPINGS, thresholds: { mode: ThresholdsMode.Absolute, steps: [{ value: -Infinity, color: 'green' }] } },
+      overrides: [],
+    };
+    const rack = { ...DEFAULT_OPTIONS, layout: 'rack' as const };
+
+    const left = render(<NodeGridPanel {...baseProps} data={data} options={rack} fieldConfig={fieldConfig} />);
+    expect(getComputedStyle(screen.getByTestId('slurm-node-grid')).justifyContent).toBe('flex-start');
+    left.unmount();
+
+    render(
+      <NodeGridPanel {...baseProps} data={data} options={{ ...rack, centreRacks: true }} fieldConfig={fieldConfig} />
+    );
+    expect(getComputedStyle(screen.getByTestId('slurm-node-grid')).justifyContent).toBe('center');
+  });
+
 });

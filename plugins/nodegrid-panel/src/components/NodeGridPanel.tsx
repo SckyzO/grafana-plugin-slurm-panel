@@ -13,7 +13,7 @@ import { layoutBlades, layoutSlots, resolveCellSize } from './rackGeometry';
 import { collectUnmapped, summarise } from '../utils/warnings';
 import type { PanelOptions } from '../types';
 
-const getStyles = (theme: GrafanaTheme2, layout: PanelOptions['layout']) => ({
+const getStyles = (theme: GrafanaTheme2, layout: PanelOptions['layout'], centred: boolean) => ({
   // The warnings strip must sit outside the scrolling area, so the grid
   // scrolls under a fixed header rather than the warning scrolling away.
   outer: css({ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }),
@@ -27,6 +27,9 @@ const getStyles = (theme: GrafanaTheme2, layout: PanelOptions['layout']) => ({
     flexDirection: layout === 'rack' ? 'row' : 'column',
     alignItems: layout === 'rack' ? 'flex-start' : 'stretch',
     flexWrap: layout === 'rack' ? 'wrap' : 'nowrap',
+    // Only ever in the rack layout: the wrap layout is one column, and
+    // centring a column moves nothing.
+    justifyContent: layout === 'rack' && centred ? 'center' : 'flex-start',
     gap: theme.spacing(1),
     padding: theme.spacing(1),
   }),
@@ -35,7 +38,7 @@ const getStyles = (theme: GrafanaTheme2, layout: PanelOptions['layout']) => ({
 
 export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: PanelProps<PanelOptions>) {
   const theme = useTheme2();
-  const styles = getStyles(theme, options.layout);
+  const styles = getStyles(theme, options.layout, options.centreRacks);
   const { model, warnings, stateField, grouping } = useNodeModel(data, options, replaceVariables);
 
   // Colour is never chosen here. The state string goes through the field

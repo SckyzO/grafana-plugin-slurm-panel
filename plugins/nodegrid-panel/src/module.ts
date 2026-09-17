@@ -142,6 +142,22 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
         showIf: (options) => options.layout === 'wrap',
       })
       .addBooleanSwitch({
+        path: 'showNodeCount',
+        name: 'Node count',
+        description: 'Show how many nodes each group holds, under its name.',
+        defaultValue: DEFAULT_OPTIONS.showNodeCount,
+        category: ['Layout'],
+      })
+      .addBooleanSwitch({
+        path: 'centreRacks',
+        name: 'Centre the cabinets',
+        description: 'Centre the row of cabinets in the panel instead of packing it against the left edge.',
+        defaultValue: DEFAULT_OPTIONS.centreRacks,
+        category: ['Layout'],
+        // Nothing to centre outside a cabinet: the wrap layout is one column.
+        showIf: (options) => options.layout === 'rack',
+      })
+      .addBooleanSwitch({
         path: 'shapeChannel',
         name: 'Shape channel',
         description:

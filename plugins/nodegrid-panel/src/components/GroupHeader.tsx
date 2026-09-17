@@ -4,12 +4,16 @@ import type { GrafanaTheme2 } from '@grafana/data';
 import { useTheme2 } from '@grafana/ui';
 import type { NodeGroup as NodeGroupModel } from '@slurm-views/core';
 
-const getStyles = (theme: GrafanaTheme2) => ({
-  // One line: a rail carrying the name, the count and the assumed marker.
+const getStyles = (theme: GrafanaTheme2, stacked: boolean) => ({
+  // A rail carrying the name, the count and the assumed marker. Side by side
+  // in the wrap layout, where the group is as wide as the row; stacked and
+  // centred over a cabinet, where the group is only as wide as the frame and
+  // a long name beside a count would decide the cabinet's width for it.
   header: css({
     display: 'flex',
-    alignItems: 'baseline',
-    gap: theme.spacing(1),
+    flexDirection: stacked ? 'column' : 'row',
+    alignItems: stacked ? 'center' : 'baseline',
+    gap: stacked ? 0 : theme.spacing(1),
     fontSize: theme.typography.bodySmall.fontSize,
     borderBottom: `1px solid ${theme.colors.border.weak}`,
     paddingBottom: theme.spacing(0.25),
@@ -20,13 +24,22 @@ const getStyles = (theme: GrafanaTheme2) => ({
   unplaced: css({ color: theme.colors.error.text, fontStyle: 'italic' }),
 });
 
-export function GroupHeader({ group, unplaced }: { group: NodeGroupModel; unplaced: boolean }) {
+export interface GroupHeaderProps {
+  group: NodeGroupModel;
+  unplaced: boolean;
+  /** Name over count, centred. The rack layout's shape. */
+  stacked?: boolean;
+  /** The count is the reader's to hide; the name never is. */
+  showCount?: boolean;
+}
+
+export function GroupHeader({ group, unplaced, stacked = false, showCount = true }: GroupHeaderProps) {
   const theme = useTheme2();
-  const styles = getStyles(theme);
+  const styles = getStyles(theme, stacked);
   return (
     <div className={styles.header}>
       <span className={styles.name}>{group.key}</span>
-      <span className={styles.count}>{group.nodes.length} nodes</span>
+      {showCount && <span className={styles.count}>{group.nodes.length} nodes</span>}
       {/* Chunking invents structure. The claim stays visible in the panel,
           not only in the editor. */}
       {group.assumed && <span className={styles.assumed}>assumed</span>}

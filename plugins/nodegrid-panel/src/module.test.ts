@@ -55,20 +55,27 @@ describe('the layout-dependent options', () => {
   });
 
   it('offers the cabinet options only inside a cabinet', () => {
-    for (const path of ['nodesPerBlade', 'bladeOverrides', 'slotsPerRack', 'slotOverrides']) {
+    for (const path of ['nodesPerBlade', 'bladeOverrides', 'slotsPerRack', 'slotOverrides', 'centreRacks']) {
       expect(optionAt(path).showIf?.(rack)).toBe(true);
       expect(optionAt(path).showIf?.(wrap)).toBe(false);
     }
   });
 
   it('leaves the options that govern both layouts unconditional', () => {
-    for (const path of ['layout', 'cellWidth', 'cellHeight', 'shapeChannel', 'colorMode']) {
+    for (const path of ['layout', 'cellWidth', 'cellHeight', 'shapeChannel', 'colorMode', 'showNodeCount']) {
       expect(optionAt(path).showIf).toBeUndefined();
     }
   });
 });
 
 describe('the defaults a reader inherits without configuring anything', () => {
+  it('keeps the node count and the left-packed cabinets it always had', () => {
+    // Both options exist so a reader can change what the panel drew before
+    // they existed. Neither default may change what it drew.
+    expect(DEFAULT_OPTIONS.showNodeCount).toBe(true);
+    expect(DEFAULT_OPTIONS.centreRacks).toBe(false);
+  });
+
   it('ships the shape channel on', () => {
     // Six theme hues cannot separate twenty-one states safely — "not
     // responding" against "allocated" measures 4.8 under protanopia. The shape
