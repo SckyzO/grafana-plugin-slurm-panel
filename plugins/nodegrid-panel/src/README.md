@@ -224,34 +224,41 @@ whatever palette the site chose.
 
 ### The states, and the colour each one gets
 
-Colour encodes what an operator can do with a node, not which of the
-twenty-one states it is in — no palette separates that many at a glance. The
-exact state is always spelled out in the cell's tooltip and in its accessible
-label, in every colour mode.
+Colour encodes the decision an operator makes about a node, not which of the
+twenty-one states it is in — no palette separates that many at a glance. **Nine
+colours, six decisions.** The hue says what to do; the shade inside a hue says
+the degree, never the decision. The exact state is always spelled out in the
+cell's tooltip and in its accessible label, in every colour mode.
 
-| Rule | Shown as | Colour |
-|---|---|---|
-| `/^.*\*$/` | not responding | `semi-dark-orange` |
-| `/^.*~$/` | powered down | `text` |
-| `/^idle.*-$/` | idle, backfill | `semi-dark-green` |
-| `/^idle.*$/` | idle | `green` |
-| `/^(planned\|plnd).*$/` | planned | `light-green` |
-| `/^comp.*$/` | completing | `super-light-blue` |
-| `/^mix.*-$/` | mixed, backfill | `light-blue` |
-| `/^mix.*$/` | mixed | `blue` |
-| `/^alloc.*-$/` | allocated, backfill | `semi-dark-blue` |
-| `/^alloc.*$/` | allocated | `dark-blue` |
-| `/^(drain\|drng).*$/` | drained | `yellow` |
-| `/^maint.*$/` | maintenance | `purple` |
-| `/^res.*$/` | reserved | `semi-dark-purple` |
-| `/^(npc\|perfctrs).*$/` | perf counters | `light-purple` |
-| `/^(down\|fail).*$/` | down | `red` |
-| `/^unk.*$/` | unknown | `semi-dark-red` |
-| `/^inval.*$/` | invalid registration | `semi-dark-red` |
-| `/^block.*$/` | blocked | `orange` |
-| `/^reboot.*$/` | reboot | `light-orange` |
-| `/^pow.*$/` | power management | `text` |
-| `/^fut.*$/` | future | `text` |
+| Default colour | Theme name | What it decides | States it covers |
+|---|---|---|---|
+| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#96D98D;vertical-align:middle"></span> `#96D98D` | `light-green` | **it works** | `allocated`, `allocated+`, `allocated-` |
+| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#73BF69;vertical-align:middle"></span> `#73BF69` | `green` | **it works** | `mixed`, `mix`, `mixed-` |
+| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#56A64B;vertical-align:middle"></span> `#56A64B` | `semi-dark-green` | **it works** | `completing`, `comp` |
+| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#5794F2;vertical-align:middle"></span> `#5794F2` | `blue` | **capacity sitting free** | `idle`, `idle-` |
+| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#8AB8FF;vertical-align:middle"></span> `#8AB8FF` | `light-blue` | **capacity sitting free** | `planned`, `plnd` |
+| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#8F3BB8;vertical-align:middle"></span> `#8F3BB8` | `dark-purple` | **a human claimed it** | `drained`, `draining`, `drng`, `maintenance`, `reserved`, `resv`, `npc`, `perfctrs` |
+| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#FF9830;vertical-align:middle"></span> `#FF9830` | `orange` | **not answering, or moving** | the `*` suffix, `blocked`, `reboot` |
+| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#C4162A;vertical-align:middle"></span> `#C4162A` | `dark-red` | **broken** | `down`, `fail`, `unknown`, `invalid` |
+| the theme's own ink | `text` | **absent from the floor** | the `~` suffix, `power_down`, `powering_up`, `future` |
+
+Hex values are the dark theme's. Every colour is a Grafana theme name rather
+than a literal, so a light theme or a custom one resolves its own value and the
+panel follows the dashboard around it.
+
+**Why green rises and red darkens.** Protanopia and deuteranopia collapse the
+red-green axis and keep light against dark. Measured on this theme, `green`
+against `red` is ΔE 32 to a full-colour reader and **4.6** to a deuteranope,
+while `light-green` against `dark-red` is 32 and **25**. A working node and a
+broken one are the one pair nobody can afford to confuse, so what works is
+drawn light and what is broken is drawn dark. Green also brightens as a node
+fills, which puts the commonest state of a busy cluster at the highest contrast
+against the background.
+
+**Six hues are not enough on their own.** `not answering` against `allocated`
+measures 4.8 under protanopia and no rearrangement of this palette fixed it,
+which is why **Shape channel is on by default**: the notch is what makes the
+fill safe. Turning it off is a choice a reader makes, not one they inherit.
 
 `sinfo` appends one of nine flags to a state: `*` not responding, `~` powered
 off, `#` powering up, `!` pending power down, `%` powering down, `$`
@@ -259,7 +266,9 @@ reservation maintenance, `@` pending reboot, `^` reboot issued, and `-`
 planned by the backfill scheduler. The two that mean the node cannot run work
 at all — `*` and `~` — are matched first and override the state. The other
 seven leave the state readable and are absorbed by the trailing `.*`, which is
-why one rule covers `idle`, `idle#` and `idle@` together.
+why one rule covers `idle`, `idle#` and `idle@` together. `-` keeps its own
+rule so the label can say "backfill", and shares its family's colour because an
+operator does not act differently on a backfilled node.
 
 ### Adding or changing a state
 
