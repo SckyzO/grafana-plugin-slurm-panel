@@ -130,16 +130,22 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
       .addSliderInput({
         path: 'gap',
         name: 'Cell gap',
-        description: 'The gap is what makes a grid readable, not a border.',
+        description:
+          'Space between cells in the Wrap layout. The gap is what makes a grid readable, not a border.',
         defaultValue: DEFAULT_OPTIONS.gap,
         settings: { min: 0, max: 8, step: 1 },
         category: ['Layout'],
+        // Wrap only, and hidden elsewhere rather than left inert: a cabinet's
+        // internal spacing is RACK_GAP, a constant, so this slider did nothing
+        // at all in the Rack layout while still inviting a reader to drag it.
+        // A control that silently ignores you is worse than one that is absent.
+        showIf: (options) => options.layout === 'wrap',
       })
       .addBooleanSwitch({
         path: 'shapeChannel',
         name: 'Shape channel',
         description:
-          'Carry state as a shape as well as a fill. Keeps the grid readable in greyscale, in print and with a colour-vision deficiency.',
+          'Carry state as a shape as well as a fill. On by default: colour alone cannot separate every Slurm state safely, and this is what keeps the grid readable in greyscale, in print and with a colour-vision deficiency.',
         defaultValue: DEFAULT_OPTIONS.shapeChannel,
         category: ['Display'],
       })
