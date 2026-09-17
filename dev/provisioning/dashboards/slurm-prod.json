@@ -36,24 +36,24 @@
           "min": 0,
           "max": 100,
           "thresholds": {
-            "mode": "absolute",
+            "mode": "percentage",
             "steps": [
               {
-                "color": "blue",
+                "color": "green",
                 "value": null
               },
               {
-                "color": "green",
+                "color": "#EAB839",
                 "value": 60
               },
               {
-                "color": "yellow",
-                "value": 92
+                "color": "red",
+                "value": 80
               }
             ]
           },
           "color": {
-            "mode": "thresholds"
+            "mode": "continuous-GrYlRd"
           }
         },
         "overrides": []
@@ -67,7 +67,14 @@
           ],
           "fields": "",
           "values": false
-        }
+        },
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "sizing": "auto",
+        "shape": "gauge",
+        "barShape": "flat",
+        "sparkline": false,
+        "textMode": "auto"
       },
       "targets": [
         {
@@ -120,11 +127,14 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "value",
+        "colorMode": "background",
         "graphMode": "none",
         "textMode": "auto",
         "justifyMode": "auto",
-        "orientation": "auto"
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard"
       },
       "targets": [
         {
@@ -177,11 +187,14 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "value",
-        "graphMode": "area",
+        "colorMode": "background",
+        "graphMode": "none",
         "textMode": "auto",
         "justifyMode": "auto",
-        "orientation": "auto"
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard"
       },
       "targets": [
         {
@@ -234,11 +247,14 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "value",
-        "graphMode": "area",
+        "colorMode": "background",
+        "graphMode": "none",
         "textMode": "auto",
         "justifyMode": "auto",
-        "orientation": "auto"
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard"
       },
       "targets": [
         {
@@ -291,11 +307,14 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "value",
-        "graphMode": "area",
+        "colorMode": "background",
+        "graphMode": "none",
         "textMode": "auto",
         "justifyMode": "auto",
-        "orientation": "auto"
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard"
       },
       "targets": [
         {
@@ -348,11 +367,14 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "value",
-        "graphMode": "area",
+        "colorMode": "background",
+        "graphMode": "none",
         "textMode": "auto",
         "justifyMode": "auto",
-        "orientation": "auto"
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard"
       },
       "targets": [
         {
@@ -409,11 +431,14 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "value",
-        "graphMode": "area",
+        "colorMode": "background",
+        "graphMode": "none",
         "textMode": "auto",
         "justifyMode": "auto",
-        "orientation": "auto"
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard"
       },
       "targets": [
         {
@@ -466,11 +491,14 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "value",
-        "graphMode": "area",
+        "colorMode": "background",
+        "graphMode": "none",
         "textMode": "auto",
         "justifyMode": "auto",
-        "orientation": "auto"
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard"
       },
       "targets": [
         {
@@ -520,13 +548,13 @@
             ]
           },
           "color": {
-            "mode": "thresholds"
+            "mode": "continuous-RdYlGr"
           }
         },
         "overrides": []
       },
       "options": {
-        "displayMode": "gradient",
+        "displayMode": "lcd",
         "orientation": "horizontal",
         "showUnfilled": true,
         "reduceOptions": {
@@ -535,6 +563,18 @@
           ],
           "fields": "",
           "values": false
+        },
+        "valueMode": "text",
+        "namePlacement": "auto",
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "maxVizHeight": 300,
+        "sizing": "auto",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
         }
       },
       "targets": [
@@ -572,27 +612,31 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
+                "color": "red",
                 "value": null
+              },
+              {
+                "color": "orange",
+                "value": 40
+              },
+              {
+                "color": "yellow",
+                "value": 50
               },
               {
                 "color": "green",
                 "value": 60
-              },
-              {
-                "color": "yellow",
-                "value": 92
               }
             ]
           },
           "color": {
-            "mode": "thresholds"
+            "mode": "continuous-RdYlGr"
           }
         },
         "overrides": []
       },
       "options": {
-        "displayMode": "gradient",
+        "displayMode": "lcd",
         "orientation": "horizontal",
         "showUnfilled": true,
         "reduceOptions": {
@@ -601,6 +645,18 @@
           ],
           "fields": "",
           "values": false
+        },
+        "valueMode": "text",
+        "namePlacement": "auto",
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "maxVizHeight": 300,
+        "sizing": "auto",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
         }
       },
       "targets": [
@@ -656,13 +712,14 @@
         },
         "multiValueLabel": false,
         "layout": "rack",
-        "cellWidth": 14,
+        "cellWidth": 24,
         "nodesPerBlade": 2,
         "bladeOverrides": "",
         "slotsPerRack": 21,
         "slotOverrides": "",
         "shapeChannel": true,
-        "colorMode": "state"
+        "colorMode": "state",
+        "gap": 2
       },
       "targets": [
         {
@@ -755,7 +812,7 @@
             },
             "properties": [
               {
-                "id": "custom.hidden",
+                "id": "custom.hideFrom.viz",
                 "value": true
               }
             ]
@@ -788,7 +845,33 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 460
+                "value": 650
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Node",
+              "scope": "series"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 115
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rack",
+              "scope": "series"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 125
               }
             ]
           }
@@ -801,7 +884,8 @@
           "reducer": [
             "sum"
           ]
-        }
+        },
+        "cellHeight": "sm"
       },
       "targets": [
         {
