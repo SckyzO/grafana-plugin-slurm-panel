@@ -18,15 +18,15 @@
     {
       "id": 1,
       "type": "gauge",
-      "title": "Nodes in use",
-      "description": "Nodes running work -- allocated or mixed -- over all nodes. Deliberately not the same question as CPU allocated below it: a cluster can have every node busy and half its cores idle, and the gap between these two numbers is where the waste is.",
+      "title": "In use",
+      "description": "Nodes doing work -- allocated, mixed or completing, and still answering -- over all nodes. It is the Working tile as a fraction, and deliberately not the same question as CPU allocated below: a cluster can have every node busy and half its cores idle, and the gap between the two is where the waste is.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
+        "w": 3,
         "x": 0,
         "y": 0
       },
@@ -72,7 +72,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "(count(count by (node) (slurm_node_status{status=~\"alloc.*|mix.*\"})) or vector(0)) / (count(count by (node) (slurm_node_status))) * 100",
+          "expr": "(count(count by (node) (slurm_node_status{status=~\"(alloc|mix|comp).*\",status!~\".*[*~]\"})) or vector(0)) / (count(count by (node) (slurm_node_status))) * 100",
           "instant": false,
           "range": true,
           "editorMode": "code"
@@ -91,7 +91,7 @@
       "gridPos": {
         "h": 5,
         "w": 3,
-        "x": 4,
+        "x": 3,
         "y": 0
       },
       "fieldConfig": {
@@ -139,65 +139,8 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "Allocated",
-      "description": "Nodes running work. On a healthy production cluster this is most of them.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "slurm-views-prom"
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 7,
-        "y": 0
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "area",
-        "textMode": "auto",
-        "justifyMode": "auto",
-        "orientation": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "count(count by (node) (slurm_node_status{status=~\"alloc.*\"})) or vector(0)",
-          "instant": false,
-          "range": true,
-          "editorMode": "code"
-        }
-      ]
-    },
-    {
-      "id": 11,
-      "type": "stat",
-      "title": "Mixed",
-      "description": "Nodes partly allocated. Without this tile the five counts do not add up to the total, which is the first thing anyone checks.",
+      "title": "Working",
+      "description": "Allocated, mixed or completing -- and still answering. A node whose state carries the `*` suffix is counted under Not answering instead, exactly as the floor colours it.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -205,7 +148,7 @@
       "gridPos": {
         "h": 5,
         "w": 3,
-        "x": 11,
+        "x": 6,
         "y": 0
       },
       "fieldConfig": {
@@ -215,7 +158,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "semi-dark-green",
+                "color": "light-green",
                 "value": null
               }
             ]
@@ -243,7 +186,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "count(count by (node) (slurm_node_status{status=~\"mix.*\"})) or vector(0)",
+          "expr": "count(count by (node) (slurm_node_status{status=~\"(alloc|mix|comp).*\",status!~\".*[*~]\"})) or vector(0)",
           "instant": false,
           "range": true,
           "editorMode": "code"
@@ -253,8 +196,8 @@
     {
       "id": 4,
       "type": "stat",
-      "title": "Idle",
-      "description": "Capacity sitting free. Nothing is wrong with it and nothing is earning on it.",
+      "title": "Free",
+      "description": "Idle or planned. Nothing is wrong with it and nothing is earning on it.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -262,7 +205,7 @@
       "gridPos": {
         "h": 5,
         "w": 3,
-        "x": 14,
+        "x": 9,
         "y": 0
       },
       "fieldConfig": {
@@ -300,7 +243,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "count(count by (node) (slurm_node_status{status=~\"idle.*\"})) or vector(0)",
+          "expr": "count(count by (node) (slurm_node_status{status=~\"(idle|planned|plnd).*\",status!~\".*[*~]\"})) or vector(0)",
           "instant": false,
           "range": true,
           "editorMode": "code"
@@ -308,10 +251,10 @@
       ]
     },
     {
-      "id": 5,
+      "id": 11,
       "type": "stat",
-      "title": "Drained",
-      "description": "Taken out of service by a human. The reasons are in the table at the bottom.",
+      "title": "Claimed",
+      "description": "Drained, under maintenance, reserved or counting performance events. One decision for the operator -- find out who and why -- which is why it is one colour on the floor and one tile here.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -319,7 +262,7 @@
       "gridPos": {
         "h": 5,
         "w": 3,
-        "x": 17,
+        "x": 12,
         "y": 0
       },
       "fieldConfig": {
@@ -357,7 +300,64 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "count(count by (node) (slurm_node_status{status=~\"drain.*|drng.*\"})) or vector(0)",
+          "expr": "count(count by (node) (slurm_node_status{status=~\"(drain|drng|maint|res|npc|perfctrs).*\",status!~\".*[*~]\"})) or vector(0)",
+          "instant": false,
+          "range": true,
+          "editorMode": "code"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Silent",
+      "description": "Nodes that stopped answering -- the `*` suffix, which overrides whatever the node was doing, here and on the floor -- plus blocked and rebooting. Not broken, not usable.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 15,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(count by (node) (slurm_node_status{status=~\".*\\\\*|(block|reboot).*\"})) or vector(0)",
           "instant": false,
           "range": true,
           "editorMode": "code"
@@ -367,16 +367,16 @@
     {
       "id": 6,
       "type": "stat",
-      "title": "Down",
-      "description": "Broken. The only tile here that is allowed to turn red on its own.",
+      "title": "Broken",
+      "description": "The only tile allowed to turn red on its own.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 20,
+        "w": 3,
+        "x": 18,
         "y": 0
       },
       "fieldConfig": {
@@ -418,7 +418,64 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "count(count by (node) (slurm_node_status{status=~\"down.*|fail.*|unk.*\"})) or vector(0)",
+          "expr": "count(count by (node) (slurm_node_status{status=~\"(down|fail|unk|inval).*\",status!~\".*[*~]\"})) or vector(0)",
+          "instant": false,
+          "range": true,
+          "editorMode": "code"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Absent",
+      "description": "Powered off, under power management, or configured but not yet real. Present in the configuration, absent from the floor.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 21,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(count by (node) (slurm_node_status{status=~\".*~|(pow|fut).*\"})) or vector(0)",
           "instant": false,
           "range": true,
           "editorMode": "code"
@@ -567,8 +624,8 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 13,
-        "w": 24,
+        "h": 15,
+        "w": 13,
         "x": 0,
         "y": 9
       },
@@ -676,10 +733,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 7,
-        "w": 24,
-        "x": 0,
-        "y": 22
+        "h": 15,
+        "w": 11,
+        "x": 13,
+        "y": 9
       },
       "fieldConfig": {
         "defaults": {
