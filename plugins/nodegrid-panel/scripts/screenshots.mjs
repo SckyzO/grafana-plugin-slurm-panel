@@ -25,6 +25,7 @@ const SHOTS = [
   ['node-grid-by-rack', 'slurm-node-grid', 1],
   ['node-grid-states', 'slurm-node-scenarios', 1],
   ['node-grid-gpu', 'slurm-node-utilisation', 4],
+  ['node-grid-heights', 'slurm-node-grouping', 1],
 ];
 
 const browser = await chromium.launch();
