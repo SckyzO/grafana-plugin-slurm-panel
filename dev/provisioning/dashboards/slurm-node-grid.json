@@ -95,7 +95,7 @@
         "defaults": {},
         "overrides": []
       },
-      "description": "slurm_exporter publishes node, status and partition, and nothing that describes where a node sits: it reads sinfo, and sinfo has no concept of a rack. This dashboard's rack label does not come from the exporter or from the node name \u2014 dev/relabel/racks.txt is turned into Prometheus relabelling by make scrape, and Grouping > Group by > Label reads that label directly. Point this panel at a Prometheus without that relabelling and there is no rack label to read; the fallback is then a capture on the node name, a join against an inventory, or a range table."
+      "description": "slurm_exporter publishes node, status and partition, and nothing that describes where a node sits: it reads sinfo, and sinfo has no concept of a rack. This dashboard's rack label does not come from the exporter or from the node name: dev/relabel/racks.txt is turned into Prometheus relabelling by make scrape, and Grouping > Group by > Label reads that label directly. Point this panel at a Prometheus without that relabelling and there is no rack label to read; the fallback is then a capture on the node name, a join against an inventory, or a range table."
     }
   ]
 }

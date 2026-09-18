@@ -41,7 +41,7 @@ export function parseCountTable(table: string, { min, max, noun }: CountBounds):
   table.split('\n').forEach((raw, i) => {
     const line = i + 1;
     // A floor plan long enough to want this option is long enough to want
-    // section headings, so `#` comments to end of line — as in the Ranges table.
+    // section headings, so `#` comments to end of line, as in the Ranges table.
     const text = (raw.split('#')[0] ?? '').trim();
     if (text === '') {
       return;

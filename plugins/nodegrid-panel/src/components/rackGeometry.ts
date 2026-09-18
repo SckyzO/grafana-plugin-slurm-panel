@@ -1,7 +1,7 @@
 /**
  * The two size decisions that make a rack read as a rack rather than a grid
  * of squares, pulled out of `RackFrame` and `NodeCell` so the property that
- * matters — a sled is wide and short, not a square — can be asserted once,
+ * matters, that a sled is wide and short rather than a square, can be asserted once,
  * as plain arithmetic, instead of only living inside CSS that a test runner
  * without a layout engine cannot see.
  */
@@ -19,7 +19,7 @@ import type { Layout } from '../types';
  *
  * `maxBlade` is the densest blade **in the panel**, not in this rack. Every
  * cabinet gets the same width, because a floor plan whose cabinets differ in
- * width does not read as a floor plan — a duo's sleds are simply wider than a
+ * width does not read as a floor plan: a duo's sleds are simply wider than a
  * quad's, which is also true of the hardware. At the default of 1 the
  * expression is `max(40, cellWidth * 4)`, exactly what this returned before
  * blades existed.
@@ -34,7 +34,7 @@ export const MIN_CELL_HEIGHT = 5;
 
 /**
  * A sled's height in pixels: about half the cell width, so a sled is
- * unmistakably wider than it is tall — the whole reason to draw a rack
+ * unmistakably wider than it is tall, which is the whole reason to draw a rack
  * instead of a grid.
  */
 export function sledHeightFor(cellWidth: number): number {
@@ -67,7 +67,7 @@ export function resolveCellSize(options: { cellWidth?: number; cellHeight?: numb
 /**
  * The frame's own padding, `theme.spacing(0.5)` on each side, in pixels.
  * Exported so `RackFrame` draws from the same number this geometry assumes,
- * rather than the two agreeing by coincidence — they already disagreed once.
+ * rather than the two agreeing by coincidence; they already disagreed once.
  */
 export const RACK_PADDING = 4;
 
@@ -79,7 +79,7 @@ export const RACK_PADDING = 4;
 export const RACK_GAP = 2;
 
 /**
- * The frame's own border, in pixels per side — the one `RackFrame` draws
+ * The frame's own border, in pixels per side: the one `RackFrame` draws
  * around the cabinet. The app runs under `box-sizing: border-box`, so this
  * comes out of the same content box as the padding; leaving it out let a
  * sled overflow the frame's right edge by exactly this many pixels.
@@ -87,7 +87,7 @@ export const RACK_GAP = 2;
 export const RACK_BORDER = 1;
 
 /**
- * The cabinet's foot, in pixels — the heavier bottom edge that makes a frame
+ * The cabinet's foot, in pixels: the heavier bottom edge that makes a frame
  * read as a rack standing on a floor rather than as a box.
  *
  * Exported for the same reason RACK_PADDING and RACK_GAP are: `frameHeight`
@@ -105,7 +105,7 @@ export const RACK_FOOT = 3;
 
 /**
  * The narrowest a sled may be drawn and still be a hover target rather than a
- * hairline — the same floor the Cell width option's description already names.
+ * hairline, the same floor the Cell width option's description already names.
  */
 export const MIN_SLED_WIDTH = 10;
 
@@ -176,7 +176,7 @@ export function layoutBlades({ groupKeys, sizes, fallback, cellWidth }: BladeLay
 }
 
 /**
- * The shortest a cabinet may be drawn, in pixels — `theme.spacing(3)`, which
+ * The shortest a cabinet may be drawn, in pixels: `theme.spacing(3)`, which
  * `RackFrame` used to apply as a CSS `min-height`.
  *
  * It belongs in the arithmetic rather than in the stylesheet because a CSS
@@ -195,7 +195,7 @@ export const MIN_FRAME_HEIGHT = 24;
  * `sledWidthFor`: the app runs under `box-sizing: border-box`, so an explicit
  * height includes both. Leaving the border out of the width formula is what
  * let a sled overflow its frame by exactly two pixels, undetected by a full
- * review and ninety-seven unit tests — this is that trap on the other axis.
+ * review and ninety-seven unit tests; this is that trap on the other axis.
  * The vertical borders are asymmetric, unlike the width's: `RACK_BORDER` on
  * top and the heavier `RACK_FOOT` at the bottom, not `RACK_BORDER` twice.
  *
@@ -212,7 +212,7 @@ export function frameHeight(rows: number, cellHeight: number): number {
 export interface SlotLayoutInput {
   /**
    * The groups the panel is actually drawing, in draw order, each with its
-   * node count — one structure rather than a key list beside a count map.
+   * node count: one structure rather than a key list beside a count map.
    * Two structures that must cover the same keys, with nothing forcing them
    * to, is how a `?? 0` ends up drawing a silently empty cabinet.
    */
@@ -249,8 +249,8 @@ export interface SlotLayout {
  *
  * The invariant this establishes: a levelled cabinet takes `panelRows`, which
  * is at least its own row count by construction, so it cannot overflow. Only
- * a group with an effective declaration — a table entry or the panel-wide
- * number — can be too small, because the panel-wide number is a declaration
+ * a group with an effective declaration, a table entry or the panel-wide
+ * number, can be too small, because the panel-wide number is a declaration
  * for every group, not only for the ones named in the table.
  */
 export function layoutSlots({ groups, blades, declared, fallback, cellHeight }: SlotLayoutInput): SlotLayout {
@@ -300,7 +300,7 @@ export function layoutSlots({ groups, blades, declared, fallback, cellHeight }: 
     if (needed > rows) {
       overflowing.push({ key, needed, declared: rows });
     }
-    // The band has to clear whatever is actually drawn, overflow included —
+    // The band has to clear whatever is actually drawn, overflow included:
     // otherwise the rows that spill above the frame paint over the header.
     const drawn = Math.max(rows, needed);
     if (drawn > bandRows) {

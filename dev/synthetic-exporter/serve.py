@@ -10,7 +10,7 @@ test, a 3000-node scale test, and everything between:
 
 Give RACKS with NODES_PER_RACK when the total you want is a multiple of some
 group size, or NODES directly when it is not. RACKS no longer shapes a node's
-name — it exists so dev/relabel/racks.txt, the range table
+name. It exists so dev/relabel/racks.txt, the range table
 dev/relabel/generate.mjs turns into Prometheus relabelling, can describe the
 same number of groups this cluster is meant to have.
 
@@ -18,7 +18,7 @@ Node names deliberately carry no location: every node is `c<n>` or `g<n>`,
 flat, counting within its own family, the same shape the real slurm_exporter
 publishes. It reads sinfo, and sinfo has no concept of a rack, so a node name
 here that encoded one would hand the panel a location it never had to work
-for — the invented rack label this project already removed once, in a
+for: the invented rack label this project already removed once, in a
 different costume.
 
 PROFILE picks the shape of the state distribution itself, independent of
@@ -26,8 +26,8 @@ node count:
 
     PROFILE=production   # default. A cluster that is working.
     PROFILE=incident      # production, plus one rack down and a drain storm.
-    PROFILE=showcase      # every base state and every modifier, uniformly —
-                           # today's old default, kept for demos that want to
+    PROFILE=showcase      # every base state and every modifier, uniformly.
+                           # Today's old default, kept for demos that want to
                            # show every colour the panel can paint at once.
 
 An unrecognised PROFILE value falls back to production and says so on
@@ -60,7 +60,7 @@ else:
 # The full, unweighted spread. Used only by the `showcase` profile: every
 # base state and every modifier, uniformly likely, so a dashboard built to
 # show every colour the panel can paint still gets the full set at once. This
-# used to be the only shape the exporter produced — measured against a real
+# used to be the only shape the exporter produced; measured against a real
 # cluster it left 3.8% of nodes with an invalid registration, 2.7% down, 1.9%
 # failed and only 8.7% idle, which is not a working cluster, it is one in
 # permanent crisis. `production` and `incident` below are what a real one
@@ -75,14 +75,14 @@ MODIFIERS = ["", "", "", "", "", "*", "~", "#", "!", "%", "$", "@", "^", "-"]
 # `production` and `incident` share this weighted table: a cluster that is
 # mostly doing work, with idle capacity behind it and only a sliver of
 # anything that needs attention. Weights are percentages measured against a
-# real cluster, not invented — see dev/README.md.
+# real cluster, not invented. See dev/README.md.
 PRODUCTION_STATE_WEIGHTS = [
     ("allocated", 54), ("mixed", 20), ("idle", 15), ("drained", 4),
     ("completing", 2), ("planned", 2), ("down", 1), ("maint", 1), ("fail", 1),
 ]
 # `incident` sweeps 15% of its non-forced nodes into drained/draining
-# explicitly (see _pick_state below); the other 85% draw from this table —
-# the production shape minus `drained` — so that band is what puts drained
+# explicitly (see _pick_state below); the other 85% draw from this table,
+# the production shape minus `drained`, so that band is what puts drained
 # nodes at roughly 15%, rather than stacking on top of production's own 4%.
 INCIDENT_BACKGROUND_WEIGHTS = [(s, w) for s, w in PRODUCTION_STATE_WEIGHTS if s != "drained"]
 
@@ -94,7 +94,7 @@ PRODUCTION_MODIFIER_WEIGHTS = [("", 92.0)] + [
 ]
 
 # dev/relabel/racks.txt calls c[81-120] "rack3". The exporter itself has no
-# way to know that: it reads sinfo, which has no concept of a rack — the same
+# way to know that: it reads sinfo, which has no concept of a rack, the same
 # reason it has no rack label to publish in the first place. An `incident`
 # that wants to take a whole rack down therefore has to pick the block out by
 # node ordinal, matching that table by hand, rather than by asking the

@@ -19,7 +19,7 @@
       "id": 1,
       "type": "gauge",
       "title": "In use",
-      "description": "Nodes running work -- allocated or mixed, and still answering -- over all nodes. Deliberately not the same question as CPU allocated below: a cluster can have every node busy and half its cores idle, and the gap between the two is where the waste is.",
+      "description": "Nodes running work (allocated or mixed, and still answering) over all nodes. Deliberately not the same question as CPU allocated below: a cluster can have every node busy and half its cores idle, and the gap between the two is where the waste is.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -614,7 +614,7 @@
       "id": 9,
       "type": "tomzone-slurm-panel",
       "title": "The floor",
-      "description": "Six cabinets against live Prometheus, two nodes to a blade, each declared at twenty-one slots so the floor is flat and every cabinet keeps one free position visible above its contents. The rack label comes from Prometheus relabelling at scrape time -- the first of the three routes to a topology, and the only one that needs no per-dashboard configuration. Hover a node for its state, its cores, its GPUs and, when it is drained, the reason and how long it has been out.",
+      "description": "Six cabinets against live Prometheus, two nodes to a blade, each declared at twenty-one slots so the floor is flat and every cabinet keeps one free position visible above its contents. The rack label comes from Prometheus relabelling at scrape time, the first of the three routes to a topology and the only one that needs no per-dashboard configuration. Hover a node for its state, its cores, its GPUs and, when it is drained, the reason and how long it has been out.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -726,7 +726,7 @@
       "id": 10,
       "type": "table",
       "title": "Why these nodes are out",
-      "description": "slurm_node_drain_reason_info carries no partition label, so it cannot be joined to slurm_node_status by any stock panel -- which is the gap this plugin was written to close. Here it is as a table for the record; the same join is in every drained node's tooltip on the floor above.",
+      "description": "slurm_node_drain_reason_info carries no partition label, so it cannot be joined to slurm_node_status by any stock panel, which is the gap this plugin was written to close. Here it is as a table for the record; the same join is in every drained node's tooltip on the floor above.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"

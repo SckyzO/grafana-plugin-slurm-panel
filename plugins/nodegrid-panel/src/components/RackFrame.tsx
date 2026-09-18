@@ -18,10 +18,10 @@ const getStyles = (theme: GrafanaTheme2, width: number, height: number, dashed: 
     alignContent: 'flex-start',
     width,
     // An explicit height, not a min-height: rows that do not fit then spill
-    // past the cross-end — the top — outside the frame's border, rather than
+    // past the cross-end, the top, outside the frame's border, rather than
     // growing the cabinet silently past what was declared.
     height,
-    // Sourced from rackGeometry rather than hardcoded here a second time —
+    // Sourced from rackGeometry rather than hardcoded here a second time,
     // sledWidthFor and frameHeight assume these same three numbers, and the
     // two disagreeing is exactly what let a sled overflow the frame before
     // 5ebb879.

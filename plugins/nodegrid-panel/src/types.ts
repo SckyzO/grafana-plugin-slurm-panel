@@ -14,7 +14,7 @@ export interface PanelOptions {
   /**
    * Cell height in pixels. Optional on purpose: the two layouts disagree about
    * the natural shape of a cell, so an unset height derives what that layout
-   * already drew — a square in Wrap, a sled in Rack.
+   * already drew: a square in Wrap, a sled in Rack.
    */
   cellHeight?: number;
   /**
@@ -28,7 +28,7 @@ export interface PanelOptions {
    */
   bladeOverrides: string;
   /**
-   * How many slots — chassis positions, not nodes and not rack units — a
+   * How many slots (chassis positions, not nodes and not rack units) a
    * cabinet is drawn with. Optional on purpose: an unset height levels every
    * cabinet to the tallest one drawn, which is what stops a short rack
    * hanging from the ceiling without anyone declaring anything.
@@ -64,18 +64,18 @@ export const DEFAULT_OPTIONS: PanelOptions = {
   nodesPerBlade: 1,
   bladeOverrides: '',
   // slotsPerRack is deliberately absent, the same way cellHeight is: an empty
-  // field is a real state — "level to the tallest" — rather than a sentinel.
+  // field is a real state, "level to the tallest", rather than a sentinel.
   slotOverrides: '',
   gap: 2,
   // Both true to the panel as it drew before the options existed: the count
   // was always shown, and the cabinets always packed from the left.
   showNodeCount: true,
   centreRacks: false,
-  // On by default, and not as a courtesy. Six theme hues cannot separate
-  // twenty-one states safely: measured on this palette, "not responding"
-  // against "allocated" is Delta E 4.8 under protanopia, below any legal
-  // floor, and no reshuffle of the six fixed it. The shape is what makes the
-  // colour safe, so it ships on and a reader turns it off rather than
+  // On by default, and not as a courtesy. Measured on this palette, "not
+  // responding" against "allocated" is Delta E 4.8 under protanopia, below any
+  // legal floor, and no reshuffle of the six hues fixed it. The shape marks
+  // that pair's family rather than encoding every state, which is what makes
+  // the colour safe, so it ships on and a reader turns it off rather than
   // discovering they needed it.
   shapeChannel: true,
   colorMode: 'state',

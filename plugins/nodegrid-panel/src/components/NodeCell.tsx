@@ -22,8 +22,8 @@ const getStyles = (theme: GrafanaTheme2) => ({
   }),
   // Drawn whenever the cell has no fill to show, whatever the colour mode:
   // a state that matched no mapping, or a node with no data for the
-  // continuous mode in use. Both mean the same thing to a reader — this cell
-  // has nothing to say — and both must look unmistakably unlike a measured
+  // continuous mode in use. Both mean the same thing to a reader, that this
+  // cell has nothing to say, and both must look unmistakably unlike a measured
   // value. Collapsing "no data" into a colour is how a dead node ends up
   // green.
   empty: css({ background: 'transparent', boxShadow: `inset 0 0 0 1.5px ${theme.colors.text.disabled}` }),
@@ -43,9 +43,15 @@ export interface NodeCellProps {
 }
 
 /**
- * The second encoding, off by default. With it on the grid survives
- * greyscale, print, forced-colors and a red-green deficiency whatever
- * palette the site chose.
+ * The second encoding, on by default. Not one shape per state: it separates the
+ * two families the fill could not be trusted to separate and returns undefined
+ * for everything else, so the grid survives greyscale, print, forced-colors and
+ * a red-green deficiency whatever palette the site chose.
+ *
+ * Matched on the mapped display text rather than the raw state, so it follows
+ * whatever Value mappings say instead of keeping a second copy of them. Note
+ * that the tests are substrings: `powered down` therefore takes the same cut as
+ * `down`, though the palette puts them in different families.
  */
 function shapeFor(text: string): string | undefined {
   if (/not responding|drained|maintenance/.test(text)) {
@@ -72,8 +78,8 @@ export function NodeCell({
   const dv = stateDisplay(node.state);
   // Grafana returns early when a value mapping matches, so `percent` is only
   // set when nothing did and the value fell through to the threshold path.
-  // Do not compare text: a mapping whose result equals its input — `idle`
-  // maps to "idle" — is a real match that text comparison reports as a miss.
+  // Do not compare text: a mapping whose result equals its input, as `idle`
+  // maps to "idle", is a real match that text comparison reports as a miss.
   const mapped = dv.percent === undefined;
   const fraction = fractionFor(node, colorMode);
   // One encoding at a time: state as a fill, or utilisation as a fill. A cell
@@ -88,7 +94,7 @@ export function NodeCell({
   // reads as a measured value. The ring was previously applied only in state
   // mode, on the reasoning that a state-mapping ring answers the wrong
   // question in a continuous one. The ring does not mean "unmapped" though,
-  // it means "nothing to show" — which is exactly the case here too. A GPU
+  // it means "nothing to show", which is exactly the case here too. A GPU
   // occupancy grid on a cluster where most nodes have no GPU was coming out
   // as a wall of grey blocks indistinguishable from real readings.
   const filled = background !== undefined;

@@ -15,7 +15,7 @@ const toNumber = (value: unknown): number | undefined =>
 const emptyFacets = (): NodeFacets => ({ gres: [] });
 
 // `IngestWarning.refId` is optional, and under exactOptionalPropertyTypes an
-// optional property may not be explicitly set to `undefined` — it must be
+// optional property may not be explicitly set to `undefined`; it must be
 // present with a real value or left out entirely. `frame.refId` and
 // `queries[facet]` are both `string | undefined`, so build the warning through
 // this helper instead of assigning the raw value into the object literal.
@@ -33,7 +33,7 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
   for (const frame of framesFor(frames, queries.state)) {
     // Narrow to `{ sample, name: string }` here, in the same step that
     // filters, so a later edit to the filter can't silently invalidate a
-    // separate `!` at the point of use — the compiler ties them together.
+    // separate `!` at the point of use, since the compiler ties them together.
     const identified = toSamples(frame).flatMap((sample) => {
       const name = sample.labels[labels.node];
       return typeof name === 'string' ? [{ sample, name }] : [];
@@ -115,7 +115,7 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
       // Under noUncheckedIndexedAccess, `[...values][0]` is `number | undefined`;
       // under exactOptionalPropertyTypes, assigning an explicit `undefined` to
       // `facets[facet]?: number` is a type error. Narrow with a guard instead of
-      // asserting it away — size is always exactly 1 here, but TS can't see that.
+      // asserting it away: size is always exactly 1 here, but TS can't see that.
       const value = [...values][0];
       if (value !== undefined) {
         node.facets[facet] = value;

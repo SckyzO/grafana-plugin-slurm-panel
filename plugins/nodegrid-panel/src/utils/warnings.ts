@@ -42,8 +42,8 @@ const STATE_FLAGS = '*~#!%$@^-';
 
 /**
  * The state without its flag, when it carries one. One unknown state reaches
- * the panel as up to eight distinct strings — `blocked`, `blocked#`,
- * `blocked!`, `blocked%` and so on — and naming each of them turns a single
+ * the panel as up to eight distinct strings (`blocked`, `blocked#`,
+ * `blocked!`, `blocked%` and so on) and naming each of them turns a single
  * actionable fact into a wall of text that says the same thing eight times.
  * The operator has one thing to do either way: write a rule for the state.
  */
@@ -57,7 +57,7 @@ const baseStateOf = (state: string): string => {
  * `allocated+` for a node that is allocated with jobs still completing, and
  * `/^allocated+.*$/` does not mean what it looks like: `d+` is one or more
  * `d`, so the rule also claims anything spelled `allocatedd`. It still matches
- * the real state, because the trailing `.*` absorbs the literal `+` — which is
+ * the real state, because the trailing `.*` absorbs the literal `+`, which is
  * exactly why a rule like that ships without anyone noticing. A name carrying
  * a bracket would not compile at all. Handing someone a rule that is quietly
  * wrong is worse than handing them none.
@@ -86,7 +86,7 @@ const HOSTLIST_ITEM_LIMIT = 8;
  * Capping the length of one line is a different problem from capping how
  * many of them there are: the strip's container is `overflow: hidden`, so an
  * unbounded *count* of short lines eats the grid exactly as one unbounded
- * line would — a duplicated range-table block that renames the copy but not
+ * line would: a duplicated range-table block that renames the copy but not
  * its hostlist can print one problem per claimant and one empty-group line
  * per group it now shadows, and neither of those is capped in number by
  * anything above. This one rule, applied last in `summarise`, covers every
@@ -144,7 +144,7 @@ export interface GroupingNotesInput {
  * A pure function rather than three expressions inside the hook, because this
  * is the part that can be wrong in a way nothing notices: mistype the
  * UNGROUPED lookup and every orphan and empty-group warning vanishes from the
- * panel while the suite stays green — the exact failure these warnings exist
+ * panel while the suite stays green, the exact failure these warnings exist
  * to catch. A hook needs a renderer to test; this does not.
  */
 export function groupingNotes({
@@ -181,8 +181,8 @@ const listOf = (names: string[]): string => {
 };
 
 /**
- * Why these nodes have no group. The condition is identical across sources —
- * the panel could not place them — but the cause is not, and the cause is the
+ * Why these nodes have no group. The condition is identical across sources,
+ * in that the panel could not place them, but the cause is not, and the cause is the
  * only part that tells the operator what to go and fix.
  */
 const causeOf = (source: KeySource, plural: boolean): string => {
@@ -218,7 +218,7 @@ export function summarise(
   if (unmapped.length > 0) {
     // Count and name states, not state-and-flag combinations. Name them rather
     // than only counting, so a state introduced by a Slurm upgrade is
-    // actionable — but cap the list. The panel's container is overflow:hidden,
+    // actionable, but cap the list. The panel's container is overflow:hidden,
     // and an unbounded line eats the grid it annotates.
     const bases = [...new Set(unmapped.map(baseStateOf))].sort();
     const noun = bases.length === 1 ? 'state' : 'states';
@@ -232,7 +232,7 @@ export function summarise(
 
     // Naming the state says what is wrong; this says what to do about it, at
     // the moment it is wrong rather than in a document. The rule is correct as
-    // printed — delimited, whole-value, escaped — because the two ways of
+    // printed (delimited, whole-value, escaped) because the two ways of
     // getting it wrong both fail silently and neither is visible from the
     // Value mappings UI.
     const example = shown[0];
@@ -321,7 +321,7 @@ export function summarise(
     }
     // Worst first, by how far the declaration is from the truth. The strip's
     // line cap is applied once at the end over every source, so a run of
-    // overflow lines can still be the ones truncation reaches — which makes
+    // overflow lines can still be the ones truncation reaches, which makes
     // this order load-bearing rather than cosmetic: the cabinet whose table
     // is most wrong is the one worth keeping. Ties break by size so the
     // order is total.

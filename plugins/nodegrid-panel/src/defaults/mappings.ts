@@ -16,7 +16,7 @@ const rule = (pattern: string, text: string, color: string): ValueMapping => ({
  * Three traps are not visible from the Value mappings UI and all fail silently.
  *
  * 1. Delimit the pattern. Grafana compiles a bare pattern with
- *    stringToJsRegex, which wraps it in ^...$ — so "^idle" becomes /^^idle$/,
+ *    stringToJsRegex, which wraps it in ^...$, so "^idle" becomes /^^idle$/,
  *    an exact match, and "idle*" falls straight through it.
  * 2. Span the whole value. RegexToText substitutes the result for the matched
  *    portion rather than labelling the value, so "/^drain/ -> drained" renders
@@ -31,8 +31,8 @@ const rule = (pattern: string, text: string, color: string): ValueMapping => ({
  *
  * Colour encodes what an operator can do with the node, not which state it is
  * in: there are twenty-one states and no palette distinguishes that many at a
- * glance. Six hues carry six decisions -- it works, it is free, a human claimed
- * it, it stopped answering, it is broken, it is gone -- and the shades inside a
+ * glance. Six hues carry six decisions (it works, it is free, a human claimed
+ * it, it stopped answering, it is broken, it is gone) and the shades inside a
  * hue say the degree, never the decision. The exact state is always in the
  * cell's label and its tooltip.
  *
@@ -47,10 +47,11 @@ const rule = (pattern: string, text: string, color: string): ValueMapping => ({
  * node, which also puts the most common state of a busy cluster at the highest
  * contrast against the background.
  *
- * Six hues still cannot carry every distinction -- `not responding` against
+ * Six hues still cannot carry every distinction: `not responding` against
  * `allocated` measures 4.8 under protanopia and no reshuffle of this palette
- * fixed it. That is why Shape channel is on by default: the second channel is
- * what makes the first one safe.
+ * fixed it. That is why Shape channel is on by default. The shape does not
+ * encode twenty-one states either. It separates the two families the fill could
+ * not (see `shapeFor` in NodeCell), which is what makes that pair safe.
  *
  * Colours are theme names, resolved by the theme. No hex.
  */
@@ -81,8 +82,8 @@ export const DEFAULT_MAPPINGS: ValueMapping[] = [
   rule('/^(planned|plnd).*$/', 'planned', 'light-blue'),
 
   // Purple: a human claimed this node. Drained, under maintenance, reserved or
-  // counting performance events are one decision for the operator -- find out
-  // who and why -- so they are one colour, and the label says which.
+  // counting performance events are one decision for the operator (find out
+  // who and why) so they are one colour, and the label says which.
   rule('/^(drain|drng).*$/', 'drained', 'dark-purple'),
   rule('/^maint.*$/', 'maintenance', 'dark-purple'),
   rule('/^res.*$/', 'reserved', 'dark-purple'),
@@ -92,7 +93,7 @@ export const DEFAULT_MAPPINGS: ValueMapping[] = [
   rule('/^block.*$/', 'blocked', 'orange'),
   rule('/^reboot.*$/', 'reboot', 'orange'),
 
-  // Dark red: broken. Dark on purpose -- this is the half of the red-green
+  // Dark red: broken. Dark on purpose: this is the half of the red-green
   // pair that a deuteranope has to tell from a working node.
   rule('/^(down|fail).*$/', 'down', 'dark-red'),
   rule('/^unk.*$/', 'unknown', 'dark-red'),
