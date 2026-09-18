@@ -1,6 +1,6 @@
 # Cabinet height in the rack layout
 
-**Status:** design approved, not implemented
+**Status:** implemented, shipped in 0.1.0
 **Scope:** the panel's rack layout only. No change to the group model, to
 ingest, to any grouping source, or to the wrap layout.
 
@@ -15,8 +15,8 @@ introduced. That design argues every cabinet must share a **width**, because a
 floor plan whose cabinets differ in width does not read as a floor plan, and
 then leaves **height** free. The same argument covers both.
 
-It predates blades — two racks of different sizes already drew at different
-heights — and blades amplify it, since a cabinet of quads becomes short while
+It predates blades (two racks of different sizes already drew at different
+heights) and blades amplify it, since a cabinet of quads becomes short while
 one of duos stays tall.
 
 Every demonstration hides it: all six racks in the dev fixture hold exactly
@@ -26,23 +26,23 @@ masked a real defect.
 
 ## What a slot is
 
-A **slot is one row in the cabinet** — one chassis position. It is not a node
+A **slot is one row in the cabinet**, one chassis position. It is not a node
 and it is not a rack unit.
 
 The distinction only matters once blades exist, and then it matters a great
 deal. A row holds as many nodes as its blade carries, so a 42-slot cabinet
-holds 42 nodes of duos on 21 slots, or 160 nodes of quads on 40 slots. Slots
+holds 42 nodes of single-node servers, 84 of duos and 168 of quads. Slots
 are the unit that stays true when the hardware inside changes, which is
 exactly the property a height needs: a 42U cabinet is a 42U cabinet whether it
 is filled with single-node servers or with quad chassis.
 
 Declaring a height in **nodes** would have the opposite property. On a floor
 where every cabinet is physically identical but the blades differ, a capacity
-in nodes would draw them at different heights — reintroducing the defect this
+in nodes would draw them at different heights, reintroducing the defect this
 design exists to remove.
 
-For the 95% of clusters that never leave `Nodes per blade` at 1, the two units
-coincide and the distinction costs nothing.
+On any cluster that never leaves `Nodes per blade` at 1, which is most of
+them, the two units coincide and the distinction costs nothing.
 
 ## The word was freed before it was used
 
@@ -53,8 +53,8 @@ second was visible to operators, in the same warning strip these new lines
 land in.
 
 Both were renamed first, in their own commits, before this design claimed the
-word: `cellCount` for the drawn position — its doc comment already read "Cells
-drawn" — and `QueryBindings` / `options.queries` for the bindings, whose
+word: `cellCount` for the drawn position, whose doc comment already read "Cells
+drawn", and `QueryBindings` / `options.queries` for the bindings, whose
 option label has always read "State query". Renaming a stored option path
 stops being free at publication, so the window for the second one closed with
 this release.
@@ -70,13 +70,13 @@ For each drawn group:
 |---|---|
 | The group appears in the Slots-per-rack table | its declared slot count |
 | The table is silent and `Slots per rack` is set | that number |
-| Neither | the tallest cabinet in the panel — declared **or** filled |
+| Neither | the tallest cabinet in the panel, declared **or** filled |
 
 The third case is the default, and it is a deliberate change of default
 behaviour: a reader who never opens either option sees cabinets standing on a
 common floor where today they hang from the ceiling. It is justified by parity
 with width, which is already levelled panel-wide by the densest blade without
-anyone asking for it, and it costs no vertical space — the row already
+anyone asking for it, and it costs no vertical space: the row already
 reserves the height of its tallest cabinet.
 
 The corollary is intentional: a group declared `rack2: 20` **stays** at twenty
@@ -114,7 +114,7 @@ Description: *Leave empty to level every cabinet to the tallest one drawn.*
 
 ### Slots per rack, by group
 
-A textarea, `addCustomEditor` with `<TextArea>` from `@grafana/ui` —
+A textarea, `addCustomEditor` with `<TextArea>` from `@grafana/ui`, because
 `addTextAreaInput` does not exist on `PanelOptionsEditorBuilder`. One line per
 declaration: a Slurm hostlist of **group** names, a colon, a slot count.
 
@@ -145,8 +145,8 @@ export interface SlotTable { slots: Map<string, number>; problems: SlotProblem[]
 export function parseSlotTable(table: string): SlotTable;
 ```
 
-`MAX_SLOT` is 64 because it sits above any cabinet that exists — the tallest
-standard rack is 60U — and because a bound is what stops a typo turning one
+`MAX_SLOT` is 64 because it sits above any cabinet that exists (the tallest
+standard rack is 60U) and because a bound is what stops a typo turning one
 cabinet into a column of a thousand rows.
 
 The problem strings are load-bearing; tests assert them verbatim:
@@ -188,17 +188,18 @@ Unlike the width, the height has no `floor()` on the row content, so every
 term of that part of the formula is visible in the result and a literal
 assertion detects a missing one.
 
-The result never falls below `MIN_FRAME_HEIGHT`, 24 pixels — `theme.spacing(3)`
-— so a cabinet with one node, or none, is still a cabinet rather than a hairline.
-That floor lives in the arithmetic rather than in `RackFrame`'s stylesheet on
-purpose: a CSS `min-height` is a second path to the frame's height that
-`layoutSlots` cannot see, and a one-row cabinet rendered at 24 inside a band
-sized at 17 would overflow the band this design exists to seat it in.
+The result never falls below `MIN_FRAME_HEIGHT`, 24 pixels, which is
+`theme.spacing(3)`, so a cabinet with one node, or none, is still a cabinet
+rather than a hairline. That floor lives in the arithmetic rather than in
+`RackFrame`'s stylesheet on purpose: a CSS `min-height` is a second path to
+the frame's height that `layoutSlots` cannot see, and a one-row cabinet
+rendered at 24 inside a band sized at 17 would overflow the band this design
+exists to seat it in.
 
 ### The band, and why declared-shorter cabinets still stand on the floor
 
 Explicit heights that legitimately differ would reintroduce the original
-defect under `alignItems: 'flex-start'` — a cabinet declared at twenty slots
+defect under `alignItems: 'flex-start'`: a cabinet declared at twenty slots
 would hang from the top of the row.
 
 Each cabinet is therefore drawn inside a **band** of one shared height, with
@@ -219,8 +220,8 @@ so by construction rather than by luck.
 
 A new `layoutSlots` sits **beside** `layoutBlades` in
 `plugins/nodegrid-panel/src/components/rackGeometry.ts`, not inside it. It
-consumes the `BladeLayout` — it needs each group's blade to convert nodes into
-rows — and that dependency is explicit in its input rather than hidden in a
+consumes the `BladeLayout`, since it needs each group's blade to convert nodes
+into rows, and that dependency is explicit in its input rather than hidden in a
 merged function. Two pure functions, each testable alone, and no rename
 cascading through `NodeGroup`, `RackFrame` and their tests.
 
@@ -228,7 +229,7 @@ cascading through `NodeGroup`, `RackFrame` and their tests.
 export interface SlotLayoutInput {
   /**
    * The groups the panel is actually drawing, in draw order, each with its
-   * node count — one structure rather than a key list beside a count map.
+   * node count: one structure rather than a key list beside a count map.
    * Two structures that must cover the same keys, with nothing forcing them
    * to, is how a `?? 0` ends up drawing a silently empty cabinet.
    */
@@ -261,7 +262,7 @@ export function layoutSlots(input: SlotLayoutInput): SlotLayout;
 Resolution order:
 
 1. `rowsNeeded(key) = ceil(group.nodes / blades.sizeOf(group.key))`
-2. `declaredFor(key) = declared.get(key) ?? fallback` — may be `undefined`
+2. `declaredFor(key) = declared.get(key) ?? fallback`, which may be `undefined`
 3. `panelRows = max over drawn groups of (declaredFor(key) ?? rowsNeeded(key))`
 4. `slotsOf(key) = declaredFor(key) ?? panelRows`
 5. `heightOf(key) = frameHeight(slotsOf(key), cellHeight)`
@@ -270,10 +271,10 @@ Resolution order:
 Step 3 is what makes an undeclared cabinet level to a *declared* neighbour as
 well as to a filled one. It also yields an invariant worth stating, because it
 bounds the overflow case: a levelled group takes `panelRows`, which is at
-least its own `rowsNeeded`, so **only a group with an effective declaration —
-a table entry or the panel-wide number — can overflow.**
+least its own `rowsNeeded`, so **only a group with an effective declaration,
+a table entry or the panel-wide number, can overflow.**
 
-`undrawn` is computed the way `layoutBlades` computes it — a declaration for a
+`undrawn` is computed the way `layoutBlades` computes it: a declaration for a
 cabinet the query did not return is worth saying, and must not change the
 height of the ones it did, so only drawn groups feed `panelRows`.
 
@@ -281,8 +282,8 @@ height of the ones it did, so only drawn groups feed `panelRows`.
 
 The declared height is set as `height`, not `min-height`. The frame fills from
 the bottom (`flex-wrap: wrap-reverse` with `align-content: flex-start`), so
-rows that do not fit render past the cross-end, which is the **top** — outside
-the frame's border, which is the drawing that was chosen over truncating and
+rows that do not fit render past the cross-end, which is the **top**, outside
+the frame's border. That is the drawing that was chosen over truncating and
 over growing in silence.
 
 Truncating was rejected outright: this is a supervision panel, and a node that
@@ -293,7 +294,7 @@ anomaly.
 
 Overflow is **unbounded by design**, and that is the price of refusing to
 truncate. A group declared at ten slots whose query returns two hundred rows
-makes `bandRows` two hundred, so every cabinet's band — and the panel — grows
+makes `bandRows` two hundred, so every cabinet's band, and the panel, grows
 to match. The drawing is then ugly and the warning says why, which is the
 correct order: a panel that is hard to look at because the declaration is
 wrong beats a panel that looks right by hiding nodes.
@@ -302,7 +303,7 @@ Two properties here cannot be seen by any unit test and must be verified in a
 real browser before the work is called done:
 
 1. that the overflow renders **above** the frame rather than below it, and
-2. that it does not paint over the group header — `bandRows` is intended to
+2. that it does not paint over the group header. `bandRows` is intended to
    reserve the room, and that intent has to be confirmed against a rendered
    page, not asserted from the formula that produced it.
 
@@ -354,11 +355,11 @@ comparison the panel actually made.
 
 ## Testing
 
-- **`packages/core/test/slots.test.ts`** — the parser, including every problem
+- **`packages/core/test/slots.test.ts`**: the parser, including every problem
   string verbatim. The path matters: `packages/core/jest.config.js` sets
   `testMatch: ['<rootDir>/test/**/*.test.ts']`, so a test written under `src/`
   is never run and passes silently.
-- **`rackGeometry` unit tests** — `layoutSlots` resolution, the levelling rule,
+- **`rackGeometry` unit tests**: `layoutSlots` resolution, the levelling rule,
   the declared-wins rule, and the only-declared-can-overflow invariant. At
   least two **literal** height assertions, chosen so that dropping any term of
   the formula changes the number: at `cellHeight` 7, `frameHeight(4, 7)` is 44 and
@@ -366,9 +367,9 @@ comparison the panel actually made.
   formula under test cannot detect an error in that formula, which is precisely
   how the two-pixel width defect survived.
 - **A browser test** for the two overflow properties above, reading geometry
-  back off the rendered element rather than recomputing it — the same idiom as
+  back off the rendered element rather than recomputing it, the same idiom as
   the test that pinned the border fix.
-- **e2e** — the provisioned blades panel gains a slot declaration, so the
+- **e2e**: the provisioned blades panel gains a slot declaration, so the
   mixed-blade floor is also a mixed-height floor. The dev fixture's six
   identical racks are what hid this defect; the regression suite should not
   inherit that regularity.
@@ -377,7 +378,7 @@ comparison the panel actually made.
 
 - **Rack units.** A slot is a chassis position, not a U. A 2U quad chassis
   occupies one slot here and two U in the cabinet. Modelling U would mean
-  per-chassis heights, and that is a DCIM tool rather than a Grafana panel —
+  per-chassis heights, and that is a DCIM tool rather than a Grafana panel,
   the same boundary the blade design drew when it refused 2-above-2.
 - **Reserved slots.** Switches, PDUs and blanking panels are not nodes, the
   exporter does not publish them, and the panel does not invent them. A
@@ -387,3 +388,13 @@ comparison the panel actually made.
   rung of topology and belong to whoever owns the inventory, not to the panel.
 - **Per-slot labels.** No ruler down the side of the cabinet. If it is needed,
   it is a separate change with its own argument.
+
+## Revision (2026-09-18)
+
+Read back against the implementation before tagging 0.1.0.
+
+| Was | Is |
+|---|---|
+| `**Status:** design approved, not implemented` | Implemented. `packages/core/src/layout/slots.ts`, `layoutSlots` in `rackGeometry.ts`, and the e2e block `cabinet height, against the same live data` |
+| `frameHeight` adds `RACK_BORDER * 2` | The vertical chrome is asymmetric: `RACK_PADDING * 2 + RACK_BORDER + RACK_FOOT`, because the cabinet's foot is heavier than its top edge. The width formula is the symmetric one; this axis is not |
+| "a 42-slot cabinet holds 42 nodes of duos on 21 slots, or 160 nodes of quads on 40 slots" | 42 slots hold 42 nodes of single-node servers, 84 of duos and 168 of quads. The old sentence mixed a cabinet's capacity with the slots a fixed node count needs |

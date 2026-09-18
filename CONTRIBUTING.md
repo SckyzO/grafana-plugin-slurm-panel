@@ -36,8 +36,8 @@ what stops that from depending on what a contributor happens to have.
 ## Working on it
 
 ```bash
-make check   # lint, typecheck, every test, build, React 19 scan — what CI runs
-make up      # Grafana on http://localhost:3000 with the panel loaded
+make check   # lint, typecheck, every test, build, React 19 scan (what CI runs)
+make up      # start the stack; prints the Grafana URL when it is ready
 make e2e     # Playwright against that stack
 make watch   # rebuild the panel on change; Grafana picks it up live
 make shell   # a shell inside the toolchain container
@@ -45,7 +45,7 @@ make clean   # drop the stack, the volumes and the build output
 ```
 
 Adding or bumping a dependency means editing the `package.json` and then
-running `make lock` once — every other target installs with
+running `make lock` once. Every other target installs with
 `--frozen-lockfile`, which is what makes a build reproducible and what lets CI
 check the lockfile against the supply-chain policies.
 
@@ -53,7 +53,7 @@ check the lockfile against the supply-chain policies.
 stack and waits for Grafana to answer before it runs a test, so there is no
 separate setup step and nothing CI does that you do not.
 
-Do not run `pnpm` on the host — not to work around a slow container, not for
+Do not run `pnpm` on the host: not to work around a slow container, not for
 your editor. The moment a command needs a toolchain the image does not have,
 that belongs in the image.
 
@@ -69,7 +69,7 @@ before its code and each answering *why* rather than *what*:
 | | |
 |---|---|
 | `2026-09-12-slurm-node-grid-design.md` | The panel itself: what a cell is, where colour comes from, why the plugin hardcodes none of it |
-| `2026-09-15-node-grouping-design.md` | How a node finds its group. Three routes separated by the privilege each needs — Prometheus relabelling, a join transformation, a declared range table — and why the panel is never the source of the topology |
+| `2026-09-15-node-grouping-design.md` | How a node finds its group. Three routes separated by the privilege each needs (Prometheus relabelling, a join transformation, a declared range table), and why the panel is never the source of the topology |
 | `2026-09-16-blade-density-design.md` | Several nodes in one cabinet slot, and why a blade here is a count rather than a shape |
 | `2026-09-16-cabinet-height-design.md` | How tall a cabinet is drawn, why height is declared in slots rather than nodes, and why an undeclared cabinet levels to the tallest on the floor |
 
@@ -80,7 +80,7 @@ the part that does not survive in the code.
 ## Why `packages/core` imports nothing from Grafana
 
 `@grafana/data` touches `window` and `document` at import time and throws
-under plain Node — there is no way to import it outside a DOM. Keeping the
+under plain Node; there is no way to import it outside a DOM. Keeping the
 engine (ingest, state parsing, grouping) free of any Grafana import is what
 lets its tests run under plain Node with nothing more than `jest`, no browser
 and no Grafana instance, and it is what keeps the panel itself thin: the
@@ -95,7 +95,7 @@ logic belongs in the panel package instead.
 A bug fix lands with a test that fails against the code before the fix and
 passes after it. Writing the fix first and the test after tends to produce a
 test that only exercises the fixed behaviour, which proves nothing about the
-bug it was meant to catch — run the new test against the pre-fix code and
+bug it was meant to catch. Run the new test against the pre-fix code and
 confirm it fails before committing either.
 
 ## Commits
@@ -111,7 +111,7 @@ percent, not text`. Scope names the workspace or area affected (`panel`,
 `dev/.env` and CI pin `GRAFANA_VERSION` to an exact tag. `docker compose up
 -d` does not recreate a container whose image tag it already has running, so
 a floating `:latest` silently keeps whatever version happened to be pulled
-first — it does not track new releases the way the tag name implies. Bump
+first; it does not track new releases the way the tag name implies. Bump
 `GRAFANA_VERSION` deliberately, in its own commit, and say in the message
 which version and why.
 
@@ -119,11 +119,11 @@ which version and why.
 
 `pnpm-workspace.yaml`'s `strictDepBuilds`, `minimumReleaseAge`,
 `blockExoticSubdeps` and `allowBuilds` are not defaults left over from
-scaffolding — they were chosen deliberately and are checked in CI. Each
+scaffolding: they were chosen deliberately and are checked in CI. Each
 `false` entry under `allowBuilds` is a recorded decision that a specific
 package does not get to run its install scripts, not a placeholder; nothing
 here is approved to build. If a dependency's install fails because of one of
 these controls, that is the control doing its job. Fix the underlying cause
-— pin an older release that clears `minimumReleaseAge`, find an alternative
-package, or bring a specific, justified exception to review — rather than
-loosening the setting to make the install succeed.
+rather than loosening the setting to make the install succeed: pin an older
+release that clears `minimumReleaseAge`, find an alternative package, or bring
+a specific, justified exception to review.

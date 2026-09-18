@@ -1,4 +1,4 @@
-# Design notes — Slurm node grid
+# Design notes: the Slurm node grid
 
 What was measured, and what the panel does with it. This is **not** a token file:
 the plugin hardcodes no colour. Grafana's documented best practice is to take
@@ -10,7 +10,7 @@ section of the spec.
 
 A Grafana panel inherits its background, its typeface and its theme. Grafana
 draws the frame, the title and the padding. So this design covers **the cell
-geometry, the grid, the group header, the node card and the layout** — and
+geometry, the grid, the group header, the node card and the layout**, and
 nothing else. No brand surface, no display face, no imported font, no palette.
 
 ```ts
@@ -30,28 +30,40 @@ const theme = useTheme2();
 The panel ships **default value mappings**, not a palette. Defaults use theme
 colour names, never hex.
 
-The shipped defaults are delimited, whole-value regexes:
+The shipped defaults, in order, are delimited whole-value regexes. They are
+transcribed from `defaults/mappings.ts`; if the two disagree, the source is
+right:
 
 ```
- 1.  /^.*\*$/            →  not responding
- 2.  /^.*~$/             →  powered down
- 3.  /^idle.*-$/         →  idle, backfill
- 4.  /^idle.*$/          →  idle
- 5.  /^mixed.*-$/        →  mixed, backfill
- 6.  /^mixed.*$/         →  mixed
- 7.  /^alloc.*-$/        →  allocated, backfill
- 8.  /^alloc.*$/         →  allocated
- 9.  /^drain.*$/         →  drained
-10.  /^(down|fail).*$/   →  down
-11.  /^maint.*$/         →  maintenance
+ 1.  /^.*\*$/              →  not responding
+ 2.  /^.*~$/               →  powered down
+ 3.  /^alloc.*-$/          →  allocated, backfill
+ 4.  /^alloc.*$/           →  allocated
+ 5.  /^mix.*-$/            →  mixed, backfill
+ 6.  /^mix.*$/             →  mixed
+ 7.  /^comp.*$/            →  completing
+ 8.  /^idle.*-$/           →  idle, backfill
+ 9.  /^idle.*$/            →  idle
+10.  /^(planned|plnd).*$/  →  planned
+11.  /^(drain|drng).*$/    →  drained
+12.  /^maint.*$/           →  maintenance
+13.  /^res.*$/             →  reserved
+14.  /^(npc|perfctrs).*$/  →  perf counters
+15.  /^block.*$/           →  blocked
+16.  /^reboot.*$/          →  reboot
+17.  /^(down|fail).*$/     →  down
+18.  /^unk.*$/             →  unknown
+19.  /^inval.*$/           →  invalid registration
+20.  /^pow.*$/             →  power management
+21.  /^fut.*$/             →  future
 ```
 
-Three rules govern that list, and two of them are not visible from the Value
+Four rules govern that list, and three of them are not visible from the Value
 mappings UI:
 
 - **Specific before general.** Rule 4 placed before rule 1 swallows `idle*`, and
   a node the controller cannot reach reads as healthy.
-- **Delimit the pattern.** A bare `^idle` is compiled by Grafana as `/^^idle$/` —
+- **Delimit the pattern.** A bare `^idle` is compiled by Grafana as `/^^idle$/`,
   an exact match. It fails silently and looks correct.
 - **Anchor a modifier at the end, not after the base.** The suffix follows the
   *full* state name. `/^alloc-.*$/` looks right and matches nothing, because the
@@ -62,7 +74,7 @@ mappings UI:
 
 ## The colour-vision measurements
 
-Run with the `dataviz` palette validator against both Grafana surfaces —
+Run with the `dataviz` palette validator against both Grafana surfaces:
 `#ffffff` light, `#181b1f` dark, all pairs. Kept here because they inform an
 option, not because the plugin implements them.
 
@@ -80,37 +92,45 @@ on the healthy state, not from hunting a better green. Roughly 8% of men have a
 red-green deficiency, and on a wallboard read across a room that is a functional
 failure rather than an aesthetic one.
 
-**A wall of saturated green hides what matters.** On a healthy cluster 95% of
-cells are OK. Loud green fills the screen and the three red cells the panel
+**A wall of saturated green hides what matters.** On a healthy cluster nearly
+every cell is OK. Loud green fills the screen and the three red cells the panel
 exists to reveal become three pixels in a shouting field. A car dashboard has no
 green light for "the engine is fine".
 
 The panel does **not** impose this. Colour follows Grafana, and a site that wants
 green sets green. What the measurements justify is the option below.
 
-## The shape channel — an option, off by default
+## The shape channel, an option that ships on
 
 A cell can carry its state as a shape as well as a fill. With it on, the grid
 stays readable in greyscale, in print, under `forced-colors`, and with a
-red-green deficiency — whatever palette the site chose.
+red-green deficiency, whatever palette the site chose.
+
+The shape is not a second alphabet for every state. It marks the two families
+the fill could not be trusted to separate and leaves the rest alone:
 
 ```
-OK        plain square
-WARN      top-right corner cut
-CRIT      full diagonal
-UNKNOWN   no fill, inset ring
+not responding, drained, maintenance   top-right corner cut
+down, powered down                     bottom-right corner cut
+everything else                        plain square
 ```
 
-Off by default: the default should look like every other Grafana panel in the
-dashboard. On for sites that need the second channel, or that put the panel on a
-wall.
+On by default, because no fill-only arrangement of this palette separated `not
+responding` from `allocated`: the two sit at ΔE 4.8 under protanopia. A site
+that would rather the panel looked like every other one in the dashboard turns
+it off.
+
+A cell with nothing to show, a state no mapping covers or a node with no data in
+a continuous mode, is drawn as a hollow ring rather than filled. That one does
+not depend on the option: refusing a colour is not a second channel, it is the
+absence of the first.
 
 ## Geometry
 
 | Element | Rule |
 |---|---|
-| Cell | square, no border radius below 20px — rounding eats the colour that carries the meaning |
-| Cell gap | `theme.spacing(0.25)`–`(0.5)`; the gap is what makes a grid readable, not a border |
+| Cell | square, no border radius below 20px; rounding eats the colour that carries the meaning |
+| Cell gap | `theme.spacing(0.25)` to `(0.5)`; the gap is what makes a grid readable, not a border |
 | Group header | one line, a rail carrying the rolled-up state |
 | Rack slot | wide and short (a 1U sled), stacked bottom-up inside a frame with a heavier bottom edge |
 | Chrome | no cards, no shadows, no radius on containers |
@@ -126,7 +146,7 @@ rather than shrinking past it.
 
 The inherited Grafana UI face for everything, with one exception: **node
 identifiers are monospaced**. `c04`, `r012c04n03` and `g10` are fixed-width
-tokens that get aligned in columns and compared character by character — tabular
+tokens that get aligned in columns and compared character by character: tabular
 data, not a small-label decoration. Use the stack Grafana already ships; import
 no font.
 

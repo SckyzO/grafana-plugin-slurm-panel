@@ -1,8 +1,9 @@
-# Slurm Node Grid — design
+# Slurm Node Grid: design
 
 Slice 1 of `slurm-views`. Written 2026-09-12, revised 2026-09-14 after checking
 every mechanism against the Grafana plugin documentation rather than against
-memory. What changed and why is recorded in *Revision*, at the end.
+memory, and again on 2026-09-17. What changed and why is recorded in the
+*Revision* sections at the end.
 
 ## Why this exists
 
@@ -33,7 +34,7 @@ In:
 
 - One Grafana panel plugin rendering one cell per Slurm node.
 - Grouping by a key that comes from a label, a capture on the node name, or a
-  chunk of the node ordinal — so a cluster can be read as racks without any
+  chunk of the node ordinal, so a cluster can be read as racks without any
   inventory.
 - A rack-shaped layout: each group as a fixed-width column of wide, short slots.
 - A tooltip carrying the facts a drained node's owner needs: reason, age, CPU,
@@ -45,7 +46,7 @@ In:
 
 Out, deliberately, and each is its own later slice:
 
-- **Named views** — switchable presets bundling a grouping, a colour mode and a
+- **Named views**: switchable presets bundling a grouping, a colour mode and a
   filter, selected from the panel rather than from the options editor. Deferred
   on purpose: which groupings deserve a preset is a question the real cluster
   answers better than we can now. Slice 1bis, not "someday".
@@ -60,7 +61,7 @@ Out, deliberately, and each is its own later slice:
 ## Decisions taken, and why
 
 **A dedicated repository with its own engine.** `datacenter-view` next door
-solves an adjacent problem — where hardware physically sits — and some of its
+solves an adjacent problem, where hardware physically sits, and some of its
 engine would be reusable. It is a different project with a different premise and
 its own release cadence, so `slurm-views` carries its own engine. The duplication
 is accepted knowingly; the two answer different questions and are expected to
@@ -71,8 +72,8 @@ diverge.
 credential.
 
 **Grafana's mechanisms, not our own.** Where Grafana already has a first-class
-way to do something — colour from field config, value mappings, thresholds, data
-links, standard options — the panel uses it rather than inventing a parallel one.
+way to do something (colour from field config, value mappings, thresholds, data
+links, standard options) the panel uses it rather than inventing a parallel one.
 This is the decision that shrank the slice the most; see *Colour and options*.
 
 **The panel owns node de-duplication.** Identity is the `node` label. Several
@@ -83,8 +84,8 @@ the join with `reason`, which is the specific thing this panel exists to fix.
 
 **Grouping may duplicate, and says so.** When the grouping label is one a node
 can hold several values of, the node appears in each group. The header states
-both numbers: `20 nodes · 25 slots`. A count that silently disagrees with `sinfo`
-is worse than no count.
+both numbers: `20 nodes drawn in 25 cells`. A count that silently disagrees
+with `sinfo` is worse than no count.
 
 ## Toolchain and compatibility
 
@@ -94,7 +95,7 @@ Verified against the plugin documentation on 2026-09-14, not assumed.
 |---|---|
 | Current Grafana | **13.2.1** (`grafana/grafana:latest`), which runs **React 19** |
 | `grafanaDependency` | `>=12.3.0` |
-| `react` / `react-dom` | `^18.3.0` — the plugin does **not** move to 19 |
+| `react` / `react-dom` | `^18.3.0`; the plugin does **not** move to 19 |
 | `react/jsx-runtime`, `react/jsx-dev-runtime` | externalised via `create-plugin add externalize-jsx-runtime` |
 | `@grafana/data`, `runtime`, `schema`, `ui` | `^12.2.0` or later |
 | Lint | ESLint 9 flat config (`eslint.config.js`) |
@@ -114,7 +115,7 @@ An npm workspaces monorepo, Node >= 22.
 slurm-views/
 ├── packages/core/            the engine. No Grafana import, no DOM.
 │   ├── ingest/frames.ts      Prometheus frames -> SlurmNode[]
-│   ├── state/parse.ts        "idle*" -> { base, modifiers } — for display text
+│   ├── state/parse.ts        "idle*" -> { base, modifiers }, for display text
 │   ├── group/keys.ts         label | capture | chunk -> a grouping key
 │   └── group/build.ts        grouping, overlap allowed
 ├── plugins/nodegrid-panel/   tomzone-slurm-panel
@@ -132,11 +133,11 @@ panel thin.
 
 ## Data contract
 
-One required query, and a set of optional named facet slots. Each slot is bound
+One required query, and a set of optional named facet roles. Each role is bound
 to a query `refId` in the panel options; the provisioned dashboard supplies the
 queries.
 
-| Slot | Default query | Shape |
+| Role | Default query | Shape |
 |---|---|---|
 | `state` (required) | `slurm_node_status` | identity `node`, state read from the `status` label |
 | `cpuAlloc` / `cpuTotal` | `slurm_node_cpu_alloc` / `slurm_node_cpu_total` | scalar |
@@ -145,7 +146,7 @@ queries.
 | `drainReason` | `slurm_node_drain_reason_info` | value read from the `reason` label |
 | `drainSince` | `time() - slurm_node_drain_since_timestamp_seconds` | scalar, seconds |
 
-Named slots rather than a generic facet system: the tooltip has to know that
+Named roles rather than a generic facet system: the tooltip has to know that
 `gresUsed` is keyed per GPU model and that `drainSince` is an age in seconds, and
 a generic mechanism would push that knowledge into options the operator would
 have to configure correctly before seeing anything.
@@ -153,8 +154,8 @@ have to configure correctly before seeing anything.
 Label names are options, defaulting to what `slurm_exporter` emits. The engine
 never hardcodes a label name.
 
-Ingest handles both shapes Prometheus returns — the labels-on-field shape of a
-`numeric-multi` result, and the table shape with label columns — because a panel
+Ingest handles both shapes Prometheus returns, the labels-on-field shape of a
+`numeric-multi` result and the table shape with label columns, because a panel
 that reads only one of them sees no labels at all on the other.
 
 ## Reading a Slurm state
@@ -184,11 +185,11 @@ down pending · `%` powering down · `$` maintenance reservation · `@` reboot
 pending · `^` reboot issued · `-` planned by the backfill scheduler.
 
 The engine parses `status` into `{ base, modifiers }` **for the display text
-only** — so the tooltip can say `mixed, planned by backfill` instead of `mixed-`.
+only**, so the tooltip can say `mixed, planned by backfill` instead of `mixed-`.
 It does not derive severity from it; that is Grafana's job. An unrecognised
 trailing character is kept as part of the base state rather than guessed at.
 
-## Colour and options — the Grafana way
+## Colour and options: the Grafana way
 
 Colour is never chosen by this panel and never hardcoded. It comes out of the
 field config, resolved against the theme:
@@ -205,10 +206,10 @@ same colour, so it is covered by an end-to-end test rather than trusted.
 
 | Question | Grafana section | Not ours |
 |---|---|---|
-| which state is which colour | **Value mappings** — exact and regex, ordered, first match wins, with a theme colour picker | a custom drag-and-drop editor |
+| which state is which colour | **Value mappings**: exact and regex, ordered, first match wins, with a theme colour picker | a custom drag-and-drop editor |
 | continuous colour for CPU / memory / GPU fill | **Thresholds** | our own scale |
-| click-through | **Data links** — `DataLinksContextMenu`, `displayValue.getLinks` | a custom link option |
-| units, min/max, display name | **Standard options** | — |
+| click-through | **Data links**: `DataLinksContextMenu`, `displayValue.getLinks` | a custom link option |
+| units, min/max, display name | **Standard options** | none |
 
 This replaces the two drag-and-drop lists an earlier draft specified. Grafana's
 value mappings already express state-to-colour with regex support, in a UI
@@ -228,9 +229,9 @@ pattern with `stringToJsRegex`, which wraps anything not delimited by slashes in
 `^...$`:
 
 ```
-"^idle"        compiles to  /^^idle$/        — an exact match on "idle"
-"^down|^fail"  compiles to  /^^down|^fail$/  — branch 1 unanchored, branch 2 exact
-"/^idle/"      compiles to  /^idle/          — the prefix rule actually intended
+"^idle"        compiles to  /^^idle$/        an exact match on "idle"
+"^down|^fail"  compiles to  /^^down|^fail$/  branch 1 unanchored, branch 2 exact
+"/^idle/"      compiles to  /^idle/          the prefix rule actually intended
 ```
 
 So a rule typed as `^idle` silently stops being a prefix rule, and `idle*` falls
@@ -238,7 +239,7 @@ through it. The delimited form is the only one that means what it looks like.
 
 **`RegexToText` replaces the match, it does not label the value.** The result
 text is substituted for the matched portion, and whatever the pattern did not
-consume stays glued to it — `/^drain/ → "drained"` turns `drained` into
+consume stays glued to it: `/^drain/ → "drained"` turns `drained` into
 `draineded`, and `/\*$/ → "not responding"` turns `idle*` into
 `idlenot responding`. The pattern must therefore span the whole value.
 
@@ -246,18 +247,31 @@ Both corrections together give the shipped set: delimited, whole-value, specific
 before general.
 
 ```
- 1.  /^.*\*$/            →  "not responding"    a modifier rule must precede
- 2.  /^.*~$/             →  "powered down"      the base rule that would
- 3.  /^idle.*-$/         →  "idle, backfill"    otherwise swallow it
- 4.  /^idle.*$/          →  "idle"
- 5.  /^mixed.*-$/        →  "mixed, backfill"
- 6.  /^mixed.*$/         →  "mixed"
- 7.  /^alloc.*-$/        →  "allocated, backfill"
- 8.  /^alloc.*$/         →  "allocated"
- 9.  /^drain.*$/         →  "drained"
-10.  /^(down|fail).*$/   →  "down"
-11.  /^maint.*$/         →  "maintenance"
+ 1.  /^.*\*$/              →  "not responding"
+ 2.  /^.*~$/               →  "powered down"
+ 3.  /^alloc.*-$/          →  "allocated, backfill"
+ 4.  /^alloc.*$/           →  "allocated"
+ 5.  /^mix.*-$/            →  "mixed, backfill"
+ 6.  /^mix.*$/             →  "mixed"
+ 7.  /^comp.*$/            →  "completing"
+ 8.  /^idle.*-$/           →  "idle, backfill"
+ 9.  /^idle.*$/            →  "idle"
+10.  /^(planned|plnd).*$/  →  "planned"
+11.  /^(drain|drng).*$/    →  "drained"
+12.  /^maint.*$/           →  "maintenance"
+13.  /^res.*$/             →  "reserved"
+14.  /^(npc|perfctrs).*$/  →  "perf counters"
+15.  /^block.*$/           →  "blocked"
+16.  /^reboot.*$/          →  "reboot"
+17.  /^(down|fail).*$/     →  "down"
+18.  /^unk.*$/             →  "unknown"
+19.  /^inval.*$/           →  "invalid registration"
+20.  /^pow.*$/             →  "power management"
+21.  /^fut.*$/             →  "future"
 ```
+
+The two suffix rules lead because a modifier rule must precede the base rule
+that would otherwise swallow it.
 
 A modifier rule anchors the modifier at the **end**, not after the base: the
 suffix follows the *full* state name, and several of these rules abbreviate it.
@@ -266,24 +280,25 @@ and the `-` never follows `alloc` directly. `/^alloc.*-$/` is the form that work
 and it is used uniformly so no rule depends on whether its prefix happens to be a
 complete base state.
 
-Ordering is still load-bearing — rule 4 placed before rule 1 puts an unreachable
-node back to reading as healthy — but the anchoring trap is the one that bites
-first, because it fails silently and looks right. States matching nothing
-(`perfctrs`, `blocked`, `inval`) keep their raw text; with thresholds always
-configured, Grafana would otherwise colour them with the threshold base colour —
-green — so the panel refuses that colour for an unmapped state and draws a
-hollow ring instead, which is the behaviour *Error handling* asks for.
+Ordering is still load-bearing (rule 4 placed before rule 1 puts an
+unreachable node back to reading as healthy) but the anchoring trap is the one
+that bites first, because it fails silently and looks right. A state matching
+nothing, which after this set means one a future Slurm introduces, keeps its
+raw text; with thresholds always configured, Grafana would otherwise colour
+them with the threshold base colour, green, so the panel refuses that colour
+for an unmapped state and draws a hollow ring instead, which is the behaviour
+*Error handling* asks for.
 
-**Colours use theme names** (`green`, `semi-dark-orange`, `red`, `text`),
+**Colours use theme names** (`light-green`, `dark-purple`, `dark-red`, `text`),
 resolved through `theme.visualization.getColorByName`. No hex anywhere in the
-plugin — the documented best practice is to use theme variables for colour,
+plugin, since the documented best practice is to use theme variables for colour,
 spacing and typography rather than hardcoding values.
 
 ### The string-field assumption, now tested
 
 `status` is a **string** field, and the mechanism above assumed
 `getDisplayProcessor` applies value mappings to string fields. **It does.**
-Verified against `@grafana/data` 12.4.10 by resolving the eleven rules above over
+Verified against `@grafana/data` 12.4.10 by resolving the rules above over
 nineteen real state values; every one resolved to the intended text and a theme
 colour. The numeric-field fallback the earlier draft held in reserve is not
 needed and is dropped.
@@ -297,26 +312,29 @@ and `document` at import time, so any test that imports it runs under
 What remains genuinely ours, because Grafana has no equivalent:
 
 - identity and state label names (default `node`, `status`)
-- the facet slot bindings
-- the grouping key source — label, capture or chunk — with a **live preview**
+- the facet role bindings
+- the grouping key source (label, capture or chunk) with a **live preview**
   against the node names actually present, because a regex typed blind into a
   panel option is one nobody can tell is wrong until the panel is empty
 - layout (`wrap` or `rack`), cell size, gap
-- an optional shape channel (see below), off by default
+- an optional shape channel (see below), on by default
 
 ### The shape channel
 
-A cell can carry its state as a shape as well as a fill — a notch, a diagonal, a
+A cell can carry its state as a shape as well as a fill: a notch, a diagonal, a
 hollow ring. Measured against the palette validator, a green/amber/red grid
 separates by only ΔE 4.1 under deuteranopia and Grafana's own default threshold
 colours by 6.2 under protanopia, so a shape channel is what makes such a grid
 readable in greyscale, in print, under `forced-colors`, and by the roughly 8% of
 men with a red-green deficiency.
 
-It ships as an **option, off by default**. The default follows Grafana's
-conventions so the panel looks like its neighbours; a site that needs the second
-channel turns it on. The measurements are recorded in `docs/design/DESIGN.md` so
-the choice is informed rather than forgotten.
+It ships as an **option, on by default**. The shipped palette's own worst pair,
+`not responding` against `allocated`, measures ΔE 4.8 under protanopia, and no
+rearrangement of the six hues cleared it, so fill alone cannot carry the panel.
+The shape is not a second alphabet for every state: it marks that pair's family
+and `down`, and leaves the rest a plain square. A site that would rather the
+panel looked like its neighbours turns it off. The measurements are recorded in
+`docs/design/DESIGN.md` so the choice is informed rather than forgotten.
 
 ## Grouping, and reading a cluster as racks
 
@@ -326,7 +344,7 @@ most to least trustworthy.
 | Source | Example | What it costs |
 |---|---|---|
 | **label** | `partition`, `gres_type`, or a `rack` label from `file_sd` | nothing; the value is read |
-| **capture** | a regex on the node name: `r012c04n03` → `r012` | nothing, where the name encodes position — a vendor convention, not a norm |
+| **capture** | a regex on the node name: `r012c04n03` → `r012` | nothing, where the name encodes position, a vendor convention rather than a norm |
 | **chunk** | slice the ordinal by N: `compute0421` → rack 11 at 40 per rack | it **invents** structure |
 
 `slurm_exporter` publishes `partition`, `status` and `gres_type`, so label
@@ -340,8 +358,8 @@ not only in the editor.
 
 ### Three levels of rack fidelity
 
-**Level 1** — rack as a group — needs only "which node is in which rack", which
-the three key sources provide. **Level 2** — the card shaped as a rack — adds an
+**Level 1**, rack as a group, needs only "which node is in which rack", which
+the three key sources provide. **Level 2**, the card shaped as a rack, adds an
 intra-rack order, which the ordinal in the node name provides, and renders each
 group as a fixed-width column of wide, short slots read bottom-up. Both are in
 this slice, and together they are the `compact` mode of the Rackscope wallboard.
@@ -359,8 +377,8 @@ position nothing told us.
 ## Rendering and interaction
 
 One cell is one `div`. Rendering is DOM, not canvas. Spacing, colour and
-typography come from `useTheme2()` — `theme.spacing()`, `theme.colors.*` — never
-from literals.
+typography come from `useTheme2()`, through `theme.spacing()` and
+`theme.colors.*`, never from literals.
 
 `layout` chooses how a group is drawn: `wrap` fills the available width, `rack`
 renders a fixed-width vertical column read bottom-up. A rack slot is drawn wide
@@ -370,7 +388,7 @@ a group; the cell, the tooltip and the link are identical.
 
 `colorMode` selects one encoding at a time: the mapped state (default), or a
 continuous fill from CPU, memory or GPU allocation driven by thresholds. One at a
-time is a legibility decision — a cell carrying state as background and
+time is a legibility decision: a cell carrying state as background and
 utilisation as an inner bar reads well at 200 nodes and turns to noise at 2 000.
 
 Each group header is one line: a rail carrying the rolled-up state, the name, the
@@ -381,17 +399,20 @@ partitions, CPU and memory allocated over total, GRES used over total per model,
 drain reason, and drain age.
 
 Node identifiers are monospaced. `c04`, `r012c04n03` and `g10` are fixed-width
-tokens that get aligned in columns and compared character by character — tabular
+tokens that get aligned in columns and compared character by character: tabular
 data, not a small-label decoration. Everything else uses the inherited UI font.
 
 ### Scale
 
 The realistic target is around 3 000 cells in one panel. Beyond that the answer
 is to split the view by region rather than to change the renderer: a single grid
-of 10 000 cells is not readable even when it is fast. Past the threshold the
-panel renders what it has and shows a warning suggesting a filter, rather than
-refusing or silently truncating. The renderer sits behind an interface so a
-canvas implementation can replace the DOM one later without touching the engine.
+of 10 000 cells is not readable even when it is fast. The panel renders what it
+has, without refusing and without silently truncating. It carries no cell-count
+warning either: the option that would have raised one was designed here and
+removed in the grouping slice, which found it could only ever announce the one
+property of the panel impossible to miss. The renderer sits behind an interface
+so a canvas implementation can replace the DOM one later without touching the
+engine.
 
 ## Error handling
 
@@ -404,7 +425,7 @@ Never paint a node healthy for lack of information.
   in the editor, so a state that appears after a Slurm upgrade is visible.
 - A query carrying neither a `node` column nor a `node` label is reported as
   skipped, by `refId`.
-- When a facet query returns several rows for one node and the slot expects a
+- When a facet query returns several rows for one node and the role expects a
   scalar, the panel reports it rather than keeping an arbitrary row.
 - Grouping that places a node in several groups reports both counts.
 
@@ -412,7 +433,7 @@ Warnings render in the panel, not in a console nobody opens.
 
 ## Verification
 
-**Engine** — plain TypeScript under Node, table-driven. Covered: both Prometheus
+**Engine**: plain TypeScript under Node, table-driven. Covered: both Prometheus
 frame shapes; a node in several partitions; the nine modifiers plus an unknown
 trailing character; the GRES fan-out with two models on one node; the three key
 sources, including a regex that does not compile, a capture that matches nothing,
@@ -422,14 +443,14 @@ intra-group order across two refreshes returning rows in a different order.
 Fixtures come from real exporter output captured against the test cluster, not
 hand-written, so the parsers are tested against the shape Prometheus returns.
 
-**End to end** — `@grafana/plugin-e2e`, from the first slice, not added later.
+**End to end**: `@grafana/plugin-e2e`, from the first slice, not added later.
 It extends Playwright with fixtures that matter here:
 
-- `gotoDashboardPage` + `readProvisionedDashboard` — the provisioned dashboard is
+- `gotoDashboardPage` + `readProvisionedDashboard`: the provisioned dashboard is
   the fixture, so the dashboard deliverable and the test are the same artefact.
-- `panelEditPage` — exercises the options editor, including that
+- `panelEditPage`: exercises the options editor, including that
   `useFieldConfig()` is wired and the standard sections appear.
-- `selectors` — resolves per Grafana version, so tests survive releases.
+- `selectors`: resolves per Grafana version, so tests survive releases.
 
 CI runs the matrix produced by `grafana/plugin-actions/e2e-version@main` rather
 than a single pinned Grafana, with `wait-for-grafana` before the specs. This is
@@ -439,7 +460,7 @@ The two defects worth designing the tests around are both invisible to unit
 tests: a missing `useFieldConfig()` that paints every cell identically, and an
 ingest path blind to the shape Prometheus actually returns.
 
-**Non-regression** — every bug fix lands with a test that fails before it and
+**Non-regression**: every bug fix lands with a test that fails before it and
 passes after. A test that was green all along protects nothing.
 
 ## Development environment
@@ -454,17 +475,18 @@ workflow sets, so the same compose file serves local work and CI.
 **The image tag is pinned, not floating.** `slurm_exporter`'s own stack floats
 Grafana on `:latest` so dashboards are authored against the current release, but
 `docker compose up -d` does not recreate a container that is already running when
-the tag moves — its Grafana has been 12.4.2 for nine days while `:latest` is
+the tag moves; its Grafana has been 12.4.2 for nine days while `:latest` is
 13.2.1. A pinned version that is visibly bumped is honest; a floating tag that
 silently does not move is not.
 
 Data comes from either source, by variable:
 
-- **Synthetic** (default) — a small exporter in `dev/` producing any cluster shape
-  on demand: 3 000 nodes, every base state, all nine modifiers, overlapping
-  partitions, several GRES models. This is the only way to reach the awkward
-  cases; a 20-node docker cluster cannot produce `blocked` or `perfctrs`.
-- **Real** — point at the Prometheus of `slurm_exporter`'s test cluster
+- **Synthetic** (default): a small exporter in `dev/` producing any cluster
+  shape on demand: 3 000 nodes, every base state, all nine modifiers,
+  overlapping partitions, several GRES models. This is the only way to reach
+  the awkward cases; a 20-node docker cluster cannot produce `blocked` or
+  `perfctrs`.
+- **Real**: point at the Prometheus of `slurm_exporter`'s test cluster
   (`make -C scripts/testing setup`), driven by its existing simulation targets:
   `workload N=`, `node-fail`, `node-restore`, `cancel-all`, `gpu-workers`.
 
@@ -481,10 +503,11 @@ chosen must meet the threshold and carry the controls:
 | npm | 11.15.0 | `ignore-scripts=true`, `allow-git=none`, `min-release-age=3` |
 | yarn | 4.14.0 | `enableScripts: false`, `approvedGitRepositories: []`, `npmMinimalAgeGate: 4320` |
 
-Every tool on this machine is currently below its threshold — npm 11.14.1, pnpm
-10.28.2, yarn 1.22.22 — so whichever is picked needs an upgrade before the first
-install. pnpm 11 is the recommendation: it has the richest controls, and the
-plugin e2e CI template supports it directly.
+Every tool on this machine was below its threshold when this was written (npm
+11.14.1, pnpm 10.28.2, yarn 1.22.22) so whichever was picked needed an upgrade
+before the first install. pnpm is the choice: it has the richest controls, and
+the plugin e2e CI template supports it directly. The toolchain image pins
+12.4.1, comfortably above the 11.0.0 floor.
 
 Dependency ranges stay semver; no git URLs, tarballs, `file:` or `link:` entries.
 
@@ -492,7 +515,7 @@ Dependency ranges stay semver; no git URLs, tarballs, `file:` or `link:` entries
 
 `slurm_exporter` passes the `sinfo` state suffix into the `status` label verbatim
 and its aggregates fold it into the base state, so `slurm_nodes_planned` never
-counts a node planned while partially busy — on the test cluster under load, 7 of
+counts a node planned while partially busy: on the test cluster under load, 7 of
 25 nodes are `mixed-` while that metric reads 0. Filed as
 [SckyzO/slurm_exporter#243](https://github.com/SckyzO/slurm_exporter/issues/243).
 
@@ -505,20 +528,20 @@ label becomes an alternative source and nothing here breaks.
 
 Recorded rather than decided, so they are not rediscovered later.
 
-### Licence — Apache-2.0
+### Licence: Apache-2.0
 
-Settled as **Apache-2.0**. Like MIT it is permissive — commercial use,
-modification and redistribution are all allowed — but it adds two things MIT
+Settled as **Apache-2.0**. Like MIT it is permissive, allowing commercial
+use, modification and redistribution, but it adds two things MIT
 lacks: an explicit patent grant from contributors, and a requirement that anyone
 distributing a modified version state that they changed it and carry the notices
 forward.
 
 That is still looser than the requirement voiced earlier in the design
-conversation — commercial use permitted, modification obliging republication —
-which only GPL-3.0 (strong, whole-work) and MPL-2.0 (weak, file-level) satisfy.
-Apache-2.0 does not oblige anyone to publish their changes, only to say that
-changes were made. The choice stands as made; the gap is recorded here rather
-than forgotten.
+conversation, commercial use permitted with modification obliging
+republication, which only GPL-3.0 (strong, whole-work) and MPL-2.0 (weak,
+file-level) satisfy. Apache-2.0 does not oblige anyone to publish their
+changes, only to say that changes were made. The choice stands as made; the
+gap is recorded here rather than forgotten.
 
 One practical consequence. The copyright holder can relicense their own code at
 any time, but once outside contributions land under Apache-2.0, moving to a more
@@ -526,8 +549,8 @@ restrictive licence needs each contributor's agreement. The window to change
 direction cheaply closes with the first accepted pull request, not with the first
 public commit.
 
-This replaces an earlier MIT decision. The repository was briefly inconsistent —
-the plugin carried the scaffold's Apache-2.0 while the root declared MIT — which
+This replaces an earlier MIT decision. The repository was briefly inconsistent:
+the plugin carried the scaffold's Apache-2.0 while the root declared MIT, which
 mattered because the plugin's `LICENSE` is copied into `dist/` at build time and
 would have shipped inside the published artefact.
 
@@ -535,7 +558,7 @@ would have shipped inside the published artefact.
 
 Levels 1 and 2 are in this slice and need no inventory. Level 3 needs
 `u_position`, `u_height` and a per-model slot matrix, none of which
-`slurm_exporter` emits — it publishes no placement label at all. Three candidate
+`slurm_exporter` emits; it publishes no placement label at all. Three candidate
 sources, none free:
 
 1. **Derived from the node name.** Already done, and it is what gets levels 1 and
@@ -545,11 +568,11 @@ sources, none free:
    and one a site with an inventory can already generate. The cost is a generator
    to write and maintain on the Prometheus side.
 3. **A placement file read by `slurm_exporter`.** Tempting, and the one to be
-   careful with: the exporter's contract is *expose what Slurm knows*, and Slurm
-   knows nothing about racks. Adding a static inventory turns a metrics exporter
-   into an inventory database, brings a reconciliation problem nobody asked for —
-   a node in the file but not in Slurm, and the reverse — and makes fixing a typo
-   in a rack name a redeployment.
+   careful with: the exporter's contract is *expose what Slurm knows*, and
+   Slurm knows nothing about racks. Adding a static inventory turns a metrics
+   exporter into an inventory database, brings a reconciliation problem nobody
+   asked for (a node in the file but not in Slurm, and the reverse) and makes
+   fixing a typo in a rack name a redeployment.
 
 Which panel draws the elevation is a second, independent question.
 
@@ -562,7 +585,7 @@ accounting, then write operations.
 
 Each is usable on its own; none is started before the previous one ships.
 
-## Revision — 2026-09-14
+## Revision (2026-09-14)
 
 Seven things were wrong or unverified in the first draft. Each was checked
 against the Grafana plugin documentation and the plugin skills, not against
@@ -570,7 +593,7 @@ memory.
 
 | Was | Is |
 |---|---|
-| "React stays on 18, toolchain pinned" — reasoning borrowed from another project | Grafana 13.2.1 runs React 19; the plugin declares `react ^18.3.0`, externalises `react/jsx-runtime`, sets `grafanaDependency >=12.3.0` |
+| "React stays on 18, toolchain pinned", reasoning borrowed from another project | Grafana 13.2.1 runs React 19; the plugin declares `react ^18.3.0`, externalises `react/jsx-runtime`, sets `grafanaDependency >=12.3.0` |
 | A validated palette with hex values in `DESIGN.md` | Colour comes from field config through `getDisplayProcessor` and `useTheme2`; theme colour names only, no hex |
 | Two custom drag-and-drop lists classifying states | Grafana **Value mappings**, with shipped defaults and documented ordering |
 | A severity engine, `state/classify.ts`, and a modifier-floor table | Deleted. `state/parse.ts` survives for the tooltip's display text only |
@@ -578,7 +601,7 @@ memory.
 | Dev stack with an unspecified Grafana | Grafana 13.x, version pinned and visibly bumped, `GRAFANA_VERSION`/`GRAFANA_IMAGE` shared with CI |
 | Supply chain unmentioned | Thresholds and controls fixed at scaffolding time; every local tool is currently below its threshold |
 
-## Revision — 2026-09-14, second pass
+## Revision (2026-09-14, second pass)
 
 Written while turning the spec into a plan. Running the mechanism beat reading
 about it: the assumption flagged above held, and two defects underneath it did
@@ -589,5 +612,18 @@ not.
 | "`getDisplayProcessor` on a string field is unverified; numeric fallback in reserve" | Verified working against `@grafana/data` 12.4.10; the fallback is dropped |
 | Defaults written as bare patterns `^idle`, `^mixed`, `^drain`, `^down\|^fail` | Grafana wraps a bare pattern in `^...$`, so four of the five were exact matches that silently never fired. Defaults are delimited: `/^idle.*$/` |
 | Defaults assumed a regex mapping labels a value | `RegexToText` *replaces* the match; an unconsumed remainder stays glued to the result. Every pattern now spans the whole value |
-| — | `@grafana/data` needs a DOM at import; tests importing it run under `jsdom` |
+| (not raised) | `@grafana/data` needs a DOM at import; tests importing it run under `jsdom` |
 | "pnpm 11 is the recommendation" | pnpm's current release is **12.4.1**, comfortably above the 11.0.0 floor; the plan pins 12.x |
+
+## Revision (2026-09-17)
+
+Read back in full before tagging 0.1.0. One decision recorded here had been
+overtaken by the implementation without the document following it.
+
+| Was | Is |
+|---|---|
+| The shape channel ships off by default, so the panel looks like its neighbours | It ships **on**. `DEFAULT_OPTIONS.shapeChannel` is `true` and `module.test.ts` pins it: `not responding` against `allocated` measures ΔE 4.8 under protanopia and no arrangement of the six hues cleared it, so fill alone was not safe to hand over |
+| "a shape channel is what makes such a grid readable", read as a per-state encoding | `shapeFor` separates three groups, not twenty-one: a cut top-right corner on `not responding` / `drained` / `maintenance`, a cut bottom-right corner on `down` and `powered down`, and a plain square for everything else |
+| *Scale* promised a warning past a cell-count threshold | There is none. `maxCells` was removed in the grouping slice and nothing replaced it; the shipped README says so outright |
+| The data contract called a facet binding a "slot" | "Slot" now means a chassis position in a cabinet. A binding is a **role**, carried by `QueryBindings` / `options.queries` |
+| The duplicate-grouping header read `20 nodes · 25 slots` | It reads `20 nodes drawn in 25 cells` |

@@ -1,4 +1,4 @@
-# Node grouping — design
+# Node grouping: design
 
 Written 2026-09-15, after establishing that `slurm_exporter` publishes no rack
 or location label and cannot be made to: it reads `sinfo`, and `sinfo` has no
@@ -22,37 +22,39 @@ place a node on a claim it cannot verify, but it must say which claim.
 ## The three rungs
 
 Where the truth lives, ordered by how well it travels beyond this one view.
-What separates them in practice is not elegance — it is **which privilege the
+What separates them in practice is not elegance. It is **which privilege the
 operator needs**.
 
-### Rung 1 — in the data (Prometheus relabelling)
+### Rung 1: in the data (Prometheus relabelling)
 
 A `metric_relabel_configs` block attaches `rack` at scrape time. The label then
 serves alerting, recording rules, `sum by (rack)`, and every other dashboard,
 not only this panel.
 
 Privilege: Prometheus admin.
-Panel support: **already complete** — `Group by ▸ Label ▸ rack`. No code.
+Panel support: **already complete**, via `Group by ▸ Label ▸ rack`. No code.
 What this slice owes it: a recipe in the plugin README, and a generator (below).
 
 This is the recommended rung, and the documentation says so everywhere it can.
 
-### Rung 2 — in the query (a join transformation)
+### Rung 2: in the query (a join transformation)
 
 Grafana's own answer to "my data lacks the dimension my view needs": a second
 query carrying the inventory (Infinity against a URL, or the built-in TestData
-datasource with pasted CSV), then *Labels to fields* followed by *Join by field*
-on `node`. The rack arrives as a column, and the panel already reads string
-columns of a table frame as labels.
+datasource with pasted CSV), joined onto the metric frame on `node`. The rack
+arrives as a column, and the panel already reads string columns of a table frame
+as labels. The chain this section first proposed, *Labels to fields* followed by
+*Join by field*, is not the one that works; see *Revision*.
 
 Privilege: Editor on the dashboard. Nothing more. This is the rung that serves
 the Grafana catalogue user who reads a Prometheus somebody else administers.
 
-Panel support: believed complete, **not verified**. Verifying the full chain end
-to end is a task in this slice, not an assumption.
-What this slice owes it: that verification, and a worked example in `dev/`.
+Panel support: complete, and verified end to end rather than assumed. The
+verification cost this slice two corrections, both recorded in *Revision*.
+What this slice owed it: that verification, and a worked example in `dev/`,
+which is the **Rung 2** panel of the *grouping and layout* dashboard.
 
-### Rung 3 — in the dashboard (a range table)
+### Rung 3: in the dashboard (a range table)
 
 A compact node-to-group table written by hand, in Slurm hostlist syntax.
 
@@ -63,12 +65,12 @@ Rung 3 is the only rung that requires development, and the only one that works
 when the operator has neither Prometheus access nor the patience to discover a
 three-transformation chain.
 
-## Rung 3 — the range table
+## Rung 3: the range table
 
 ### Syntax
 
 ```
-# Row A — machine room north
+# Row A, machine room north
 rack1: c[1-5]
 rack2: c[6-10]
 
@@ -78,9 +80,9 @@ gpu:   g[1-10]
 
 1. **The right-hand side is one Slurm hostlist expression, and nothing else.**
    No invented grammar: `c[1-10,20,30-35]`, `node[001-100]` with zero padding
-   preserved, and comma-joined lists outside brackets — `c[1-10],g[1-5]`. It is
-   what `sinfo` prints, so `sinfo -h -o '%N'` output pastes in directly and
-   every Slurm administrator already reads it.
+   preserved, and comma-joined lists outside brackets, as in `c[1-10],g[1-5]`.
+   It is what `sinfo` prints, so `sinfo -h -o '%N'` output pastes in directly
+   and every Slurm administrator already reads it.
 2. **The left-hand side is the group's display name**, free text up to the first
    colon, trimmed, spaces allowed: `Rack A3: c[1-40]`.
 3. **Line order is display order.** This is a feature, not a side effect: rack
@@ -93,8 +95,8 @@ gpu:   g[1-10]
    defensively: this string is typed by hand and is invalid for most of the time
    it is being typed. A grid that vanishes on every keystroke is unusable.
 6. **A node listed in two ranges goes to the first line, and the strip says so.**
-   Not an error — that would hide the whole grid over a typo. Not silent either —
-   a duplicate is a real authoring mistake.
+   Not an error, which would hide the whole grid over a typo, and not silent
+   either, because a duplicate is a real authoring mistake.
 7. **The table is expanded, not matched.** `c[1-5]` becomes five names, then a
    dictionary; lookup is O(1) per node. Expansion needs a hard cap against
    `node[1-100000]`; the cap is a constant, not an option.
@@ -103,7 +105,7 @@ gpu:   g[1-10]
 
 Expanding means the table states **which nodes are supposed to exist**. A node
 listed in the table but absent from Prometheus is a node that stopped being
-scraped — roughly the most serious condition a cluster has, and one neither
+scraped, roughly the most serious condition a cluster has, and one neither
 rung 1 nor rung 2 can see, since both only know nodes that still speak.
 
 This slice does not implement that detection. The syntax and the parsed model
@@ -112,11 +114,11 @@ must not foreclose it.
 ### Where the table is stored
 
 A panel option of type string, carried by the `KeySource` itself, so its path is
-`grouping.table` — the same shape `capture` already uses for `grouping.pattern`.
+`grouping.table`, the same shape `capture` already uses for `grouping.pattern`.
 
 Because it is a string, it may be `$racks` and resolve a dashboard variable:
 the panel interpolates with `replaceVariables` from `PanelProps` before parsing.
-This is Grafana's documented path — `plugin-tools/how-to-guides/panel-plugins/
+This is Grafana's documented path: `plugin-tools/how-to-guides/panel-plugins/
 interpolate-variables` describes `replaceVariables` as being for "user-defined
 template strings for display **or processing** within the panel". Parsing a
 range table is processing.
@@ -127,7 +129,7 @@ the dashboard JSON, provisionable and versionable with the rest.
 ### Why a panel option is acceptable here, when it was not for colour
 
 A bespoke colour editor was rejected in the previous slice because Grafana has a
-native store for that — value mappings — and a second store would have been
+native store for that, value mappings, and a second store would have been
 invisible to field overrides, to provisioning, and to every other consumer of
 the dashboard JSON.
 
@@ -170,7 +172,7 @@ order?: string[];
 
 One mechanism covers both needs: it declares the order *and* declares which
 groups must exist regardless of occupancy. The other three sources pass nothing
-and keep today's behaviour exactly — this is an addition, not a change, and an
+and keep today's behaviour exactly. This is an addition, not a change, and an
 unconfigured user sees no difference.
 
 ### Orphans
@@ -185,12 +187,12 @@ A node matching no range goes to the existing `UNGROUPED` group.
 - **Its header carries a marker**, in the same place `chunk` carries `assumed`,
   and for the same reason: nobody reads the strip while looking at the grid, so
   the admission must travel with the data. It is a different admission and takes
-  different words — `assumed` means "I invented this group", an orphan group
-  means "I could not place these".
+  different words: `assumed` means "I invented this group", while an orphan
+  group means "I could not place these".
 - **Its frame is dashed rather than solid**, the same idiom as the hollow ring
   on an unmapped state: the panel refuses to render as normal what it did not
   resolve.
-- **The renderer identifies both cases from what already exists** — orphan is
+- **The renderer identifies both cases from what already exists**: orphan is
   `group.key === UNGROUPED`, empty is `group.nodes.length === 0`. No new field
   on `NodeGroup`.
 
@@ -225,18 +227,18 @@ is a fact, and a fact extinguishes itself when it stops being true.
 One pass over the nodes per render. For each candidate label, how many nodes it
 would classify; for the active source, how many it actually classified.
 
-Candidates are the labels already kept in `SlurmNode.labels` — those whose value
-agrees across every series for that node — **minus** four exclusions:
+Candidates are the labels already kept in `SlurmNode.labels`, those whose value
+agrees across every series for that node, **minus** four exclusions:
 
 - the node label itself, which has a distinct value per node;
 - the state label, which changes between scrapes: that is a measurement, not a
   topology;
-- any label whose distinct-value count equals the number of nodes it *reaches* —
-  an identity in disguise, not a group. The comparison is against the nodes
-  carrying the label, not against the whole model, because `slurm_exporter`
-  ships a label only some nodes carry: `reason` lands on drained nodes alone,
-  so three distinct reasons among 240 nodes would otherwise read as a grouping
-  worth adopting;
+- any label whose distinct-value count equals the number of nodes it
+  *reaches*, an identity in disguise rather than a group. The comparison is
+  against the nodes carrying the label, not against the whole model, because
+  `slurm_exporter` ships a label only some nodes carry: `reason` lands on
+  drained nodes alone, so three distinct reasons among 240 nodes would
+  otherwise read as a grouping worth adopting;
 - any label with a single distinct value, such as `cluster="prod"`. It would
   cover every node and put them all in one group, so it would win the coverage
   comparison while being useless advice.
@@ -253,7 +255,7 @@ behaviour:
 | Situation | Result |
 |---|---|
 | no labels at all | silent, permanently |
-| relabelling done, grouping by that label | active source covers as much — silent |
+| relabelling done, grouping by that label | active source covers as much, so silent |
 | `ranges` with a complete table | silent, even though a label exists |
 | `ranges`, 12 orphans, a label covers them | **speaks** |
 | `chunk`, while a label exists | silent (chunking places every node whose name ends in a digit, which on a real cluster is all of them, so it rarely covers less than a label would) |
@@ -269,7 +271,7 @@ In the warnings strip, in the same voice as the rest:
 Label "rack" would group all 240. Grouping ▸ Group by ▸ Label.
 ```
 
-It does **not** claim that `rack` means rack — the panel cannot know that. It
+It does **not** claim that `rack` means rack; the panel cannot know that. It
 names a label and a number; the human recognises the name.
 
 It changes nothing automatically. Ever. A panel that reconfigures itself is
@@ -281,7 +283,7 @@ to the scrape, with nothing in its JSON to explain it.
 
 Turns a range table into rung 1.
 
-**Input:** a file in the rung-3 format — the same text one would paste into the
+**Input:** a file in the rung-3 format, the same text one would paste into the
 panel.
 
 **Output**, on stdout, one rule per group:
@@ -296,14 +298,14 @@ metric_relabel_configs:
 
 Expanded alternation is mandatory, and it is the trap a human writing this by
 hand falls into: Prometheus regexes are RE2, not hostlists. `c[1-40]` there does
-not mean "c1 through c40" — it means "c followed by one of 1, 2, 3, 4, 0". It
+not mean "c1 through c40". It means "c followed by one of 1, 2, 3, 4, 0". It
 works by accident on `c[1-5]` and is silently wrong from `c[1-10]` onward. That
 is the generator's reason to exist.
 
 **Written in TypeScript, importing the parser from `packages/core`.** Not in
 Python despite the synthetic exporter being Python: a second implementation of
 the hostlist grammar is how the two drift apart, and the claim "one table, two
-destinations" does not survive two parsers. The generator owns no grammar — it
+destinations" does not survive two parsers. The generator owns no grammar: it
 expands through the shared parser, then prints the alternation.
 
 **It is not dead code, because the dev stack depends on it.** The synthetic
@@ -311,14 +313,14 @@ exporter publishes no rack label, by design, since it mirrors the real exporter.
 So the dev stack currently cannot demonstrate rung 1 at all. Generating `dev/`'s
 `metric_relabel_configs` from a checked-in range table means the generator runs
 on every `make up`, all three rungs become demonstrable against the same data,
-and the format gains a second consumer — the only proof that it is a format
+and the format gains a second consumer, the only proof that it is a format
 rather than an internal structure with punctuation.
 
 **It does not write anyone's `prometheus.yml`.** It prints; `dev/` redirects.
 
 **Documented cost:** one rule per rack, evaluated per sample. 200 racks against
 18,000 series is 3.6M regex evaluations per scrape. Prometheus anchors and
-optimises these, so it holds — but it belongs in the documentation rather than
+optimises these, so it holds, but it belongs in the documentation rather than
 in a production surprise. Worth noting that on a very large cluster this is an
 argument *for* rung 3, where the table is parsed once per render instead of
 re-evaluated on every scrape.
@@ -328,19 +330,19 @@ re-evaluated on every scrape.
 ### `maxCells` is removed
 
 Verified: it does nothing but print one strip line. That line warns about the
-single property of the panel that is impossible to miss — that there are a lot
+single property of the panel that is impossible to miss: that there are a lot
 of cells. Worse, it is an *option*, so the user configures the threshold at
 which they will be told what is already in front of them. Configuration with
 zero information.
 
 Removed: one option, one strip branch, two tests. Nothing replaces it. The one
 case where the count is not self-evident is a grid that overflows into scroll,
-and the answer to that would be a neutral count, not a tunable warning — not
+and the answer to that would be a neutral count, not a tunable warning. Not
 built here.
 
 ### `cellSize` splits into `cellWidth` and `cellHeight`
 
-A node is a 1U sled: wider than tall. The code already concedes this privately —
+A node is a 1U sled: wider than tall. The code already concedes this privately:
 `rackWidthFor = cellSize × 4`, `sledHeightFor = cellSize ÷ 2`. The non-square
 proportion exists; it is merely derived instead of stated.
 
@@ -353,7 +355,7 @@ const height = options.cellHeight ?? (layout === 'rack' ? sledHeightFor(width) :
 ```
 
 - `wrap` renders a square today, so an unset height falls back to the width.
-- `rack` renders a sled at `sledHeightFor(width)` — 7px at the default — so an
+- `rack` renders a sled at `sledHeightFor(width)`, 7px at the default, so an
   unset height keeps deriving it.
 
 A fixed default of 14 for both would silently double the sled height in `rack`
@@ -362,9 +364,10 @@ unset preserves both layouts byte-for-byte for anyone who has configured
 nothing, which is the majority.
 
 `cellSize` is **removed outright**, not kept as a fallback. The two-phase rule
-protects released users, and this plugin has none: it is unsigned, unpublished,
-and not merged to `main`. The only dashboards carrying `cellSize` are the four
-provisioned in `dev/`, which this slice updates in the same commit. A fallback
+protects released users, and at the time this was written the plugin had none:
+it was unsigned, unpublished and not yet merged. The only dashboards carrying
+`cellSize` were the ones provisioned in `dev/`, which this slice updates in the
+same commit. A fallback
 for users who do not exist would be dead code under the project's own rule.
 
 `rackWidthFor` survives unchanged, deriving the cabinet frame from the width.
@@ -407,7 +410,7 @@ change and passes after.
 - the two strip lines appear independently
 - a `$variable` in the range option is interpolated before parsing
 - with `cellWidth`/`cellHeight` unset, `wrap` still renders a square and `rack`
-  still renders `sledHeightFor(width)` — the non-breaking claim, asserted
+  still renders `sledHeightFor(width)`, the non-breaking claim, asserted
 
 **Rung 2 verification** (a task, not an assumption):
 - the Prometheus → *Labels to fields* → *Join by field* chain produces a frame
@@ -432,10 +435,22 @@ change and passes after.
 |---|---|
 | Where should topology live? | Prometheus first; the panel never sources it |
 | Is rung 3 in? | In |
-| Orphan nodes? | Stay visible — drawn, marked, and named |
+| Orphan nodes? | Stay visible: drawn, marked, and named |
 | A range matching no node? | Drawn empty **and** named in the strip |
 | Prometheus-first: guidance or runtime precedence? | Guidance, plus a measured signal |
-| Range table in a dashboard variable? | Yes — Grafana documents `replaceVariables` for it |
+| Range table in a dashboard variable? | Yes; Grafana documents `replaceVariables` for it |
 | Does the repo ship the generator? | Yes, in `dev/`, because the dev stack uses it |
 | `maxCells`? | Removed |
 | `cellSize`? | Splits into width and height |
+
+## Revision (2026-09-18)
+
+Read back against the implementation before tagging 0.1.0. Rung 2 was the one
+thing this document declined to assume, and running it changed two of its
+claims.
+
+| Was | Is |
+|---|---|
+| Rung 2 chains *Labels to fields* then *Join by field* | *Labels to fields* is not needed and does not help: it turns each series' labels into columns **in place**, leaving one frame per series. Query A needs `Format: Table`, which makes Prometheus return a single frame with `node` already a column. The only transformation is `Join by field` |
+| Rung 2's panel support is "believed complete, not verified" | Verified end to end against a live stack. Two things a first reading of the Grafana docs does not give: the panel's own datasource must be `-- Mixed --` or the second query never runs, silently; and the joined frame's `refId` is `joinByField-A-B`, not `A`, which is what **State query** has to name |
+| The inventory column was going to be `rack` | It is `zone`. A column that agrees with one relabelling already supplies proves nothing about whether the join ran |
