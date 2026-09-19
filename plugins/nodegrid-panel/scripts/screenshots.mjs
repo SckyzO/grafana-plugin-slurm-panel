@@ -38,6 +38,8 @@ const SHOTS = [
   { name: 'node-grid-shapes', uid: 'slurm-node-scenarios', panel: 2 },
   { name: 'node-grid-noshapes', uid: 'slurm-node-scenarios', panel: 3 },
   { name: 'node-grid-unplaced', uid: 'slurm-node-grouping', panel: 8 },
+  { name: 'node-grid-filtered', uid: 'slurm-node-grouping', panel: 11 },
+  { name: 'node-grid-join', uid: 'slurm-node-grouping', panel: 6 },
   { name: 'node-grid-tooltip', uid: 'slurm-node-grid', panel: 1, hover: true },
   { name: 'node-grid-dashboard', uid: 'slurm-prod' },
 ];
@@ -120,7 +122,11 @@ for (const shot of SHOTS) {
       // and a Range is what measures text rather than the box holding it.
       const range = document.createRange();
       range.selectNodeContents(heading);
-      right = Math.max(right, range.getBoundingClientRect().right);
+      // Plus room for the description icon Grafana puts after the title. It
+      // is a sibling of the text rather than part of it, so a crop measured
+      // on the text alone shaves it in half on any panel whose title is the
+      // widest thing in it.
+      right = Math.max(right, range.getBoundingClientRect().right + 24);
     }
     // A tooltip is drawn in a portal, so it can reach outside the panel on
     // any side. It has to widen the crop rather than be clipped by it: a

@@ -128,6 +128,8 @@ a panel option — `slurm_node_status{rack=~"cpu.*"}`, or
 `slurm_node_status{partition="bigmem"}` — grouped by `rack` or `partition` as
 usual. The grid names exactly what came back, and nothing is reported missing.
 
+![Four cpu cabinets and nothing else, with an empty warnings strip](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-filtered.png)
+
 There is no "show only these groups" option, deliberately: it would hide nodes
 the query returned, and a node that exists and is not drawn is a node nobody
 is watching. Nodes the query never asked for are a different matter.

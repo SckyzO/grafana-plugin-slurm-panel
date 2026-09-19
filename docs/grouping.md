@@ -137,8 +137,14 @@ Written out as the panel JSON actually carries it:
 ```
 
 This repository's own dev stack runs exactly this chain against live
-Prometheus data. See `dev/README.md`, "Three ways to a topology", for the
-worked panel with real node names.
+Prometheus data — the panel below groups by `zone`, a dimension that exists
+in the inventory and nowhere in the scraped metrics, which is what proves
+the join ran rather than the relabelling:
+
+![Nodes grouped into aisleA, aisleB and aisleC, values that exist only in the joined inventory](../plugins/nodegrid-panel/src/img/node-grid-join.png)
+
+See `dev/README.md`, "Three ways to a topology", for the worked panel with
+real node names.
 
 ### Rung 3: a range table
 
@@ -164,6 +170,8 @@ slurm_node_status{partition="bigmem"}
 and group by `rack` or `partition` as usual. The grid names exactly what came
 back and the warnings strip stays empty.
 
+![Four cpu cabinets and nothing else, with an empty warnings strip](../plugins/nodegrid-panel/src/img/node-grid-filtered.png)
+
 There is deliberately no "show only these groups" option. It would hide nodes
 the query *did* return, and a node that exists and is not drawn is a node
 nobody is watching — the one failure this panel is built to prevent. Nodes the
@@ -184,6 +192,12 @@ That is the same line that catches a rack nobody plugged back in after
 maintenance. On a filtered panel it is noise, so filter the tables alongside
 the query — `cpu[1-4]: 4` rather than the whole floor — or hold one table per
 view in a dashboard variable.
+
+What an inventory that covers less than the query looks like — the orphans
+drawn in a dashed frame, named rather than dropped, with the coverage line
+underneath:
+
+![A warnings strip naming 460 unplaced nodes above a grid that still draws every one of them](../plugins/nodegrid-panel/src/img/node-grid-unplaced.png)
 
 ## The hostlist syntax
 
