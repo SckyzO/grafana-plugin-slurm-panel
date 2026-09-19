@@ -323,13 +323,13 @@ test.describe('the primary overview dashboard groups by the rack it now has', ()
     const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-grid.json' });
     await gotoDashboardPage(dashboard);
 
-    await expect(page.getByTestId('node-group-rack1')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('node-group-cpu1')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('node-group-ungrouped')).toHaveCount(0);
   });
 });
 
-test.describe('the utilisation dashboard groups the same six racks on every panel', () => {
-  test('shows all six named racks and drops nothing into ungrouped, on every panel', async ({
+test.describe('the utilisation dashboard groups the same nine racks on every panel', () => {
+  test('shows all nine named racks and drops nothing into ungrouped, on every panel', async ({
     gotoDashboardPage,
     readProvisionedDashboard,
   }) => {
@@ -338,11 +338,11 @@ test.describe('the utilisation dashboard groups the same six racks on every pane
     // ('^(r\\d+)') to the relabelled `rack` label. The colour test above only
     // checks fill behaviour on panels 2 and 4 and would keep passing even if
     // the grouping key were wrong — every panel would just render one
-    // "ungrouped" block instead of six named racks, with nothing failing.
+    // "ungrouped" block instead of nine named racks, with nothing failing.
     const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-utilisation.json' });
     const dashboardPage = await gotoDashboardPage(dashboard);
 
-    const racks = ['rack1', 'rack2', 'rack3', 'rack4', 'gpu1', 'gpu2'];
+    const racks = ['cpu1', 'cpu2', 'cpu3', 'cpu4', 'bigmem1', 'bigmem2', 'visu1', 'gpu1', 'gpu2'];
     for (const title of ['State', 'CPU occupancy', 'Memory occupancy', 'GPU occupancy']) {
       const grid = await gridIn(dashboardPage, title);
       for (const key of racks) {
@@ -354,10 +354,10 @@ test.describe('the utilisation dashboard groups the same six racks on every pane
 });
 
 test.describe('the three ways to get a topology, proven against the same live data', () => {
-  const racks = ['rack1', 'rack2', 'gpu1'];
+  const racks = ['cpu1', 'cpu2', 'gpu1'];
 
   test('rung 1 groups by a relabelled Prometheus label', async ({ page }) => {
-    await gotoPanelWithData(page, 5, 'rack1');
+    await gotoPanelWithData(page, 5, 'cpu1');
     for (const key of racks) {
       await expect(page.getByTestId(`node-group-${key}`)).toBeVisible();
     }
@@ -372,7 +372,7 @@ test.describe('the three ways to get a topology, proven against the same live da
     //
     // The inventory's dimension is named "zone", not "rack": relabelling
     // already puts a rack label carrying the same three values on query A, so
-    // asserting rack1/rack2/gpu1 here would pass whether or not the join ever
+    // asserting cpu1/cpu2/gpu1 here would pass whether or not the join ever
     // ran. "zone" and aisleA/aisleB/aisleC exist nowhere else in the stack -
     // the only way a group by that name can appear is if the join supplied
     // it.
@@ -384,7 +384,7 @@ test.describe('the three ways to get a topology, proven against the same live da
   });
 
   test('rung 3 groups by a range table held in a dashboard variable', async ({ page }) => {
-    await gotoPanelWithData(page, 7, 'rack1');
+    await gotoPanelWithData(page, 7, 'cpu1');
     for (const key of racks) {
       await expect(page.getByTestId(`node-group-${key}`)).toBeVisible();
     }
@@ -396,11 +396,11 @@ test.describe('the three ways to get a topology, proven against the same live da
 
 test.describe('the coverage signal, proven by a source that deliberately covers less', () => {
   test('an incomplete range table draws the orphans as unplaced and names a wider label', async ({ page }) => {
-    await gotoPanelWithData(page, 8, 'rack1');
+    await gotoPanelWithData(page, 8, 'cpu1');
 
-    // The table names only rack1: c[1-80] against the full 540-node cluster,
+    // The table names only cpu1: c[1-80] against the full 540-node cluster,
     // so 80 nodes are placed and the other 460 fall outside every range.
-    const placed = page.getByTestId('node-group-rack1');
+    const placed = page.getByTestId('node-group-cpu1');
     await expect(placed).toBeVisible({ timeout: 15_000 });
     await expect.poll(() => placed.locator('[data-testid^="node-cell-"]').count(), { timeout: 15_000 }).toBe(80);
 
@@ -437,7 +437,7 @@ test.describe('a cabinet holds every sled it draws', () => {
     const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-grid.json' });
     await gotoDashboardPage(dashboard);
 
-    const frame = page.getByTestId('node-group-rack1').getByTestId('rack-frame');
+    const frame = page.getByTestId('node-group-cpu1').getByTestId('rack-frame');
     await expect(frame).toBeVisible({ timeout: 15_000 });
     const cells = frame.locator('[data-testid^="node-cell-"]');
     await expect.poll(() => cells.count(), { timeout: 15_000 }).toBeGreaterThan(0);
@@ -460,7 +460,7 @@ test.describe('blades, against the same live data', () => {
   test('draws each cabinet as many sleds wide as its blade holds', async ({ page }) => {
     // getBoundingClientRect, not toBeVisible: the question is where these
     // cells actually are, and toBeVisible passes for anything mounted.
-    await gotoPanelWithData(page, 9, 'rack1');
+    await gotoPanelWithData(page, 9, 'cpu1');
 
     // Sleds across, not rows down. Row count used to carry this — forty nodes
     // made ten rows at four per blade and twenty at two — but the fixture now
@@ -477,9 +477,9 @@ test.describe('blades, against the same live data', () => {
 
     // Four densities on one floor, which is the whole point of the override
     // table: a single wrong lookup would show up as one of these four.
-    expect(await sledsAcross('rack1')).toBe(4);
-    expect(await sledsAcross('rack5')).toBe(3);
-    expect(await sledsAcross('rack7')).toBe(1);
+    expect(await sledsAcross('cpu1')).toBe(4);
+    expect(await sledsAcross('bigmem1')).toBe(3);
+    expect(await sledsAcross('visu1')).toBe(1);
     expect(await sledsAcross('gpu1')).toBe(2);
   });
 });
@@ -490,7 +490,7 @@ test.describe('cabinet height, against the same live data', () => {
     // deliberately level now — every cabinet declared at twenty slots and
     // full. Panel 10 exists to hold the two declarations apart: twenty slots
     // against twenty-six, over cabinets that both draw twenty rows.
-    await gotoPanelWithData(page, 10, 'rack1');
+    await gotoPanelWithData(page, 10, 'cpu1');
 
     const frame = async (group: string) => {
       const box = await page.getByTestId(`node-group-${group}`).getByTestId('rack-frame').boundingBox();
@@ -498,7 +498,7 @@ test.describe('cabinet height, against the same live data', () => {
       return box!;
     };
 
-    const rack = await frame('rack1');
+    const rack = await frame('cpu1');
     const gpu = await frame('gpu1');
 
     // Twenty slots against twenty-six: the declaration decides the height,
@@ -512,9 +512,9 @@ test.describe('cabinet height, against the same live data', () => {
   });
 
   test('spills what does not fit above the frame, clear of the group header', async ({ page }) => {
-    await gotoPanelWithData(page, 40, 'rack1');
+    await gotoPanelWithData(page, 40, 'cpu1');
 
-    const group = page.getByTestId('node-group-rack1');
+    const group = page.getByTestId('node-group-cpu1');
     const frameBox = await group.getByTestId('rack-frame').boundingBox();
     const bandBox = await group.locator('[data-testid="rack-band"]').boundingBox();
     expect(frameBox).not.toBeNull();
@@ -536,8 +536,8 @@ test.describe('cabinet height, against the same live data', () => {
   });
 
   test('names the cabinet that outgrew its declaration', async ({ page }) => {
-    await gotoPanelWithData(page, 40, 'rack1');
-    await expect(page.getByText('rack1 needs 20 slots but 12 were declared.')).toBeVisible();
+    await gotoPanelWithData(page, 40, 'cpu1');
+    await expect(page.getByText('cpu1 needs 20 slots but 12 were declared.')).toBeVisible();
   });
 
   test('gives the rows the whole content box, with nothing leaking past the padding', async ({ page }) => {

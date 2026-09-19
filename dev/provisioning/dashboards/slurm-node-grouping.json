@@ -300,7 +300,7 @@
             "type": "prometheus",
             "uid": "slurm-views-prom"
           },
-          "expr": "slurm_node_status{node=~\"c[1-5]|c4[1-5]|g[1-5]\"}",
+          "expr": "slurm_node_status{node=~\"c[1-5]|c9[1-5]|g[1-5]\"}",
           "instant": true,
           "format": "table"
         },
@@ -311,7 +311,7 @@
             "uid": "slurm-views-testdata"
           },
           "scenarioId": "csv_content",
-          "csvContent": "node,zone\nc1,aisleA\nc2,aisleA\nc3,aisleA\nc4,aisleA\nc5,aisleA\nc41,aisleB\nc42,aisleB\nc43,aisleB\nc44,aisleB\nc45,aisleB\ng1,aisleC\ng2,aisleC\ng3,aisleC\ng4,aisleC\ng5,aisleC\n"
+          "csvContent": "node,zone\nc1,aisleA\nc2,aisleA\nc3,aisleA\nc4,aisleA\nc5,aisleA\nc91,aisleB\nc92,aisleB\nc93,aisleB\nc94,aisleB\nc95,aisleB\ng1,aisleC\ng2,aisleC\ng3,aisleC\ng4,aisleC\ng5,aisleC\n"
         }
       ],
       "options": {
@@ -372,7 +372,7 @@
             "type": "prometheus",
             "uid": "slurm-views-prom"
           },
-          "expr": "slurm_node_status{node=~\"c[1-5]|c4[1-5]|g[1-5]\"}",
+          "expr": "slurm_node_status{node=~\"c[1-5]|c9[1-5]|g[1-5]\"}",
           "instant": true
         }
       ],
@@ -407,7 +407,7 @@
       "id": 8,
       "type": "tomzone-slurm-panel",
       "title": "Deliberately incomplete -- a range table covering one rack of six",
-      "description": "Not a bug: this panel's range table names only rack1: c[1-40], against the full 240-node cluster. 200 nodes match no range and are drawn under \"ungrouped\", dashed and marked unplaced, and the warnings strip both names them and reports that the rack label would cover all 240, the coverage signal the other panels never trigger, because every source they use already covers every node. Its warnings strip is deliberate too, not a defect: a reader could otherwise mistake the coverage line for something broken, which is why the title already says \"Deliberately incomplete\".",
+      "description": "Not a bug: this panel's range table names only cpu1: c[1-80], against the full 540-node cluster. 460 nodes match no range and are drawn under \"ungrouped\", in a dashed frame marked unplaced, because a node that exists and is not drawn is a node nobody is watching. The warnings strip names them and, separately, reports that the rack label would have placed all 540 - the coverage signal, which stays silent on every other panel here because their sources already cover every node.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -442,7 +442,7 @@
         },
         "grouping": {
           "kind": "ranges",
-          "table": "rack1: c[1-80]"
+          "table": "cpu1: c[1-80]"
         },
         "multiValueLabel": false,
         "layout": "wrap",
@@ -460,7 +460,7 @@
       "id": 9,
       "type": "tomzone-slurm-panel",
       "title": "Blades -- a mixed floor, against live Prometheus",
-      "description": "Blade density, against live Prometheus. Nodes per blade, by group puts four densities on one floor: the four compute racks take quad blades, rack5 and rack6 triples, rack7 single-node servers, and the two gpu racks duos - so a cabinet is drawn four, three, one or two sleds wide. rack7's line restates the default of 1 on purpose: a floor plan that names every cabinet reads better than one where the quiet ones are inferred. Every cabinet is twenty slots and every one is full, because the fixture sizes a rack at twenty times its density rather than giving them all the same node count. Declared heights that differ are panel 10's job.",
+      "description": "Blade density, against live Prometheus. Nodes per blade, by group puts four densities on one floor: the four cpu racks take quad blades, bigmem1 and bigmem2 triples, visu1 single-node servers, and the two gpu racks duos - so a cabinet is drawn four, three, one or two sleds wide. visu1's line restates the default of 1 on purpose: a floor plan that names every cabinet reads better than one where the quiet ones are inferred. Every cabinet is twenty slots and every one is full, because the fixture sizes a rack at twenty times its density rather than giving them all the same node count. Declared heights that differ are panel 10's job.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -498,7 +498,7 @@
         "layout": "rack",
         "cellWidth": 14,
         "nodesPerBlade": 1,
-        "bladeOverrides": "rack[1-4]: 4\nrack[5-6]: 3\nrack7: 1\ngpu[1-2]: 2",
+        "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2",
         "slotOverrides": "",
         "gap": 2,
         "shapeChannel": false,
@@ -514,7 +514,7 @@
       "id": 40,
       "type": "tomzone-slurm-panel",
       "title": "A declaration too small for what arrived",
-      "description": "rack1 is declared at four slots and the query returns forty nodes. The panel draws all forty: the thirty-six that do not fit spill above the frame's top edge rather than being truncated, because a node that exists and is not drawn is a node nobody is watching. The warnings strip says so. This panel exists to pin the direction of that spill and the clearance above it, which jsdom cannot see.",
+      "description": "cpu1 is declared at twelve slots and holds eighty nodes on quad blades, which needs twenty. The panel draws all twenty rows: the eight that do not fit spill above the frame's top edge rather than being truncated, because a node that exists and is not drawn is a node nobody is watching. The warnings strip says so. This panel exists to pin the direction of that spill and the clearance above it, which jsdom cannot see.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -552,11 +552,11 @@
         "layout": "rack",
         "cellWidth": 14,
         "nodesPerBlade": 1,
-        "slotOverrides": "rack1: 12",
+        "slotOverrides": "cpu1: 12",
         "gap": 2,
         "shapeChannel": false,
         "colorMode": "state",
-        "bladeOverrides": "rack[1-4]: 4\nrack[5-6]: 3\nrack7: 1\ngpu[1-2]: 2"
+        "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2"
       },
       "fieldConfig": {
         "defaults": {},
@@ -567,7 +567,7 @@
       "id": 10,
       "type": "tomzone-slurm-panel",
       "title": "Two declared heights, one floor",
-      "description": "Slots per rack, by group, against live Prometheus. Both cabinet kinds draw twenty rows here - eighty compute nodes at four per blade, forty gpu nodes at two - so the only thing separating their heights is the declaration: twenty slots against twenty-six. A cabinet's height is a property of the hardware, not of what is currently plugged into it, and the gpu cabinets are drawn with six empty slots above their last row rather than shrunk to fit. Both kinds still stand on the same floor: a short cabinet sits on it, it does not hang from the ceiling. That is the defect this option exists to fix, and the e2e suite measures it on this panel.",
+      "description": "Slots per rack, by group, against live Prometheus. Every cabinet here draws twenty rows - eighty cpu nodes at four per blade, sixty bigmem at three, twenty visu at one, forty gpu at two - so the only thing separating their heights is the declaration: the gpu cabinets are declared at twenty-six slots and the rest keep the panel-wide twenty. A cabinet's height is a property of the hardware, not of what is currently plugged into it, so the gpu cabinets are drawn with six empty slots above their last row rather than shrunk to fit. They still stand on the same floor: a short cabinet sits on it, it does not hang from the ceiling. That is the defect this option exists to fix, and the e2e suite measures it on this panel.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -605,8 +605,8 @@
         "layout": "rack",
         "cellWidth": 14,
         "nodesPerBlade": 1,
-        "bladeOverrides": "rack[1-4]: 4\nrack[5-6]: 3\nrack7: 1\ngpu[1-2]: 2",
-        "slotOverrides": "rack[1-7]: 20\ngpu[1-2]: 26",
+        "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2",
+        "slotOverrides": "gpu[1-2]: 26",
         "gap": 2,
         "shapeChannel": false,
         "colorMode": "state",
@@ -624,10 +624,10 @@
         "name": "racks",
         "type": "constant",
         "hide": 2,
-        "query": "rack1: c[1-5]\nrack2: c[41-45]\ngpu1: g[1-5]",
+        "query": "cpu1: c[1-5]\ncpu2: c[91-95]\ngpu1: g[1-5]",
         "current": {
           "text": "",
-          "value": "rack1: c[1-5]\nrack2: c[41-45]\ngpu1: g[1-5]"
+          "value": "cpu1: c[1-5]\ncpu2: c[91-95]\ngpu1: g[1-5]"
         }
       }
     ]

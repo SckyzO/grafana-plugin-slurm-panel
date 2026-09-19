@@ -11,10 +11,16 @@
 # slots times that cabinet's blade density, which is what makes the floor
 # level and every cabinet full:
 #
-#   rack1..rack4   80 nodes   quad blades   4 x 20
-#   rack5, rack6   60 nodes   triple        3 x 20
-#   rack7          20 nodes   single-node   1 x 20
-#   gpu1, gpu2     40 nodes   duo           2 x 20
+#   cpu1..cpu4        80 nodes   quad blades   4 x 20
+#   bigmem1, bigmem2  60 nodes   triple        3 x 20
+#   visu1             20 nodes   single-node   1 x 20
+#   gpu1, gpu2        40 nodes   duo           2 x 20
+#
+# A rack is named for the family that fills it, because that is how a floor
+# gets filled: one kind of hardware bought in bulk and racked together. It is
+# still a location, not a partition - four cabinets carry the one `cpu`
+# partition - and the panel reads the label this file produces, never the
+# partition.
 #
 # Give every rack the same node count instead and the denser cabinets draw
 # half empty, describing hardware nobody owns.
@@ -24,12 +30,12 @@
 # working: the panel draws them under "ungrouped" and names them in its
 # warnings strip.
 
-rack1: c[1-80]
-rack2: c[81-160]
-rack3: c[161-240]
-rack4: c[241-320]
-rack5: c[321-380]
-rack6: c[381-440]
-rack7: c[441-460]
-gpu1:  g[1-40]
-gpu2:  g[41-80]
+cpu1:    c[1-80]
+cpu2:    c[81-160]
+cpu3:    c[161-240]
+cpu4:    c[241-320]
+bigmem1: b[1-60]
+bigmem2: b[61-120]
+visu1:   v[1-20]
+gpu1:    g[1-40]
+gpu2:    g[41-80]

@@ -41,6 +41,16 @@ export default defineConfig<PluginOptions>(baseConfig, {
    * the variable is passed at all.
    */
   retries: 0,
+  /**
+   * Playwright defaults to half the machine's cores, which makes the suite's
+   * reliability a property of who is running it: a CI runner gets two workers
+   * and a development workstation sixteen. At sixteen, against a Grafana and
+   * a Prometheus sharing that same machine, pages time out and a different
+   * handful of tests fails each run — measured at 540 nodes, where a
+   * utilisation dashboard is 2160 cells per load. Four is stable across three
+   * consecutive runs here and CI keeps the two it has always used.
+   */
+  workers: process.env.CI ? 2 : 4,
   use: {
     baseURL: process.env.GRAFANA_URL ?? `http://localhost:${process.env.GRAFANA_PORT ?? 3000}`,
     provisioningRootDir: resolve(__dirname, '../../dev/provisioning'),

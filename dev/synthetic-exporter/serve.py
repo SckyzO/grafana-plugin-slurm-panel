@@ -42,14 +42,24 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 RACKS = max(1, int(os.environ.get("RACKS") or "6"))
 NODES_PER_RACK = int(os.environ.get("NODES_PER_RACK") or "0")
 NODES = RACKS * NODES_PER_RACK if NODES_PER_RACK > 0 else int(os.environ.get("NODES") or "540")
-# How many of those carry GPUs, as a count rather than as a share of a
-# partition cycle. The share was the earlier design and it tied two unrelated
-# things together: the cycle's length fixed the ratio, so the cluster total
-# had to stay a multiple of it and the floor plan could not move without
-# rewriting the partition list. The floor plan is the thing that moves.
-GPU_NODES = int(os.environ.get("GPU_NODES") or "80")
-# The partitions the non-gpu nodes rotate through. A gpu node is in "gpu".
-PARTITIONS = (os.environ.get("PARTITIONS") or "cpu,debug").split(",")
+# The cluster's four node families. A family is one kind of hardware bought
+# in bulk, which is how a real floor is filled: a partition name, the prefix
+# its nodes are named with, a share of the cluster, and what one of them is.
+#
+# Share rather than count, so NODES stays the single knob for cluster size: a
+# smoke test at 1080 nodes splits the same way a 540-node one does. The
+# default weights are 16:6:1:4 over 540, which comes out at exactly
+# 320/120/20/80 - four cabinets of eighty quad-blade nodes, two of sixty
+# triples, one of twenty single-node servers and two of forty duos, every
+# cabinet twenty slots and every one full. dev/relabel/racks.txt cuts those
+# names into the racks that hold them.
+FAMILIES = (
+    # partition  prefix  weight  memory MB  gpus
+    ("cpu",      "c",    16,     512_000,   0),
+    ("bigmem",   "b",    6,      4_096_000, 0),
+    ("visu",     "v",    1,      512_000,   2),
+    ("gpu",      "g",    4,      512_000,   8),
+)
 SEED = int(os.environ.get("SEED", "1"))
 
 _KNOWN_PROFILES = ("production", "incident", "showcase")
@@ -100,14 +110,14 @@ PRODUCTION_MODIFIER_WEIGHTS = [("", 92.0)] + [
     (m, 8.0 / 6) for m in ("-", "*", "~", "#", "@", "$")
 ]
 
-# dev/relabel/racks.txt calls c[81-120] "rack3". The exporter itself has no
+# dev/relabel/racks.txt calls c[81-160] "cpu2". The exporter itself has no
 # way to know that: it reads sinfo, which has no concept of a rack, the same
 # reason it has no rack label to publish in the first place. An `incident`
 # that wants to take a whole rack down therefore has to pick the block out by
 # node ordinal, matching that table by hand, rather than by asking the
 # exporter something it structurally cannot answer.
 INCIDENT_DOWN_RACK_FIRST = 81
-INCIDENT_DOWN_RACK_LAST = 120
+INCIDENT_DOWN_RACK_LAST = 160
 
 # A drain storm where forty nodes share one reason reads as a copy-paste
 # artefact, not an incident. Picked per node, deterministically from SEED.
@@ -175,34 +185,51 @@ def _cpus_state(rng, state, total):
     return 0, 0, total
 
 
+def _family_counts(total):
+    """Split `total` across the families by weight, exactly.
+
+    Largest remainder rather than plain rounding: the shares have to add back
+    up to `total` at any cluster size, and a rounding scheme that loses a node
+    would leave it outside every range in racks.txt, which reads on the panel
+    as an orphan rather than as the arithmetic slip it is.
+    """
+    weights = [f[2] for f in FAMILIES]
+    scaled = [total * w / sum(weights) for w in weights]
+    counts = [int(x) for x in scaled]
+    for index in sorted(range(len(FAMILIES)), key=lambda k: scaled[k] - counts[k], reverse=True)[
+        : total - sum(counts)
+    ]:
+        counts[index] += 1
+    return counts
+
+
 def cluster():
     rng = random.Random(SEED)
     nodes = []
-    cpu_count = 0
-    gpu_count = 0
-    # Exactly GPU_NODES of them, spread evenly through the generation order
-    # rather than clumped at one end: a gpu node every NODES/GPU_NODES steps,
-    # placed by integer arithmetic so the count is exact whatever the ratio.
-    gpu_at = {1 + (k * NODES) // GPU_NODES for k in range(GPU_NODES)} if GPU_NODES > 0 else set()
+    # One family at a time, in declaration order, so c1..cN are contiguous and
+    # a range table can name a rack with one hostlist instead of a list.
+    plan = []
+    for family, count in zip(FAMILIES, _family_counts(NODES)):
+        plan.extend([family] * count)
+    seen = {}
     for i in range(1, NODES + 1):
-        parts = ["gpu"] if i in gpu_at else [PARTITIONS[i % len(PARTITIONS)]]
+        partition, prefix, _weight, mem, gpus = plan[i - 1]
+        parts = [partition]
         if i % 7 == 0:
             parts.append("debug")
-        is_gpu = "gpu" in parts
+        is_gpu = gpus > 0
         # Named by family, not by index: c1..cN and g1..gN, counting within
         # each family in generation order. A rack index fed only the name, so
         # once the name no longer needs one there is nothing left to compute.
-        if is_gpu:
-            gpu_count += 1
-            name = "g%d" % gpu_count
-        else:
-            cpu_count += 1
-            name = "c%d" % cpu_count
+        # Counted in a dict, not by rescanning `nodes`: the obvious version
+        # of this line is a linear search inside the loop that builds the list
+        # it searches, which is quadratic in cluster size for no reason.
+        seen[prefix] = seen.get(prefix, 0) + 1
+        name = "%s%d" % (prefix, seen[prefix])
 
         state = _pick_state(rng, name)
         cpus = 128
         cpu_alloc, cpu_idle, cpu_other = _cpus_state(rng, state, cpus)
-        mem = 512000
         nodes.append({
             "name": name,
             "state": state,
@@ -216,8 +243,11 @@ def cluster():
             # holding roughly half its memory, and a node holding none is
             # holding none.
             "mem_alloc": mem * cpu_alloc // cpus,
-            "gpus": 8 if is_gpu else 0,
-            "gpu_used": (rng.choice([2, 4, 8]) if cpu_alloc > 0 else 0) if is_gpu else 0,
+            "gpus": gpus,
+            # Never more than the node has: a visu node carries two, a gpu
+            # node eight, and a fixed choice of [2, 4, 8] would have published
+            # eight used out of two on every visu node that was working.
+            "gpu_used": (rng.randint(1, gpus) if cpu_alloc > 0 else 0) if is_gpu else 0,
             "drained": state.startswith("drain"),
             "drain_reason": rng.choice(DRAIN_REASONS),
         })
