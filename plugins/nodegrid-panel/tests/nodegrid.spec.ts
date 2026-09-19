@@ -147,55 +147,57 @@ test.describe('the node grid renders against a real Grafana', () => {
 });
 
 test.describe('the panel supplies its own state colours', () => {
-  test('colours a dashboard that configures no value mappings at all', async ({
-    gotoDashboardPage,
-    readProvisionedDashboard,
-    page,
-  }) => {
+  test('colours a dashboard that configures no value mappings at all', async ({ page }) => {
     // slurm-node-scenarios.json carries no fieldConfig.defaults.mappings: not
     // an empty array, the key is absent. Anything coloured here came from the
     // plugin's own standardOptions default, which is the whole claim. Written
     // against a build without that default first, where it failed with 0
     // mapped cells out of 31.
-    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-scenarios.json' });
-    const dashboardPage = await gotoDashboardPage(dashboard);
+    //
+    // One panel at a time through ?viewPanel, and asserted per panel rather
+    // than as one total over the dashboard. A total is a measure of what
+    // Grafana happened to mount: it read 203, then 43 when a panel two rows
+    // up grew taller, and scrolling the panels into view fixed it on five of
+    // the six images in the CI matrix and not on 13.0.9. Per panel there is
+    // nothing left to mount - and "the defaults reach more than one panel" is
+    // what this test means anyway, which a sum never quite said.
+    const panels: Array<[number, string]> = [
+      [1, 'Every state, live'],
+      [2, 'A rack on the floor'],
+      [3, 'The same rack, read without the shape channel'],
+      [4, 'A drain storm, with the reasons attached'],
+      [5, 'A production cluster on an ordinary day'],
+    ];
 
-    await expect(page.getByTestId('slurm-node-grid').first()).toBeVisible({ timeout: 15_000 });
+    const coloursSeen = new Set<string>();
+    for (const [id, title] of panels) {
+      await page.goto(`/d/slurm-node-scenarios/scenarios?viewPanel=${id}`);
+      const cells = page.locator('[data-testid^="node-cell-"]');
+      // One compound selector, not `.locator(cell).locator(mapped)` — the
+      // second form searches for a mapped element *inside* each cell and
+      // matches nothing, which reports zero on a grid that is fully coloured.
+      const mapped = page.locator('[data-testid^="node-cell-"][data-mapped="true"]');
+      await expect
+        .poll(() => cells.count(), { timeout: 20_000, message: `${title} drew nothing` })
+        .toBeGreaterThan(0);
 
-    // Bring every panel into view first. Grafana mounts a panel only once it
-    // enters the viewport, so an unscrolled count is a count of whichever
-    // panels happen to fit today - this assertion once dropped from 203 to 43
-    // because a panel two rows up grew taller. Scrolling by title, the way
-    // gridIn does, makes the number a property of the dashboard rather than
-    // of its layout. A mouse wheel does not work here: the scenes renderer
-    // scrolls its own container, not the window.
-    for (const title of [
-      'Every state, live, with the rules the panel ships',
-      'A rack on the floor',
-      'The same rack, read without the shape channel',
-      'A drain storm, with the reasons attached',
-      'A production cluster on an ordinary day',
-    ]) {
-      await gridIn(dashboardPage, title);
+      const [drawn, coloured] = [await cells.count(), await mapped.count()];
+      // Every cell but the deliberately unknown state on panel 1, which is
+      // there precisely to be unmapped.
+      expect(coloured, `${title}: ${coloured} of ${drawn} cells matched a rule`)
+        .toBeGreaterThanOrEqual(drawn - 1);
+
+      for (const c of await mapped.evaluateAll((n) =>
+        Array.from(new Set(n.map((x) => getComputedStyle(x).backgroundColor)))
+      )) {
+        coloursSeen.add(c);
+      }
     }
 
-    // One compound selector, not `.locator(cell).locator(mapped)` — the second
-    // form searches for a mapped element *inside* each cell and matches
-    // nothing, which reports zero on a grid that is fully coloured.
-    const mapped = page.locator('[data-testid^="node-cell-"][data-mapped="true"]');
-    // 643 of the dashboard's 644 cells match a shipped rule; the one that does
-    // not is the deliberately unknown state. A bound of 1 would pass on a
-    // single lucky cell; 500 fails if the defaults reach only one panel - the
-    // largest alone is the 540-node live one - and stays clear of 643 so that
-    // adding an unmapped state does not break it.
-    await expect.poll(() => mapped.count(), { timeout: 20_000 }).toBeGreaterThan(500);
-
     // Mapped is not the same as coloured: a uniformly grey grid would still
-    // report every cell as mapped. The eleven rules resolve to nine colours.
-    const colours = await mapped.evaluateAll((nodes) =>
-      Array.from(new Set(nodes.map((n) => getComputedStyle(n).backgroundColor)))
-    );
-    expect(colours.length).toBeGreaterThan(4);
+    // report every cell as mapped. The twenty-one rules resolve to nine
+    // colours, and these five panels between them reach most of them.
+    expect(coloursSeen.size).toBeGreaterThan(4);
   });
 });
 
