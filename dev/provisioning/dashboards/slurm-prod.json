@@ -19,7 +19,7 @@
       "id": 1,
       "type": "gauge",
       "title": "In use",
-      "description": "Nodes running work (allocated or mixed, and still answering) over all nodes. Deliberately not the same question as CPU allocated below: a cluster can have every node busy and half its cores idle, and the gap between the two is where the waste is.",
+      "description": "Share of the cluster's nodes carrying work. Green at the top, not red: on an HPC cluster a busy machine is the point, and an idle one is capacity that earns nothing. Every utilisation scale on this dashboard reads the same way - the more used, the greener - which is the same reasoning that colours allocated green and idle blue in the floor plan below.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -36,24 +36,28 @@
           "min": 0,
           "max": 100,
           "thresholds": {
-            "mode": "percentage",
+            "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "value": null,
+                "color": "red"
               },
               {
-                "color": "#EAB839",
-                "value": 60
+                "value": 40,
+                "color": "orange"
               },
               {
-                "color": "red",
-                "value": 80
+                "value": 60,
+                "color": "yellow"
+              },
+              {
+                "value": 80,
+                "color": "green"
               }
             ]
           },
           "color": {
-            "mode": "continuous-GrYlRd"
+            "mode": "continuous-RdYlGr"
           }
         },
         "overrides": []
@@ -474,16 +478,20 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
-                "value": null
+                "value": null,
+                "color": "red"
               },
               {
-                "color": "green",
-                "value": 60
+                "value": 40,
+                "color": "orange"
               },
               {
-                "color": "yellow",
-                "value": 92
+                "value": 60,
+                "color": "yellow"
+              },
+              {
+                "value": 80,
+                "color": "green"
               }
             ]
           },
@@ -620,8 +628,8 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 15,
-        "w": 13,
+        "h": 11,
+        "w": 24,
         "x": 0,
         "y": 9
       },
@@ -732,10 +740,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 15,
-        "w": 11,
-        "x": 13,
-        "y": 9
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 20
       },
       "fieldConfig": {
         "defaults": {
