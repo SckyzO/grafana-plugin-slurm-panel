@@ -627,3 +627,14 @@ overtaken by the implementation without the document following it.
 | *Scale* promised a warning past a cell-count threshold | There is none. `maxCells` was removed in the grouping slice and nothing replaced it; the shipped README says so outright |
 | The data contract called a facet binding a "slot" | "Slot" now means a chassis position in a cabinet. A binding is a **role**, carried by `QueryBindings` / `options.queries` |
 | The duplicate-grouping header read `20 nodes · 25 slots` | It reads `20 nodes drawn in 25 cells` |
+
+## Revision (2026-09-19)
+
+| Was | Is |
+|---|---|
+| "It ships **on**. `DEFAULT_OPTIONS.shapeChannel` is `true` and `module.test.ts` pins it" | It ships **off**, and `module.test.ts` pins that instead, alongside the option's existence. The measurement that drove the original decision is unchanged — `not responding` against `allocated` is still ΔE 4.8 under protanopia — but the conclusion drawn from it was that every reader should pay for the pair who need it. The maintainer's call is the other way: the notches cost legibility at fourteen pixels for everyone, most readers have no red-green deficiency, and a switch one click away under Display serves the ones who do. Documented in both READMEs, with the pair named, rather than left for a reader to discover |
+| The dev stack demonstrated the channel with a matched pair on the scenarios dashboard | One panel, `Shape channel`, on the grouping and layout dashboard. Every other grid in the stack now shows the shipped default, which is what a reader is actually going to get |
+
+This is a default changing, which is a breaking change for anyone who had
+come to rely on it. Nobody has: the plugin is unpublished.
+

@@ -161,7 +161,7 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
         path: 'shapeChannel',
         name: 'Shape channel',
         description:
-          'Carry state as a shape as well as a fill. On by default: colour alone cannot separate every Slurm state safely, and this is what keeps the grid readable in greyscale, in print and with a colour-vision deficiency.',
+          'Carry state as a shape as well as a fill. Off by default. Turn it on for a red-green colour deficiency, for greyscale, or for print: "not responding" and "allocated" measure Delta E 4.8 under protanopia, which the fill alone cannot separate.',
         defaultValue: DEFAULT_OPTIONS.shapeChannel,
         category: ['Display'],
       })

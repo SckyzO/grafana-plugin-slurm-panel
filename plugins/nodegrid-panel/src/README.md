@@ -252,17 +252,28 @@ colour mode is active, so meaning never rests on colour alone.
 
 ![GPU occupancy across six racks, with the GPU-less nodes drawn empty rather than coloured](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-gpu.png)
 
-**Display > Shape channel** adds a second encoding, on by default: a notch
-or a diagonal cut into the cell for the states that most need to stay
-visible without colour. With it on, the grid stays readable in greyscale, in
-print, under `forced-colors`, and for a red-green colour deficiency,
-whatever palette the site chose.
+**Display > Shape channel** adds a second encoding: a notch or a diagonal cut
+into the cell for the states that most need to stay visible without colour.
+With it on, the grid stays readable in greyscale, in print, under
+`forced-colors`, and for a red-green colour deficiency, whatever palette the
+site chose.
 
-The same rack drawn both ways. A notch survives what hue does not:
+It ships **off**, which is a trade rather than an oversight. The notches cost
+a little legibility at fourteen pixels for every reader, and most readers do
+not need them. Turn it on if you read with a red-green deficiency, in
+greyscale, or on paper — the paragraph below says exactly which pair of states
+makes that necessary.
 
-| Shape channel on | Shape channel off |
-|---|---|
-| ![A rack of down nodes, each cell notched](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-shapes.png) | ![The same rack, flat fills only](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-noshapes.png) |
+The same floor drawn both ways — same nodes, same colours, one option apart.
+A notch survives what hue does not:
+
+**Off, the default:**
+
+![Nine cabinets, flat fills only](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-noshapes.png)
+
+**On:** the drained and down cells carry a cut corner as well as a colour.
+
+![The same nine cabinets, the drained and down cells notched](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-shapes.png)
 
 ### The states, and the colour each one gets
 
@@ -299,12 +310,12 @@ against the background.
 
 **Six hues are not enough on their own.** `not responding` against `allocated`
 measures 4.8 under protanopia and no rearrangement of this palette fixed it,
-which is why **Shape channel is on by default**. The shape is not a second
+which is why **Shape channel exists**. The shape is not a second
 alphabet for all twenty-one states. It marks the two families the fill could
 not be trusted to separate, cutting the top-right corner of `not responding`,
 `drained` and `maintenance` and the bottom-right corner of `down` and `powered
-down`. Every other state is drawn as a plain square. Turning it off is a choice
-a reader makes, not one they inherit.
+down`. Every other state is drawn as a plain square. Turning it on is a choice
+a reader makes; nobody else's grid changes.
 
 `sinfo` appends one of nine flags to a state: `*` not responding, `~` powered
 off, `#` powering up, `!` pending power down, `%` powering down, `$`

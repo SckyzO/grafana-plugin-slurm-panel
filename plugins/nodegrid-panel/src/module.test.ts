@@ -76,10 +76,14 @@ describe('the defaults a reader inherits without configuring anything', () => {
     expect(DEFAULT_OPTIONS.centreRacks).toBe(false);
   });
 
-  it('ships the shape channel on', () => {
-    // Six theme hues cannot separate twenty-one states safely — "not
-    // responding" against "allocated" measures 4.8 under protanopia. The shape
-    // is what makes the colour legal, so it is not opt-in.
-    expect(DEFAULT_OPTIONS.shapeChannel).toBe(true);
+  it('ships the shape channel off, and offers it', () => {
+    // A trade, pinned so it stays a decision rather than drifting: "not
+    // responding" against "allocated" measures 4.8 under protanopia, so a
+    // reader with a red-green deficiency needs this switch — and the notches
+    // cost legibility at 14px for every reader who does not. It ships off and
+    // the option is one click away, which is only defensible while the option
+    // exists, so this pins both.
+    expect(DEFAULT_OPTIONS.shapeChannel).toBe(false);
+    expect(optionAt('shapeChannel').name).toBe('Shape channel');
   });
 });

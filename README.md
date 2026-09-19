@@ -43,8 +43,10 @@ rather than hanging from the ceiling.
 six hues for six decisions: it works, it is free, a human claimed it, it
 stopped answering, it is broken, it is gone. What works is drawn light and what
 is broken is drawn dark, because protanopia and deuteranopia collapse red
-against green and keep light against dark. A shape channel ships **on**, because
-the fill alone could not be trusted to separate the states that matter most.
+against green and keep light against dark. Where the fill still cannot be
+trusted — `not responding` against `allocated` measures ΔE 4.8 under
+protanopia — a **shape channel** is one switch away, off by default because
+the notches cost legibility for every reader who does not need them.
 
 ![Every Slurm state the panel ships a rule for, each drawn in its colour](plugins/nodegrid-panel/src/img/node-grid-states.png)
 

@@ -71,12 +71,14 @@ export const DEFAULT_OPTIONS: PanelOptions = {
   // was always shown, and the cabinets always packed from the left.
   showNodeCount: true,
   centreRacks: false,
-  // On by default, and not as a courtesy. Measured on this palette, "not
-  // responding" against "allocated" is Delta E 4.8 under protanopia, below any
-  // legal floor, and no reshuffle of the six hues fixed it. The shape marks
-  // that pair's family rather than encoding every state, which is what makes
-  // the colour safe, so it ships on and a reader turns it off rather than
-  // discovering they needed it.
-  shapeChannel: true,
+  // Off by default, which is a trade the maintainer made knowingly and not a
+  // gap. Measured on this palette, "not responding" against "allocated" is
+  // Delta E 4.8 under protanopia - below any legal floor, and no reshuffle of
+  // the six hues cleared it - so a reader with a red-green deficiency does
+  // need this switch. Most readers do not, the notches cost legibility at
+  // 14px for everyone, and the palette is otherwise measured safe. It ships
+  // off, the option is one click away under Display, and the README says who
+  // should reach for it rather than leaving them to find out.
+  shapeChannel: false,
   colorMode: 'state',
 };

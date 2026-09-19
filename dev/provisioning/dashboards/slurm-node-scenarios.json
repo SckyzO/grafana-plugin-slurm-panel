@@ -17,7 +17,7 @@
     {
       "id": 6,
       "type": "text",
-      "title": "Nine colours, six decisions",
+      "title": "State colour reference",
       "gridPos": {
         "h": 16,
         "w": 8,
@@ -34,7 +34,7 @@
     {
       "id": 1,
       "type": "tomzone-slurm-panel",
-      "title": "Every state, live, with the rules the panel ships",
+      "title": "All Slurm states, default mappings",
       "description": "Every node state in the sinfo man page, long form and abbreviation both, grouped by the raw state so the group header is the input and the swatch is the output. Nine colours for twenty-one states: the hue carries the decision an operator makes (it works, it is free, a human claimed it, it stopped answering, it is broken, it is gone) and the shade says the degree. The notch is the shape channel, on by default: it marks the two families the fill could not be trusted to separate, not all twenty-one states. The last entry is not a Slurm state at all: it is what a state introduced by a future Slurm looks like: drawn hollow rather than coloured, and named in the strip above, so it cannot be mistaken for one the panel understands.",
       "datasource": {
         "type": "grafana-testdata-datasource",
@@ -86,15 +86,15 @@
     {
       "id": 2,
       "type": "tomzone-slurm-panel",
-      "title": "A rack on the floor",
-      "description": "Four racks of twenty; r003 has lost power. Rack layout, grouped by the rack label. The rack column in this CSV is hand-written: slurm_exporter publishes no such label, and there is nowhere for one to come from because it reads sinfo. Grouping by a label is only available if you add the label yourself, through Prometheus relabelling or a join against an inventory.",
+      "title": "Rack layout",
+      "description": "A cabinet of twenty sleds per rack, drawn from a hand-written CSV so it needs nothing running but Grafana. r003 is entirely down, which is what makes the state colours worth looking at here rather than on a floor that is mostly green.",
       "datasource": {
         "type": "grafana-testdata-datasource",
         "uid": "slurm-views-testdata"
       },
       "gridPos": {
         "h": 9,
-        "w": 12,
+        "w": 24,
         "x": 0,
         "y": 16
       },
@@ -136,62 +136,9 @@
       }
     },
     {
-      "id": 3,
-      "type": "tomzone-slurm-panel",
-      "title": "The same rack, read without the shape channel",
-      "description": "Identical data to the panel on the left with the shape channel switched off, which is not the default. State is normally carried by a notch as well as a fill, so the grid survives greyscale, print and colour-vision deficiency, where three greens and two blues are three greys and two greys, and where a working node and a broken one are the pair that must never converge.",
-      "datasource": {
-        "type": "grafana-testdata-datasource",
-        "uid": "slurm-views-testdata"
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 16
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "type": "grafana-testdata-datasource",
-            "uid": "slurm-views-testdata"
-          },
-          "scenarioId": "csv_content",
-          "csvContent": "node,rack,partition,status,Value\nr001n0001,r001,cpu,idle,1\nr001n0002,r001,cpu,idle,1\nr001n0003,r001,cpu,mixed,1\nr001n0004,r001,cpu,allocated,1\nr001n0005,r001,cpu,idle,1\nr001n0006,r001,cpu,mixed,1\nr001n0007,r001,cpu,allocated,1\nr001n0008,r001,cpu,idle,1\nr001n0009,r001,cpu,idle,1\nr001n0010,r001,cpu,idle,1\nr001n0011,r001,cpu,mixed,1\nr001n0012,r001,cpu,allocated,1\nr001n0013,r001,cpu,idle,1\nr001n0014,r001,cpu,mixed,1\nr001n0015,r001,cpu,allocated,1\nr001n0016,r001,cpu,idle,1\nr001n0017,r001,cpu,idle,1\nr001n0018,r001,cpu,idle,1\nr001n0019,r001,cpu,mixed,1\nr001n0020,r001,cpu,allocated,1\nr002n0021,r002,cpu,idle,1\nr002n0022,r002,cpu,mixed,1\nr002n0023,r002,cpu,allocated,1\nr002n0024,r002,cpu,idle,1\nr002n0025,r002,cpu,idle,1\nr002n0026,r002,cpu,idle,1\nr002n0027,r002,cpu,mixed,1\nr002n0028,r002,cpu,allocated,1\nr002n0029,r002,cpu,idle,1\nr002n0030,r002,cpu,mixed,1\nr002n0031,r002,cpu,allocated,1\nr002n0032,r002,cpu,idle,1\nr002n0033,r002,cpu,idle,1\nr002n0034,r002,cpu,idle,1\nr002n0035,r002,cpu,mixed,1\nr002n0036,r002,cpu,allocated,1\nr002n0037,r002,cpu,idle,1\nr002n0038,r002,cpu,mixed,1\nr002n0039,r002,cpu,allocated,1\nr002n0040,r002,cpu,idle,1\nr003n0041,r003,cpu,down,1\nr003n0042,r003,cpu,down,1\nr003n0043,r003,cpu,down,1\nr003n0044,r003,cpu,down,1\nr003n0045,r003,cpu,down,1\nr003n0046,r003,cpu,down,1\nr003n0047,r003,cpu,down,1\nr003n0048,r003,cpu,down,1\nr003n0049,r003,cpu,down,1\nr003n0050,r003,cpu,down,1\nr003n0051,r003,cpu,down,1\nr003n0052,r003,cpu,down,1\nr003n0053,r003,cpu,down,1\nr003n0054,r003,cpu,down,1\nr003n0055,r003,cpu,down,1\nr003n0056,r003,cpu,down,1\nr003n0057,r003,cpu,down,1\nr003n0058,r003,cpu,down,1\nr003n0059,r003,cpu,down,1\nr003n0060,r003,cpu,down,1\nr004n0061,r004,cpu,idle,1\nr004n0062,r004,cpu,mixed,1\nr004n0063,r004,cpu,allocated,1\nr004n0064,r004,cpu,idle,1\nr004n0065,r004,cpu,idle,1\nr004n0066,r004,cpu,idle,1\nr004n0067,r004,cpu,mixed,1\nr004n0068,r004,cpu,allocated,1\nr004n0069,r004,cpu,idle,1\nr004n0070,r004,cpu,mixed,1\nr004n0071,r004,cpu,allocated,1\nr004n0072,r004,cpu,idle,1\nr004n0073,r004,cpu,idle,1\nr004n0074,r004,cpu,idle,1\nr004n0075,r004,cpu,mixed,1\nr004n0076,r004,cpu,allocated,1\nr004n0077,r004,cpu,idle,1\nr004n0078,r004,cpu,mixed,1\nr004n0079,r004,cpu,allocated,1\nr004n0080,r004,cpu,idle,1\n"
-        }
-      ],
-      "options": {
-        "labels": {
-          "node": "node",
-          "state": "status",
-          "partition": "partition",
-          "gresType": "gres_type",
-          "reason": "reason"
-        },
-        "queries": {
-          "state": "A"
-        },
-        "grouping": {
-          "kind": "label",
-          "label": "rack"
-        },
-        "multiValueLabel": false,
-        "layout": "rack",
-        "cellWidth": 16,
-        "gap": 2,
-        "shapeChannel": false,
-        "colorMode": "state"
-      },
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      }
-    },
-    {
       "id": 4,
       "type": "tomzone-slurm-panel",
-      "title": "A drain storm, with the reasons attached",
+      "title": "Drain storm with reasons",
       "description": "The join this panel exists for. slurm_node_drain_reason_info carries no partition label, so no stock panel can put the reason next to the state. Query B supplies it here; hover a yellow cell.",
       "datasource": {
         "type": "grafana-testdata-datasource",
@@ -253,7 +200,7 @@
     {
       "id": 5,
       "type": "tomzone-slurm-panel",
-      "title": "A production cluster on an ordinary day",
+      "title": "Production cluster snapshot",
       "description": "Not staged, unlike the panels above: this one reads slurm_node_status and the CPU, GPU and drain facets from this dev cluster's live Prometheus, grouped by the rack label make scrape relabels in, against the synthetic exporter's default PROFILE=production shape: a cluster that is mostly allocated and mixed, with real idle capacity behind it, and only a sliver of drained, down, maintenance and failed nodes. This panel carries no warnings on purpose: it is what the grid looks like when nothing is wrong, so the reader can learn what normal looks like before trying to spot what is not.",
       "datasource": {
         "type": "prometheus",
