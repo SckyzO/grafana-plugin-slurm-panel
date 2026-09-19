@@ -71,7 +71,7 @@ hand-written CSV panels beside six that read this dev cluster.
 
 | Dashboard | Source | What it is for |
 |---|---|---|
-| Production | Prometheus | What a floor looks like on an ordinary day, and the one to open first: the number you check before anything else, the states under it, the two resources that run out, the floor itself in duo blades, and the drain reasons no stock panel can join. Every count goes through `count by (node)` before it is counted |
+| Production | Prometheus | The one to open first, in five bands: how much of the cluster still works and how much of it is working, where the nodes have been over the window, the floor itself, capacity per partition, and the reasons no stock panel can join. Every count goes through `count by (node)` before it is counted |
 | Node grid | Prometheus | The overview: one panel, every node, grouped by the `rack` label `make scrape` relabels in (falls back to a capture, a join or a range table on a Prometheus without that relabelling) |
 | Utilisation | Prometheus | State beside CPU, memory and GPU occupancy, driven by Thresholds |
 | Scenarios | CSV + Prometheus | Hand-written situations that render identically every time, plus one live panel showing what a real, unstaged distribution looks like |
@@ -189,27 +189,32 @@ query on that live cluster, and the panel plugin's own e2e suite
 (`the three ways to get a topology, proven against the same live data`)
 asserts each of them.
 
-The dashboard's twelve panels, in provisioned order:
+The dashboard's thirteen panels, in provisioned order:
 
 | # | Panel | Grouping | Data |
 |---|---|---|---|
-| 1 | By a label, in rack layout | Label `rack` | CSV, hand-written; the best case, exporter already publishes the structure |
-| 2 | By a capture, splitting compute from GPU | Capture `^([a-z]+)` | CSV, hand-written; recovers node class, not a location |
-| 3 | By a chunk of the ordinal | Chunk, size 8 | CSV, hand-written; invents structure, marked `assumed` |
-| 4 | Not grouped at all | None | CSV, hand-written; one flat grid |
-| 5 | Rung 1, label, against live Prometheus | Label `rack` | Prometheus, relabelled by `make scrape` |
-| 6 | Rung 2, join, against an inventory the metrics do not carry | Label `zone` | Prometheus (query A) joined to a CSV inventory (query B) |
-| 7 | Rung 3, ranges, against live Prometheus | Ranges, `$racks` dashboard variable | Prometheus |
-| 8 | Deliberately incomplete, a range table covering one rack of nine | Ranges, `cpu1: c[1-80]` | Prometheus, the full 540-node cluster |
-| 9 | Blades, a mixed floor | Label `rack` | Prometheus, four densities declared per group - `cpu` quad, `bigmem` triple, `visu` single, `gpu` duo - every cabinet at twenty slots |
-| 10 | Two declared heights, one floor | Label `rack` | Prometheus, same blades, the panel-wide twenty slots against `gpu[1-2]: 26` |
-| 11 | Only part of the floor, filtered in the query | Label `rack`, query narrowed to `rack=~"cpu.*"` | Prometheus, four cabinets of the nine |
-| 40 | A declaration too small for what arrived | Label `rack`, `cpu1` declared at twelve slots | Prometheus, the full 540-node cluster |
+| 1 | Grouped by label, rack layout | Label `rack` | CSV, hand-written; the best case, exporter already publishes the structure |
+| 2 | Grouped by name capture | Capture `^([a-z]+)` | CSV, hand-written; recovers node class, not a location |
+| 3 | Grouped by ordinal chunk | Chunk, size 8 | CSV, hand-written; invents structure, marked `assumed` |
+| 4 | Ungrouped | None | CSV, hand-written; one flat grid |
+| 5 | Topology 1: relabelled Prometheus label | Label `rack` | Prometheus, relabelled by `make scrape` |
+| 6 | Topology 2: joined inventory | Label `zone` | Prometheus (query A) joined to a CSV inventory (query B) |
+| 7 | Topology 3: range table | Ranges, `$racks` dashboard variable | Prometheus |
+| 8 | Incomplete range table | Ranges, `cpu1: c[1-80]` | Prometheus, the full 540-node cluster |
+| 9 | Blade density by rack | Label `rack` | Prometheus, four densities declared per group - `cpu` quad, `bigmem` triple, `visu` single, `gpu` duo - every cabinet at twenty slots |
+| 10 | Declared cabinet heights | Label `rack` | Prometheus, same blades, the panel-wide twenty slots against `gpu[1-2]: 26` |
+| 11 | Filtered to CPU racks | Label `rack`, query narrowed to `rack=~"cpu.*"` | Prometheus, four cabinets of the nine |
+| 40 | Slot declaration too small | Label `rack`, `cpu1` declared at twelve slots | Prometheus, the full 540-node cluster |
+| 12 | Shape channel | Label `rack` | Prometheus, the one grid in this stack with `shapeChannel: true` |
 
 Panels 1-4 are the same 32-node CSV, grouped four ways, and need nothing
 running but Grafana. The rest read this dev cluster's live Prometheus:
-rungs 1-3, the coverage signal, and the two that pin blade density and cabinet
-height.
+the three rungs, the coverage signal, and the ones that pin blade density,
+cabinet height, query-side filtering and the shape channel.
+
+The three rungs are the panels titled **Topology 1**, **Topology 2** and
+**Topology 3**: "rung" is this repository's word for them, and a panel title
+is not the place to teach it.
 
 **Rung 1, label.** The plain case, once a `rack` label exists: Prometheus
 datasource, `slurm_node_status`, Grouping > Group by > Label, label `rack`.

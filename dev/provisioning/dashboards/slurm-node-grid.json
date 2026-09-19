@@ -15,7 +15,7 @@
     {
       "id": 1,
       "type": "tomzone-slurm-panel",
-      "title": "Nodes, grouped by rack",
+      "title": "Nodes by rack",
       "gridPos": {
         "h": 14,
         "w": 24,

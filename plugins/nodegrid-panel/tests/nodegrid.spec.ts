@@ -162,11 +162,10 @@ test.describe('the panel supplies its own state colours', () => {
     // nothing left to mount - and "the defaults reach more than one panel" is
     // what this test means anyway, which a sum never quite said.
     const panels: Array<[number, string]> = [
-      [1, 'Every state, live'],
-      [2, 'A rack on the floor'],
-      [3, 'The same rack, read without the shape channel'],
-      [4, 'A drain storm, with the reasons attached'],
-      [5, 'A production cluster on an ordinary day'],
+      [1, 'All Slurm states, default mappings'],
+      [2, 'Rack layout'],
+      [4, 'Drain storm with reasons'],
+      [5, 'Production cluster snapshot'],
     ];
 
     const coloursSeen = new Set<string>();
@@ -212,7 +211,7 @@ test.describe('the continuous colour modes', () => {
     // Every synthetic node reports cpu_alloc and cpu_total, so every cell has
     // a value and none may be drawn empty — if the facet queries stopped being
     // read this would be 540, not 0.
-    const cpu = (await gridIn(dashboardPage, 'CPU occupancy')).locator('[data-testid^="node-cell-"]');
+    const cpu = (await gridIn(dashboardPage, 'CPU utilisation by node')).locator('[data-testid^="node-cell-"]');
     await expect.poll(() => cpu.count(), { timeout: 20_000 }).toBeGreaterThan(200);
     expect(await cpu.locator(':scope[data-filled="false"]').count()).toBe(0);
 
@@ -227,7 +226,7 @@ test.describe('the continuous colour modes', () => {
     // rather than filled: an undefined background on a <button> falls back to
     // the browser's ButtonFace grey, which reads as a real measurement and
     // once covered two thirds of this panel.
-    const gpu = (await gridIn(dashboardPage, 'GPU occupancy')).locator('[data-testid^="node-cell-"]');
+    const gpu = (await gridIn(dashboardPage, 'GPU utilisation by node')).locator('[data-testid^="node-cell-"]');
     await expect.poll(() => gpu.locator(':scope[data-filled="false"]').count(), { timeout: 20_000 })
       .toBeGreaterThan(50);
     const empty = gpu.locator(':scope[data-filled="false"]').first();
@@ -251,10 +250,10 @@ test.describe('the continuous colour modes', () => {
     // by rack, a capture keeping the letter prefix, a chunk naming itself,
     // and the ungrouped bucket the "None" key puts everything in.
     const panels: Array<[number, string, string]> = [
-      [1, 'By a label, in rack layout', 'r001'],
-      [2, 'By a capture, splitting compute from GPU', 'c'],
-      [3, 'By a chunk of the ordinal', 'chunk 1'],
-      [4, 'Not grouped at all', 'ungrouped'],
+      [1, 'Grouped by label, rack layout', 'r001'],
+      [2, 'Grouped by name capture', 'c'],
+      [3, 'Grouped by ordinal chunk', 'chunk 1'],
+      [4, 'Ungrouped', 'ungrouped'],
     ];
 
     for (const [id, title, anchor] of panels) {
@@ -360,7 +359,7 @@ test.describe('the utilisation dashboard groups the same nine racks on every pan
     const dashboardPage = await gotoDashboardPage(dashboard);
 
     const racks = ['cpu1', 'cpu2', 'cpu3', 'cpu4', 'bigmem1', 'bigmem2', 'visu1', 'gpu1', 'gpu2'];
-    for (const title of ['State', 'CPU occupancy', 'Memory occupancy', 'GPU occupancy']) {
+    for (const title of ['Node state', 'CPU utilisation by node', 'Memory utilisation by node', 'GPU utilisation by node']) {
       const grid = await gridIn(dashboardPage, title);
       for (const key of racks) {
         await expect(grid.getByTestId(`node-group-${key}`)).toBeVisible({ timeout: 15_000 });
