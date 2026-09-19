@@ -8,16 +8,19 @@ providers:
     # pins its own uid for the same reason; this is the one that was missing.
     folderUid: slurm-views
     type: file
-    # The files in this directory are the truth, deliberately.
+    # Editable from the browser, and saves persist.
     #
-    # With allowUiUpdates: true, Grafana keeps its own copy in the database and
-    # lets it drift: saving a dashboard materialises every default the panel
-    # supplies into the saved JSON. A dashboard saved once froze the plugin's
-    # value mappings as they were that day, kept reporting six Slurm states as
-    # unmapped after the plugin learned them, and no longer matched the file it
-    # came from. Editing in the browser still works for the session — it just
-    # does not persist, so the way to keep a change is to export the JSON into
-    # this directory, where it can be reviewed.
-    allowUiUpdates: false
+    # Grafana's rule: with allowUiUpdates true a save is written to Grafana's
+    # own database, and the file wins again the next time the file changes -
+    # "regardless of version numbers", so an edit here silently discards
+    # whatever was saved in the UI for that dashboard.
+    #
+    # The trap is not the save, it is the export. Saving materialises every
+    # default the panel supplies into the dashboard's JSON, so an export
+    # pasted back into this directory freezes them: one did exactly that to
+    # the plugin's value mappings, which then kept reporting six Slurm states
+    # as unmapped after the plugin had learned them. When copying a change
+    # back, take the panel or the option that changed - not the whole export.
+    allowUiUpdates: true
     options:
       path: /etc/grafana/provisioning/dashboards
