@@ -19,7 +19,7 @@
       "type": "text",
       "title": "Nine colours, six decisions",
       "gridPos": {
-        "h": 11,
+        "h": 16,
         "w": 8,
         "x": 0,
         "y": 0
@@ -41,7 +41,7 @@
         "uid": "slurm-views-testdata"
       },
       "gridPos": {
-        "h": 11,
+        "h": 16,
         "w": 16,
         "x": 8,
         "y": 0
@@ -96,7 +96,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 11
+        "y": 16
       },
       "targets": [
         {
@@ -148,7 +148,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 11
+        "y": 16
       },
       "targets": [
         {
@@ -201,7 +201,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 25
       },
       "targets": [
         {
@@ -263,7 +263,7 @@
         "h": 13,
         "w": 24,
         "x": 0,
-        "y": 28
+        "y": 33
       },
       "targets": [
         {
@@ -355,7 +355,8 @@
         "layout": "rack",
         "cellWidth": 14,
         "gap": 2,
-        "colorMode": "state"
+        "colorMode": "state",
+        "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2"
       },
       "fieldConfig": {
         "defaults": {},

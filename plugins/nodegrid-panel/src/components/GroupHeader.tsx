@@ -39,7 +39,11 @@ export function GroupHeader({ group, unplaced, stacked = false, showCount = true
   return (
     <div className={styles.header}>
       <span className={styles.name}>{group.key}</span>
-      {showCount && <span className={styles.count}>{group.nodes.length} nodes</span>}
+      {showCount && (
+        <span className={styles.count}>
+          {group.nodes.length} {group.nodes.length === 1 ? 'node' : 'nodes'}
+        </span>
+      )}
       {/* Chunking invents structure. The claim stays visible in the panel,
           not only in the editor. */}
       {group.assumed && <span className={styles.assumed}>assumed</span>}

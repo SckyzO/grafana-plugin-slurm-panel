@@ -55,7 +55,8 @@
         "layout": "rack",
         "cellWidth": 13,
         "gap": 2,
-        "colorMode": "state"
+        "colorMode": "state",
+        "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2"
       },
       "fieldConfig": {
         "defaults": {},
@@ -72,7 +73,7 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 12,
+        "h": 20,
         "w": 8,
         "x": 0,
         "y": 13
@@ -158,7 +159,7 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 12,
+        "h": 20,
         "w": 8,
         "x": 8,
         "y": 13
@@ -244,7 +245,7 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 12,
+        "h": 20,
         "w": 8,
         "x": 16,
         "y": 13

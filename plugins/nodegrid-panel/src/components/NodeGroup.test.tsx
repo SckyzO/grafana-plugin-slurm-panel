@@ -87,6 +87,22 @@ const group: NodeGroupModel = {
 };
 
 describe('NodeGroup', () => {
+  it('counts one node as a node, not as nodes', () => {
+    // A group of one is not a corner case here: grouping by state gives one
+    // group per state, and the scenarios dashboard draws forty-four of them
+    // side by side, every one of them reading "1 nodes".
+    const alone: NodeGroupModel = { key: 'rack-9', nodes: [mkNode('node-a')], assumed: false };
+    renderGroup(alone, { ...DEFAULT_OPTIONS, layout: 'rack' });
+
+    expect(screen.getByText('1 node')).toBeInTheDocument();
+    expect(screen.queryByText('1 nodes')).not.toBeInTheDocument();
+  });
+
+  it('counts anything other than one as nodes', () => {
+    renderGroup(group, { ...DEFAULT_OPTIONS, layout: 'rack' });
+    expect(screen.getByText('2 nodes')).toBeInTheDocument();
+  });
+
   it('draws a rack frame of sleds when layout is rack', () => {
     renderGroup(group, { ...DEFAULT_OPTIONS, layout: 'rack' });
 

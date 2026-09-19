@@ -158,22 +158,37 @@ test.describe('the panel supplies its own state colours', () => {
     // against a build without that default first, where it failed with 0
     // mapped cells out of 31.
     const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-scenarios.json' });
-    await gotoDashboardPage(dashboard);
+    const dashboardPage = await gotoDashboardPage(dashboard);
 
     await expect(page.getByTestId('slurm-node-grid').first()).toBeVisible({ timeout: 15_000 });
+
+    // Bring every panel into view first. Grafana mounts a panel only once it
+    // enters the viewport, so an unscrolled count is a count of whichever
+    // panels happen to fit today - this assertion once dropped from 203 to 43
+    // because a panel two rows up grew taller. Scrolling by title, the way
+    // gridIn does, makes the number a property of the dashboard rather than
+    // of its layout. A mouse wheel does not work here: the scenes renderer
+    // scrolls its own container, not the window.
+    for (const title of [
+      'Every state, live, with the rules the panel ships',
+      'A rack on the floor',
+      'The same rack, read without the shape channel',
+      'A drain storm, with the reasons attached',
+      'A production cluster on an ordinary day',
+    ]) {
+      await gridIn(dashboardPage, title);
+    }
 
     // One compound selector, not `.locator(cell).locator(mapped)` — the second
     // form searches for a mapped element *inside* each cell and matches
     // nothing, which reports zero on a grid that is fully coloured.
     const mapped = page.locator('[data-testid^="node-cell-"][data-mapped="true"]');
-    // 203 cells are mounted and mapped at this viewport — not every panel on
-    // the dashboard: Grafana mounts a panel only once it scrolls into view,
-    // and this test does not scroll. Counting the whole dashboard gives 643,
-    // which is why a bound read off a scrolled page fails here. A bound of 1
-    // would pass on a single lucky cell; 150 fails if the defaults reach only
-    // one panel, and stays clear of 203 so that adding an unmapped state to
-    // the reference panel does not break it.
-    await expect.poll(() => mapped.count(), { timeout: 15_000 }).toBeGreaterThan(150);
+    // 643 of the dashboard's 644 cells match a shipped rule; the one that does
+    // not is the deliberately unknown state. A bound of 1 would pass on a
+    // single lucky cell; 500 fails if the defaults reach only one panel - the
+    // largest alone is the 540-node live one - and stays clear of 643 so that
+    // adding an unmapped state does not break it.
+    await expect.poll(() => mapped.count(), { timeout: 20_000 }).toBeGreaterThan(500);
 
     // Mapped is not the same as coloured: a uniformly grey grid would still
     // report every cell as mapped. The eleven rules resolve to nine colours.
