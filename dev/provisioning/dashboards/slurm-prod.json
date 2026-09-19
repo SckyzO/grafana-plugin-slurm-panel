@@ -654,7 +654,7 @@
         "layout": "rack",
         "cellWidth": 24,
         "nodesPerBlade": 1,
-        "bladeOverrides": "rack[1-4]: 4\ngpu[1-2]: 2",
+        "bladeOverrides": "rack[1-4]: 4\nrack[5-6]: 3\nrack7: 1\ngpu[1-2]: 2",
         "slotsPerRack": 20,
         "slotOverrides": "",
         "shapeChannel": true,

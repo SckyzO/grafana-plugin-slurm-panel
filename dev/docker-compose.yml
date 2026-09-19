@@ -64,9 +64,13 @@ services:
       # SYNTH_NODES_PER_RACK is set: give it that way when the rack size is
       # the shape you care about, or set SYNTH_NODES directly when the total
       # is — in which case RACKS has no effect on the exporter at all.
-      RACKS: ${SYNTH_RACKS:-6}
-      NODES_PER_RACK: ${SYNTH_NODES_PER_RACK:-0}
-      NODES: ${SYNTH_NODES:-400}
+      # All empty by default, like PARTITIONS below and for the same reason:
+      # serve.py owns the cluster's shape, and a default spelled here as well
+      # silently wins over it. Every SYNTH_* below still overrides.
+      RACKS: ${SYNTH_RACKS:-}
+      NODES_PER_RACK: ${SYNTH_NODES_PER_RACK:-}
+      NODES: ${SYNTH_NODES:-}
+      GPU_NODES: ${SYNTH_GPU_NODES:-}
       # Empty on purpose: serve.py owns the default partition cycle, because
       # that cycle also fixes the gpu-to-compute ratio the rack sizes depend
       # on. Spelling a default here too meant two places claimed it and this

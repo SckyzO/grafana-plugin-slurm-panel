@@ -6,10 +6,17 @@
 # the whole claim, one table and two destinations, and
 # tests/contract/relabel.test.cjs is what keeps it true.
 #
-# It describes the exporter's default shape: 400 nodes, four compute racks of
-# eighty and two gpu racks of forty. Those sizes are not arbitrary — a compute
-# cabinet takes quad blades and a gpu cabinet duos, so both fill the same
-# twenty slots. Give every rack the same node count and the quad cabinets draw
+# It describes the exporter's default shape: 540 nodes over nine cabinets of
+# twenty slots each. The sizes are not arbitrary — every one of them is twenty
+# slots times that cabinet's blade density, which is what makes the floor
+# level and every cabinet full:
+#
+#   rack1..rack4   80 nodes   quad blades   4 x 20
+#   rack5, rack6   60 nodes   triple        3 x 20
+#   rack7          20 nodes   single-node   1 x 20
+#   gpu1, gpu2     40 nodes   duo           2 x 20
+#
+# Give every rack the same node count instead and the denser cabinets draw
 # half empty, describing hardware nobody owns.
 #
 # Run the stack with a different RACKS or NODES and some nodes will fall
@@ -21,5 +28,8 @@ rack1: c[1-80]
 rack2: c[81-160]
 rack3: c[161-240]
 rack4: c[241-320]
+rack5: c[321-380]
+rack6: c[381-440]
+rack7: c[441-460]
 gpu1:  g[1-40]
 gpu2:  g[41-80]

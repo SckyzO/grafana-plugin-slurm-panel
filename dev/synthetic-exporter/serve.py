@@ -39,17 +39,17 @@ import random
 import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-RACKS = max(1, int(os.environ.get("RACKS", "6")))
-NODES_PER_RACK = int(os.environ.get("NODES_PER_RACK", "0"))
-NODES = RACKS * NODES_PER_RACK if NODES_PER_RACK > 0 else int(os.environ.get("NODES", "400"))
-# One gpu node in five, not one in three. The ratio is what makes a floor of
-# equal-height cabinets possible: a compute cabinet takes quad blades and a
-# gpu cabinet duos, so at the same twenty slots the compute rack holds eighty
-# nodes and the gpu rack forty. Four compute racks and two gpu racks at those
-# sizes is 400. A three-name cycle gave every rack the same forty nodes
-# whatever its blade density, which drew the compute cabinets half empty and
-# described hardware that does not exist.
-PARTITIONS = (os.environ.get("PARTITIONS") or "cpu,gpu,debug,cpu,cpu").split(",")
+RACKS = max(1, int(os.environ.get("RACKS") or "6"))
+NODES_PER_RACK = int(os.environ.get("NODES_PER_RACK") or "0")
+NODES = RACKS * NODES_PER_RACK if NODES_PER_RACK > 0 else int(os.environ.get("NODES") or "540")
+# How many of those carry GPUs, as a count rather than as a share of a
+# partition cycle. The share was the earlier design and it tied two unrelated
+# things together: the cycle's length fixed the ratio, so the cluster total
+# had to stay a multiple of it and the floor plan could not move without
+# rewriting the partition list. The floor plan is the thing that moves.
+GPU_NODES = int(os.environ.get("GPU_NODES") or "80")
+# The partitions the non-gpu nodes rotate through. A gpu node is in "gpu".
+PARTITIONS = (os.environ.get("PARTITIONS") or "cpu,debug").split(",")
 SEED = int(os.environ.get("SEED", "1"))
 
 _KNOWN_PROFILES = ("production", "incident", "showcase")
@@ -180,8 +180,12 @@ def cluster():
     nodes = []
     cpu_count = 0
     gpu_count = 0
+    # Exactly GPU_NODES of them, spread evenly through the generation order
+    # rather than clumped at one end: a gpu node every NODES/GPU_NODES steps,
+    # placed by integer arithmetic so the count is exact whatever the ratio.
+    gpu_at = {1 + (k * NODES) // GPU_NODES for k in range(GPU_NODES)} if GPU_NODES > 0 else set()
     for i in range(1, NODES + 1):
-        parts = [PARTITIONS[i % len(PARTITIONS)]]
+        parts = ["gpu"] if i in gpu_at else [PARTITIONS[i % len(PARTITIONS)]]
         if i % 7 == 0:
             parts.append("debug")
         is_gpu = "gpu" in parts

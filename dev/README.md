@@ -177,8 +177,8 @@ covers what each of the three rungs actually needs from you.
 
 ## Three ways to a topology, and how each one is wired
 
-`dev/relabel/racks.txt` gives this dev cluster a real `rack` label: six groups
-covering `rack1..rack4` over `c1..c320` and `gpu1..gpu2` over `g1..g80`, by
+`dev/relabel/racks.txt` gives this dev cluster a real `rack` label: nine groups
+covering `rack1..rack7` over `c1..c460` and `gpu1..gpu2` over `g1..g80`, by
 turning the same table into Prometheus relabelling (`make scrape`, run by
 `make up`) that also pastes into the panel's Grouping > Ranges option. That
 one file is the input to two of the three routes below; **grouping and
@@ -198,10 +198,10 @@ The dashboard's eleven panels, in provisioned order:
 | 5 | Rung 1, label, against live Prometheus | Label `rack` | Prometheus, relabelled by `make scrape` |
 | 6 | Rung 2, join, against an inventory the metrics do not carry | Label `zone` | Prometheus (query A) joined to a CSV inventory (query B) |
 | 7 | Rung 3, ranges, against live Prometheus | Ranges, `$racks` dashboard variable | Prometheus |
-| 8 | Deliberately incomplete, a range table covering one rack of six | Ranges, `rack1: c[1-80]` | Prometheus, the full 400-node cluster |
-| 9 | Blades, a mixed floor | Label `rack` | Prometheus, with `rack[1-4]: 4` and `gpu[1-2]: 2` declared per group, every cabinet at twenty slots |
-| 10 | Two declared heights, one floor | Label `rack` | Prometheus, same blades, `rack[1-4]: 20` against `gpu[1-2]: 26` |
-| 40 | A declaration too small for what arrived | Label `rack`, `rack1` declared at twelve slots | Prometheus, the full 400-node cluster |
+| 8 | Deliberately incomplete, a range table covering one rack of nine | Ranges, `rack1: c[1-80]` | Prometheus, the full 540-node cluster |
+| 9 | Blades, a mixed floor | Label `rack` | Prometheus, four densities declared per group - quad, triple, single, duo - every cabinet at twenty slots |
+| 10 | Two declared heights, one floor | Label `rack` | Prometheus, same blades, `rack[1-7]: 20` against `gpu[1-2]: 26` |
+| 40 | A declaration too small for what arrived | Label `rack`, `rack1` declared at twelve slots | Prometheus, the full 540-node cluster |
 
 Panels 1-4 are the same 32-node CSV, grouped four ways, and need nothing
 running but Grafana. The rest read this dev cluster's live Prometheus:
@@ -287,10 +287,10 @@ groups appear.
 some label would place strictly more nodes than the active source does. Every
 demo above covers every node it queries, so that line never fires on any of
 them, and proving nothing is not the same as the signal working. One further
-panel groups the *entire* 400-node cluster by a range table naming only
-`rack1: c[1-80]`: 80 nodes land in `rack1`, the other 320 match no range and
+panel groups the *entire* 540-node cluster by a range table naming only
+`rack1: c[1-80]`: 80 nodes land in `rack1`, the other 460 match no range and
 draw under `ungrouped`, dashed and marked unplaced, and the warnings strip
-both names the 320 and reports that `rack` would cover all 400. Deliberately
+both names the 460 and reports that `rack` would cover all 540. Deliberately
 incomplete, not a broken panel; its own description says so.
 
 ## Browser tests

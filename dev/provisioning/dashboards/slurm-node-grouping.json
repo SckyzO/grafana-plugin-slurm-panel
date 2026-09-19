@@ -460,7 +460,7 @@
       "id": 9,
       "type": "tomzone-slurm-panel",
       "title": "Blades -- a mixed floor, against live Prometheus",
-      "description": "Blade density, against live Prometheus. Nodes per blade, by group gives the four compute racks quad blades and the two gpu racks duos, so a compute cabinet is drawn four sleds wide and a gpu cabinet two. The floor is level and every cabinet is full because the fixture's rack sizes follow from that density rather than ignoring it: eighty nodes at four per blade and forty at two both come to twenty rows, which is what Slots per rack declares. Give every rack the same node count and the quad cabinets draw half empty - hardware nobody owns. Declared heights that differ are panel 10's job, not this one's.",
+      "description": "Blade density, against live Prometheus. Nodes per blade, by group puts four densities on one floor: the four compute racks take quad blades, rack5 and rack6 triples, rack7 single-node servers, and the two gpu racks duos - so a cabinet is drawn four, three, one or two sleds wide. rack7's line restates the default of 1 on purpose: a floor plan that names every cabinet reads better than one where the quiet ones are inferred. Every cabinet is twenty slots and every one is full, because the fixture sizes a rack at twenty times its density rather than giving them all the same node count. Declared heights that differ are panel 10's job.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -498,7 +498,7 @@
         "layout": "rack",
         "cellWidth": 14,
         "nodesPerBlade": 1,
-        "bladeOverrides": "rack[1-4]: 4\ngpu[1-2]: 2",
+        "bladeOverrides": "rack[1-4]: 4\nrack[5-6]: 3\nrack7: 1\ngpu[1-2]: 2",
         "slotOverrides": "",
         "gap": 2,
         "shapeChannel": false,
@@ -556,7 +556,7 @@
         "gap": 2,
         "shapeChannel": false,
         "colorMode": "state",
-        "bladeOverrides": "rack[1-4]: 4\ngpu[1-2]: 2"
+        "bladeOverrides": "rack[1-4]: 4\nrack[5-6]: 3\nrack7: 1\ngpu[1-2]: 2"
       },
       "fieldConfig": {
         "defaults": {},
@@ -605,8 +605,8 @@
         "layout": "rack",
         "cellWidth": 14,
         "nodesPerBlade": 1,
-        "bladeOverrides": "rack[1-4]: 4\ngpu[1-2]: 2",
-        "slotOverrides": "rack[1-4]: 20\ngpu[1-2]: 26",
+        "bladeOverrides": "rack[1-4]: 4\nrack[5-6]: 3\nrack7: 1\ngpu[1-2]: 2",
+        "slotOverrides": "rack[1-7]: 20\ngpu[1-2]: 26",
         "gap": 2,
         "shapeChannel": false,
         "colorMode": "state",

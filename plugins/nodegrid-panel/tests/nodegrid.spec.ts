@@ -68,12 +68,12 @@ test.describe('the node grid renders against a real Grafana', () => {
 
     await expect(page.getByTestId('slurm-node-grid')).toBeVisible({ timeout: 15_000 });
     const cells = page.locator('[data-testid^="node-cell-"]');
-    // The synthetic exporter publishes 400 nodes across 6 racks: four compute
-    // racks of eighty and two gpu racks of forty. A bound of 10 would pass
-    // even if a frame-shape defect silently dropped most of them; 350 catches
-    // a partial ingest failure, not only a total one, and stays a lower bound
+    // The synthetic exporter publishes 540 nodes across 9 racks, each cabinet
+    // twenty slots times its blade density. A bound of 10 would pass even if
+    // a frame-shape defect silently dropped most of them; 500 catches a
+    // partial ingest failure, not only a total one, and stays a lower bound
     // so it survives someone changing SYNTH_NODES.
-    await expect.poll(() => cells.count(), { timeout: 15_000 }).toBeGreaterThan(350);
+    await expect.poll(() => cells.count(), { timeout: 15_000 }).toBeGreaterThan(500);
   });
 
   test('paints different states different colours', async ({ gotoDashboardPage, readProvisionedDashboard, page }) => {
@@ -85,12 +85,12 @@ test.describe('the node grid renders against a real Grafana', () => {
     await gotoDashboardPage(dashboard);
 
     const mapped = page.locator('[data-testid^="node-cell-"][data-mapped="true"]');
-    // All 400 synthetic nodes match a shipped mapping today: the twenty-one
-    // rules cover every sinfo state in both spellings, suffixes included. 300
+    // All 540 synthetic nodes match a shipped mapping today: the twenty-one
+    // rules cover every sinfo state in both spellings, suffixes included. 400
     // stays a lower bound (survives a SYNTH_NODES change) while still failing
-    // on a partial render — one rack's worth is eighty cells, which a bound of
+    // on a partial render — the largest rack is eighty cells, which a bound of
     // 10 would let through unnoticed.
-    await expect.poll(() => mapped.count(), { timeout: 15_000 }).toBeGreaterThan(300);
+    await expect.poll(() => mapped.count(), { timeout: 15_000 }).toBeGreaterThan(400);
 
     const colours = await mapped.evaluateAll((nodes) =>
       Array.from(new Set(nodes.map((n) => getComputedStyle(n).backgroundColor)))
@@ -194,7 +194,7 @@ test.describe('the continuous colour modes', () => {
 
     // Every synthetic node reports cpu_alloc and cpu_total, so every cell has
     // a value and none may be drawn empty — if the facet queries stopped being
-    // read this would be 400, not 0.
+    // read this would be 540, not 0.
     const cpu = (await gridIn(dashboardPage, 'CPU occupancy')).locator('[data-testid^="node-cell-"]');
     await expect.poll(() => cpu.count(), { timeout: 20_000 }).toBeGreaterThan(200);
     expect(await cpu.locator(':scope[data-filled="false"]').count()).toBe(0);
@@ -398,8 +398,8 @@ test.describe('the coverage signal, proven by a source that deliberately covers 
   test('an incomplete range table draws the orphans as unplaced and names a wider label', async ({ page }) => {
     await gotoPanelWithData(page, 8, 'rack1');
 
-    // The table names only rack1: c[1-80] against the full 400-node cluster,
-    // so 80 nodes are placed and the other 320 fall outside every range.
+    // The table names only rack1: c[1-80] against the full 540-node cluster,
+    // so 80 nodes are placed and the other 460 fall outside every range.
     const placed = page.getByTestId('node-group-rack1');
     await expect(placed).toBeVisible({ timeout: 15_000 });
     await expect.poll(() => placed.locator('[data-testid^="node-cell-"]').count(), { timeout: 15_000 }).toBe(80);
@@ -407,16 +407,16 @@ test.describe('the coverage signal, proven by a source that deliberately covers 
     const orphaned = page.getByTestId('node-group-ungrouped');
     await expect(orphaned).toBeVisible();
     await expect(orphaned).toHaveAttribute('data-unplaced', 'true');
-    await expect.poll(() => orphaned.locator('[data-testid^="node-cell-"]').count(), { timeout: 15_000 }).toBe(320);
+    await expect.poll(() => orphaned.locator('[data-testid^="node-cell-"]').count(), { timeout: 15_000 }).toBe(460);
 
     // Both signals on one panel: the orphan line names what the range table
     // missed, and the coverage line names the label that would have covered
-    // all 400 - the measurement that stays silent on every other panel here,
+    // all 540 - the measurement that stays silent on every other panel here,
     // because their sources already cover every node.
     const strip = page.getByTestId('panel-warnings').first();
     await expect(strip).toBeVisible({ timeout: 15_000 });
-    await expect(strip).toContainText('320 nodes matched no range');
-    await expect(strip).toContainText('Label "rack" would group all 400');
+    await expect(strip).toContainText('460 nodes matched no range');
+    await expect(strip).toContainText('Label "rack" would group all 540');
   });
 });
 
@@ -457,7 +457,7 @@ test.describe('a cabinet holds every sled it draws', () => {
 });
 
 test.describe('blades, against the same live data', () => {
-  test('draws a quad cabinet four sleds wide and a duo cabinet two', async ({ page }) => {
+  test('draws each cabinet as many sleds wide as its blade holds', async ({ page }) => {
     // getBoundingClientRect, not toBeVisible: the question is where these
     // cells actually are, and toBeVisible passes for anything mounted.
     await gotoPanelWithData(page, 9, 'rack1');
@@ -475,7 +475,11 @@ test.describe('blades, against the same live data', () => {
       return new Set(lefts).size;
     };
 
+    // Four densities on one floor, which is the whole point of the override
+    // table: a single wrong lookup would show up as one of these four.
     expect(await sledsAcross('rack1')).toBe(4);
+    expect(await sledsAcross('rack5')).toBe(3);
+    expect(await sledsAcross('rack7')).toBe(1);
     expect(await sledsAcross('gpu1')).toBe(2);
   });
 });

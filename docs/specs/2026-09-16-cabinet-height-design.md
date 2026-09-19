@@ -406,7 +406,7 @@ complaint.
 
 | Was | Is |
 |---|---|
-| "all six racks in the dev fixture hold exactly forty nodes, so every screenshot shows six cabinets of equal height" | The fixture is 400 nodes: four compute racks of eighty and two gpu racks of forty. Those sizes follow from blade density, so both kinds fill the same twenty slots. Equal height is now the *correct* drawing, not a demonstration gap |
+| "all six racks in the dev fixture hold exactly forty nodes, so every screenshot shows six cabinets of equal height" | The fixture is 540 nodes over nine cabinets, each holding twenty slots times its blade density: 80 in quads, 60 in triples, 40 in duos, 20 in single-node servers. Equal height is now the *correct* drawing, not a demonstration gap |
 | The declared-height demonstration lives on the blades panel, which declared twelve slots against twenty-four | It has its own panel, `Two declared heights, one floor` (id 10 of the grouping dashboard): twenty slots against twenty-six, over cabinets that both draw twenty rows. The blades panel is level and full, because that is what the hardware it describes looks like |
 
 The old arrangement made the compute cabinets read as half empty. They were:
