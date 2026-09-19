@@ -106,10 +106,11 @@ up: scrape ## Start Grafana, Prometheus and the synthetic exporter
 	    sleep 1; \
 	  done; echo "Grafana never became healthy" >&2; exit 1'
 	@# Grafana being healthy does not mean there is anything to draw, so the
-	@# probe below asks the question the dashboards ask: run one of their
-	@# queries, through Grafana, and wait until it comes back with a node in
-	@# it. Three separate things have to be true for that, and each one of them
-	@# has produced a flake here:
+	@# probes below ask the questions the dashboards ask: run one of their
+	@# queries, through Grafana, and wait until it comes back with data in
+	@# it — once per datasource, because each is a separate plugin on the same
+	@# registry. Three separate things have to be true for the first, and each
+	@# one of them has produced a flake here:
 	@#
 	@#   - Prometheus has scraped at least once;
 	@#   - the provisioned datasource exists;
@@ -131,6 +132,18 @@ up: scrape ## Start Grafana, Prometheus and the synthetic exporter
 	      2>/dev/null | grep -q "\"node\"" && exit 0; \
 	    sleep 1; \
 	  done; echo "Grafana never answered a node query - see: make logs-once" >&2; exit 1'
+	@# And again for TestData, which is a different plugin on the same
+	@# registry and gets registered on its own schedule. Four panels of the
+	@# grouping dashboard read a CSV from it and nothing else, so until it
+	@# answers they draw no cells at all — which is what took down the 12.4
+	@# leg while the five others passed.
+	@$(RUN) sh -c 'for _ in $$(seq 1 90); do \
+	    curl -sf -u admin:admin -H "Content-Type: application/json" -X POST \
+	      http://grafana:3000/api/ds/query \
+	      -d "{\"queries\":[{\"refId\":\"A\",\"datasource\":{\"type\":\"grafana-testdata-datasource\",\"uid\":\"slurm-views-testdata\"},\"scenarioId\":\"csv_content\",\"csvContent\":\"probe\\n1\"}],\"from\":\"now-5m\",\"to\":\"now\"}" \
+	      2>/dev/null | grep -q "\"probe\"" && exit 0; \
+	    sleep 1; \
+	  done; echo "Grafana never answered a TestData query - see: make logs-once" >&2; exit 1'
 	@# What that query cannot prove is the one thing it was once claimed to:
 	@# /api/ds/query never touches the panel plugin. Grafana scans plugins
 	@# after it starts serving, and until tomzone-slurm-panel is registered a
