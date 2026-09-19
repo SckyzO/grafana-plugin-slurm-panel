@@ -27,11 +27,15 @@ The value of this panel is the join and the density, not new data.
 **One cell per node.** Distinct nodes, not series. A node in three partitions
 is one cell, and the panel says so when a node is drawn more than once.
 
+![A tooltip over one cell, naming the node, its state, its partitions and its CPU allocation](plugins/nodegrid-panel/src/img/node-grid-tooltip.png)
+
 **A floor plan, not a grid.** The rack layout draws each group as a cabinet:
 sleds wide and short, filling from the floor. A chassis holding several nodes
 is described by **Nodes per blade**, and a cabinet's real height by **Slots per
 rack**, so a half-filled rack stands on the floor with its empty slots above it
 rather than hanging from the ceiling.
+
+![A floor mixing two-wide and four-wide cabinets, each standing on the same line](plugins/nodegrid-panel/src/img/node-grid-blades.png)
 
 ![A half-filled rack stands on the floor, with its empty slots above it](plugins/nodegrid-panel/src/img/node-grid-heights.png)
 
@@ -41,6 +45,8 @@ stopped answering, it is broken, it is gone. What works is drawn light and what
 is broken is drawn dark, because protanopia and deuteranopia collapse red
 against green and keep light against dark. A shape channel ships **on**, because
 the fill alone could not be trusted to separate the states that matter most.
+
+![Every Slurm state the panel ships a rule for, each drawn in its colour](plugins/nodegrid-panel/src/img/node-grid-states.png)
 
 **Grouping it does not invent.** Three routes to a topology, separated by the
 privilege each needs: Prometheus relabelling at scrape time, a join
@@ -52,6 +58,15 @@ it cannot resolve, in a warnings strip above the grid.
 was declared; a state with no value mapping is drawn hollow and named rather
 than coloured by accident. A node missing from a supervision view is a worse
 failure than a node drawn in the wrong place.
+
+![A warnings strip naming 200 unplaced nodes above a grid that still draws every one of them](plugins/nodegrid-panel/src/img/node-grid-unplaced.png)
+
+## In a dashboard
+
+It sits below the counters rather than replacing them, and answers the
+question they raise — *which* nodes, and *where*.
+
+![A production dashboard: gauges and counters above, the floor plan and a table of drain reasons below](plugins/nodegrid-panel/src/img/node-grid-dashboard.png)
 
 ## Installing
 

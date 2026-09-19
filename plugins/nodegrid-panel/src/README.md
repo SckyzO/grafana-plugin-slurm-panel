@@ -10,6 +10,8 @@ series. This panel groups by node identity first, and says how many distinct
 nodes and how many drawn cells that produced whenever the two numbers
 disagree.
 
+![Six cabinets, one sled per node, coloured by Slurm state](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-by-rack.png)
+
 ## Data
 
 One required query, plus a set of optional named facets. Each is bound
@@ -38,6 +40,11 @@ plugin's repository is a worked example: its panel's `options.queries` and
 `options.labels` bind every role except the two memory facets, which the
 **Memory occupancy** panel of
 `dev/provisioning/dashboards/slurm-node-utilisation.json` shows instead.
+
+Hovering a cell reads everything the panel joined for that node, whichever
+facets the queries bound:
+
+![A tooltip over one cell, naming the node, its state, its partitions and its CPU allocation](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-tooltip.png)
 
 ## Grouping
 
@@ -172,6 +179,8 @@ supported. Neither is a cabinet that mixes blade sizes within itself:
 the drawing true. A group with no declaration keeps one sled per node, a
 vertical stack that makes no claim about where anything sits sideways.
 
+![A floor mixing two-wide and four-wide cabinets, each standing on the same line](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-blades.png)
+
 ### Cabinet height
 
 In the Rack layout every cabinet stands on a common floor, levelled to the
@@ -199,6 +208,8 @@ the rows that do not fit spill above the frame and the warnings strip names
 it. Nothing is ever hidden, because a node that exists and is not drawn is a
 node nobody is watching.
 
+![A half-filled cabinet stands on the floor, its empty slots above it](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-heights.png)
+
 ## Colour
 
 **Display > Colour by** picks one encoding for the cell fill at a time:
@@ -219,11 +230,19 @@ noise at a couple thousand. A cell always names its node and state in
 words, in the tooltip and in its accessible label, regardless of which
 colour mode is active, so meaning never rests on colour alone.
 
+![GPU occupancy across six racks, with the GPU-less nodes drawn empty rather than coloured](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-gpu.png)
+
 **Display > Shape channel** adds a second encoding, on by default: a notch
 or a diagonal cut into the cell for the states that most need to stay
 visible without colour. With it on, the grid stays readable in greyscale, in
 print, under `forced-colors`, and for a red-green colour deficiency,
 whatever palette the site chose.
+
+The same rack drawn both ways. A notch survives what hue does not:
+
+| Shape channel on | Shape channel off |
+|---|---|
+| ![A rack of down nodes, each cell notched](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-shapes.png) | ![The same rack, flat fills only](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-noshapes.png) |
 
 ### The states, and the colour each one gets
 
@@ -276,6 +295,8 @@ seven leave the state readable and are absorbed by the trailing `.*`, which is
 why one rule covers `idle`, `idle#` and `idle@` together. `-` keeps its own
 rule so the label can say "backfill", and shares its family's colour because an
 operator does not act differently on a backfilled node.
+
+![Every Slurm state the panel ships a rule for, each drawn in its colour](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-states.png)
 
 ### Adding or changing a state
 
@@ -354,6 +375,8 @@ not fully resolve:
   Group by > Label.` It is measured, never acted on; the panel does not
   switch sources by itself.
 
+![A warnings strip naming 200 unplaced nodes above a grid that still draws every one of them](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-unplaced.png)
+
 Four kinds of label are never proposed, however well they would score, so
 their absence from that line is not a bug:
 
@@ -371,3 +394,11 @@ the active source does. One that merely ties says nothing.
 A state matching no mapping keeps its raw text; Grafana would colour it with
 the threshold base colour (green, by default) rather than a mapped one, so
 the cell deliberately refuses that colour and draws a hollow ring instead.
+
+## In a dashboard
+
+The panel is a floor plan, not a summary: it sits below the counters rather
+than replacing them, and answers the question they raise — *which* nodes, and
+*where*.
+
+![A production dashboard: gauges and counters above, the floor plan and a table of drain reasons below](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-dashboard.png)
