@@ -108,7 +108,7 @@ up: scrape ## Start Grafana, Prometheus and the synthetic exporter
 	@# Grafana being healthy does not mean there is anything to draw, so the
 	@# probe below asks the question the dashboards ask: run one of their
 	@# queries, through Grafana, and wait until it comes back with a node in
-	@# it. Four separate things have to be true for that, and each one of them
+	@# it. Three separate things have to be true for that, and each one of them
 	@# has produced a flake here:
 	@#
 	@#   - Prometheus has scraped at least once;
@@ -117,11 +117,10 @@ up: scrape ## Start Grafana, Prometheus and the synthetic exporter
 	@#     answers /api/health and the datasource API well before this, and in
 	@#     that window every query fails with "Could not find plugin definition
 	@#     for data source", which reaches the panel as no frames at all and
-	@#     draws as "No nodes";
-	@#   - the panel plugin is loaded, since a dashboard cannot draw without it.
+	@#     draws as "No nodes".
 	@#
-	@# Waiting on the query rather than on the four parts is what keeps this
-	@# honest: any fifth thing that has to be true is covered too. These
+	@# Waiting on the query rather than on the three parts is what keeps this
+	@# honest: any fourth thing that has to be true is covered too. These
 	@# dashboards refresh every 30s, so an empty first render eventually heals
 	@# on a screen — but a test asserting inside 15s has already failed, and
 	@# the grouping dashboard, which sets no refresh at all, never heals.
@@ -132,6 +131,17 @@ up: scrape ## Start Grafana, Prometheus and the synthetic exporter
 	      2>/dev/null | grep -q "\"node\"" && exit 0; \
 	    sleep 1; \
 	  done; echo "Grafana never answered a node query - see: make logs-once" >&2; exit 1'
+	@# What that query cannot prove is the one thing it was once claimed to:
+	@# /api/ds/query never touches the panel plugin. Grafana scans plugins
+	@# after it starts serving, and until tomzone-slurm-panel is registered a
+	@# dashboard draws "Panel plugin not found" — no grid in the DOM at all,
+	@# which is how this surfaced: two tests failing on the slowest image in
+	@# the matrix while the same commit passed on the five others.
+	@$(RUN) sh -c 'for _ in $$(seq 1 90); do \
+	    curl -sf -u admin:admin http://grafana:3000/api/plugins/tomzone-slurm-panel/settings \
+	      2>/dev/null | grep -q "\"id\":\"tomzone-slurm-panel\"" && exit 0; \
+	    sleep 1; \
+	  done; echo "Grafana never registered the panel plugin - see: make logs-once" >&2; exit 1'
 	@# Asked of compose rather than hardcoded: the published port is
 	@# ${GRAFANA_PORT:-3000}, and a message that names the wrong one is
 	@# worse than no message.
