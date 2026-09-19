@@ -151,6 +151,40 @@ share one layout and it can be edited in one place. See "Why a range table
 is a panel option" below for why that is the option's actual escape hatch
 from feeling like a duplicate of something Grafana should already store.
 
+## Showing part of the cluster
+
+A panel for the cpu racks alone, or for one partition, is a query, not a
+panel option. Ask for less:
+
+```promql
+slurm_node_status{rack=~"cpu.*"}
+slurm_node_status{partition="bigmem"}
+```
+
+and group by `rack` or `partition` as usual. The grid names exactly what came
+back and the warnings strip stays empty.
+
+There is deliberately no "show only these groups" option. It would hide nodes
+the query *did* return, and a node that exists and is not drawn is a node
+nobody is watching — the one failure this panel is built to prevent. Nodes the
+query never asked for were never the panel's to show, which is a different
+thing and an honest one.
+
+**Every declaration table has to follow the query.** Nodes per blade, Slots
+per rack and a Ranges table are all inventories: they assert that those groups
+exist. One naming a cabinet the query no longer returns says so, and it is
+right to:
+
+```
+Nodes per blade named 5 groups that are not drawn: bigmem[1-2],gpu[1-2],visu1.
+Range "bigmem1" matched no node: b[1-60].
+```
+
+That is the same line that catches a rack nobody plugged back in after
+maintenance. On a filtered panel it is noise, so filter the tables alongside
+the query — `cpu[1-4]: 4` rather than the whole floor — or hold one table per
+view in a dashboard variable.
+
 ## The hostlist syntax
 
 The range table borrows `sinfo`'s own notation, `c[1-40]`, rather than

@@ -121,6 +121,24 @@ partition when grouping by the `partition` label, the only label this
 fan-out supports, since it needs a per-node list of every value the label
 takes, and the engine only builds that list for partitions.
 
+### Showing part of the cluster
+
+A panel for the cpu racks alone, or for one partition, is a query rather than
+a panel option — `slurm_node_status{rack=~"cpu.*"}`, or
+`slurm_node_status{partition="bigmem"}` — grouped by `rack` or `partition` as
+usual. The grid names exactly what came back, and nothing is reported missing.
+
+There is no "show only these groups" option, deliberately: it would hide nodes
+the query returned, and a node that exists and is not drawn is a node nobody
+is watching. Nodes the query never asked for are a different matter.
+
+One thing has to follow the query: **the declaration tables**. Nodes per
+blade, Slots per rack and a Ranges table each assert that those groups exist,
+so one naming a cabinet the query no longer returns is reported — the same
+line that catches a rack nobody plugged back in. Narrow the tables with the
+query.
+
+
 ## Layout
 
 **Layout** draws the grid one of two ways:

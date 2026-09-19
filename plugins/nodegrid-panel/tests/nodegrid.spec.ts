@@ -394,6 +394,30 @@ test.describe('the three ways to get a topology, proven against the same live da
   });
 });
 
+test.describe('showing part of the cluster', () => {
+  test('a filtered query narrows the floor without a warning, because nothing is hidden', async ({
+    page,
+  }) => {
+    // The panel has no "only these groups" option on purpose: it would hide
+    // nodes the query returned, which is the one thing this panel refuses to
+    // do. Narrowing belongs in the query, where the nodes are never asked
+    // for — and the difference has to be visible, so this pins the strip
+    // staying empty rather than only the groups being right.
+    await gotoPanelWithData(page, 11, 'cpu1');
+
+    for (const key of ['cpu1', 'cpu2', 'cpu3', 'cpu4']) {
+      await expect(page.getByTestId(`node-group-${key}`)).toBeVisible();
+    }
+    for (const key of ['bigmem1', 'gpu1', 'visu1', 'ungrouped']) {
+      await expect(page.getByTestId(`node-group-${key}`)).toHaveCount(0);
+    }
+
+    // No orphan line, and no coverage suggestion either: `rack` is already
+    // the grouping, so nothing could place more nodes than it does.
+    await expect(page.getByTestId('panel-warnings')).toHaveCount(0);
+  });
+});
+
 test.describe('the coverage signal, proven by a source that deliberately covers less', () => {
   test('an incomplete range table draws the orphans as unplaced and names a wider label', async ({ page }) => {
     await gotoPanelWithData(page, 8, 'cpu1');

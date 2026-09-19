@@ -189,7 +189,7 @@ query on that live cluster, and the panel plugin's own e2e suite
 (`the three ways to get a topology, proven against the same live data`)
 asserts each of them.
 
-The dashboard's eleven panels, in provisioned order:
+The dashboard's twelve panels, in provisioned order:
 
 | # | Panel | Grouping | Data |
 |---|---|---|---|
@@ -203,6 +203,7 @@ The dashboard's eleven panels, in provisioned order:
 | 8 | Deliberately incomplete, a range table covering one rack of nine | Ranges, `cpu1: c[1-80]` | Prometheus, the full 540-node cluster |
 | 9 | Blades, a mixed floor | Label `rack` | Prometheus, four densities declared per group - `cpu` quad, `bigmem` triple, `visu` single, `gpu` duo - every cabinet at twenty slots |
 | 10 | Two declared heights, one floor | Label `rack` | Prometheus, same blades, the panel-wide twenty slots against `gpu[1-2]: 26` |
+| 11 | Only part of the floor, filtered in the query | Label `rack`, query narrowed to `rack=~"cpu.*"` | Prometheus, four cabinets of the nine |
 | 40 | A declaration too small for what arrived | Label `rack`, `cpu1` declared at twelve slots | Prometheus, the full 540-node cluster |
 
 Panels 1-4 are the same 32-node CSV, grouped four ways, and need nothing

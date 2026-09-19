@@ -616,6 +616,60 @@
         "defaults": {},
         "overrides": []
       }
+    },
+    {
+      "id": 11,
+      "type": "tomzone-slurm-panel",
+      "title": "Only part of the floor, filtered in the query",
+      "description": "One panel for one part of the cluster, which is done in the query rather than in the panel: this one asks for rack=~\"cpu.*\" and gets the four cpu cabinets, nothing else. Group by Label on rack then names exactly what came back and the warnings strip stays empty - the nodes that are missing were never asked for, so nothing is hidden. There is deliberately no \"only these groups\" option: that would hide nodes the query did return, which is the one thing this panel refuses to do. Filtering on partition=\"bigmem\" or any other label works the same way. What does have to follow the query is every declaration table - Nodes per blade, Slots per rack and a Ranges table alike. Each of them asserts that those groups exist, so one naming a cabinet the query no longer returns says so: \"Nodes per blade named 5 groups that are not drawn\". That is the same signal that catches a rack nobody has plugged back in, so this panel's blade table names cpu[1-4] and nothing else.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 58
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_node_status{rack=~\"cpu.*\"}",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "queries": {
+          "state": "A"
+        },
+        "grouping": {
+          "kind": "label",
+          "label": "rack"
+        },
+        "multiValueLabel": false,
+        "layout": "rack",
+        "cellWidth": 14,
+        "nodesPerBlade": 1,
+        "bladeOverrides": "cpu[1-4]: 4",
+        "slotOverrides": "",
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "state",
+        "slotsPerRack": 20
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
     }
   ],
   "templating": {
