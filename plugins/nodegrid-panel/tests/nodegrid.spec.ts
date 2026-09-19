@@ -212,38 +212,52 @@ test.describe('the continuous colour modes', () => {
     expect(await empty.evaluate((n) => getComputedStyle(n).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
   });
 
-  test('groups the same nodes four different ways', async ({
-    gotoDashboardPage,
-    readProvisionedDashboard,
-  }) => {
-    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-grouping.json' });
-    const dashboardPage = await gotoDashboardPage(dashboard);
-
+  test('groups the same nodes four different ways', async ({ page }) => {
     // These four panels read the same 32-row CSV, so a differing cell count
     // means a grouping key dropped nodes rather than regrouping them.
-    for (const title of [
-      'By a label, in rack layout',
-      'By a capture, splitting compute from GPU',
-      'By a chunk of the ordinal',
-      'Not grouped at all',
-    ]) {
-      const grid = await gridIn(dashboardPage, title);
+    //
+    // One panel per load, through gotoPanelWithData, rather than four read
+    // off a single page. This dashboard sets no auto-refresh: a panel that
+    // draws empty once stays empty, and no assertion timeout rescues it —
+    // only a reload does, which is the whole reason that helper exists.
+    // Reading all four off one load was the last place in this file still
+    // betting on the first render, and it is what failed on one image of the
+    // CI matrix, twice, while the other five passed.
+    //
+    // The anchors are the group keys those four groupings actually produce,
+    // read off the running stack rather than guessed: a label grouping keyed
+    // by rack, a capture keeping the letter prefix, a chunk naming itself,
+    // and the ungrouped bucket the "None" key puts everything in.
+    const panels: Array<[number, string, string]> = [
+      [1, 'By a label, in rack layout', 'r001'],
+      [2, 'By a capture, splitting compute from GPU', 'c'],
+      [3, 'By a chunk of the ordinal', 'chunk 1'],
+      [4, 'Not grouped at all', 'ungrouped'],
+    ];
+
+    for (const [id, title, anchor] of panels) {
+      await gotoPanelWithData(page, id, anchor);
+      // The message matters: without it a failure reports "expected 32,
+      // received 0" and says nothing about which of the four panels it was.
       await expect
-        .poll(() => grid.locator('[data-testid^="node-cell-"]').count(), { timeout: 20_000 })
+        .poll(() => page.locator('[data-testid^="node-cell-"]').count(), {
+          timeout: 20_000,
+          message: `${title} (panel ${id}) drew the wrong number of cells`,
+        })
         .toBe(32);
     }
 
     // The capture panel splits c* from g* on the node name, which is the only
     // structure a real slurm_exporter offers: it publishes no rack label.
-    const capture = await gridIn(dashboardPage, 'By a capture, splitting compute from GPU');
-    await expect(capture.getByText('c', { exact: true })).toBeVisible();
-    await expect(capture.getByText('g', { exact: true })).toBeVisible();
+    await gotoPanelWithData(page, 2, 'c');
+    await expect(page.getByText('c', { exact: true })).toBeVisible();
+    await expect(page.getByText('g', { exact: true })).toBeVisible();
 
     // Chunking is the one key that asserts structure the data never stated,
     // and the panel has to say so on every group it invents.
-    const chunk = await gridIn(dashboardPage, 'By a chunk of the ordinal');
-    await expect(chunk.getByText('chunk 1', { exact: true })).toBeVisible();
-    await expect(chunk.getByText('assumed', { exact: true }).first()).toBeVisible();
+    await gotoPanelWithData(page, 3, 'chunk 1');
+    await expect(page.getByText('chunk 1', { exact: true })).toBeVisible();
+    await expect(page.getByText('assumed', { exact: true }).first()).toBeVisible();
   });
 });
 
