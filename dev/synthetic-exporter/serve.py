@@ -239,10 +239,16 @@ def cluster():
             "cpu_idle": cpu_idle,
             "cpu_other": cpu_other,
             "mem": mem,
-            # Memory follows the cores: a node holding half its cores is
-            # holding roughly half its memory, and a node holding none is
-            # holding none.
-            "mem_alloc": mem * cpu_alloc // cpus,
+            # Memory follows the cores, loosely. It used to follow them
+            # exactly - mem * cpu_alloc // cpus - and that made a "memory
+            # allocated" panel a pixel-for-pixel copy of the cpu one, which
+            # is a panel that cannot be wrong and therefore cannot be read.
+            # Real jobs are not balanced: some fill the cores and barely
+            # touch the memory, and a bigmem node exists precisely because
+            # the opposite happens. The spread is drawn from SEED, so it is
+            # the same on every run, and it is clamped because a node cannot
+            # hold more memory than it has.
+            "mem_alloc": 0 if cpu_alloc == 0 else min(mem, int(mem * cpu_alloc / cpus * rng.uniform(0.55, 1.35))),
             "gpus": gpus,
             # Never more than the node has: a visu node carries two, a gpu
             # node eight, and a fixed choice of [2, 4, 8] would have published

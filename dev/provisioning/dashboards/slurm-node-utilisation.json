@@ -55,7 +55,6 @@
         "layout": "rack",
         "cellWidth": 13,
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "state"
       },
       "fieldConfig": {
@@ -116,7 +115,6 @@
         "layout": "wrap",
         "cellWidth": 13,
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "cpu"
       },
       "fieldConfig": {
@@ -203,7 +201,6 @@
         "layout": "wrap",
         "cellWidth": 13,
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "mem"
       },
       "fieldConfig": {
@@ -290,7 +287,6 @@
         "layout": "wrap",
         "cellWidth": 13,
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "gres"
       },
       "fieldConfig": {

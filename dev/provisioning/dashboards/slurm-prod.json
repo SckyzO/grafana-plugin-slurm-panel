@@ -18,8 +18,8 @@
     {
       "id": 1,
       "type": "gauge",
-      "title": "In use",
-      "description": "Share of the cluster's nodes carrying work. Green at the top, not red: on an HPC cluster a busy machine is the point, and an idle one is capacity that earns nothing. Every utilisation scale on this dashboard reads the same way - the more used, the greener - which is the same reasoning that colours allocated green and idle blue in the floor plan below.",
+      "title": "Serviceable",
+      "description": "Share of the cluster a job could land on: everything minus the nodes drained, down, failed, unknown, invalid, reserved, under maintenance or not answering. The gauge beside it says how much of the cluster is working; this one says how much of it still could. The gap between them is the maintenance backlog - a cluster at 100% use over 60% serviceable is a cluster in trouble, and no single number says so.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -30,11 +30,114 @@
         "x": 0,
         "y": 0
       },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(1 - ((count(count by (node) (slurm_node_status{status=~\"drain.*|drng.*|down.*|fail.*|unk.*|inval.*|maint.*|resv.*|.*[*]\"})) or vector(0)) / (count(count by (node) (slurm_node_status))))) * 100",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "minVizWidth": 75,
+        "minVizHeight": 75,
+        "sizing": "auto"
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
           "min": 0,
           "max": 100,
+          "decimals": 1,
+          "color": {
+            "mode": "continuous-RdYlGr"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "red"
+              },
+              {
+                "value": 85,
+                "color": "orange"
+              },
+              {
+                "value": 92,
+                "color": "yellow"
+              },
+              {
+                "value": 97,
+                "color": "green"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "gauge",
+      "title": "In use",
+      "description": "Share of the nodes carrying work, allocated and mixed together. Green at the top, not red: on an HPC cluster a busy machine is the point and an idle one is capacity earning nothing. Every utilisation scale on this dashboard reads the same way.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 4,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "((count(count by (node) (slurm_node_status{status=~\"alloc.*|mix.*\",status!~\".*[*~]\"})) or vector(0)) / (count(count by (node) (slurm_node_status)))) * 100",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "minVizWidth": 75,
+        "minVizHeight": 75,
+        "sizing": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "color": {
+            "mode": "continuous-RdYlGr"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -55,46 +158,16 @@
                 "color": "green"
               }
             ]
-          },
-          "color": {
-            "mode": "continuous-RdYlGr"
           }
         },
         "overrides": []
-      },
-      "options": {
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "sizing": "auto",
-        "shape": "gauge",
-        "barShape": "flat",
-        "sparkline": false,
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "(count(count by (node) (slurm_node_status{status=~\"alloc.*|mix.*\",status!~\".*[*~]\"})) or vector(0)) / (count(count by (node) (slurm_node_status))) * 100",
-          "instant": false,
-          "range": true,
-          "editorMode": "code"
-        }
-      ]
+      }
     },
     {
-      "id": 2,
+      "id": 3,
       "type": "stat",
       "title": "Nodes",
-      "description": "Distinct nodes, not series. `count by (node)` first, then count that.",
+      "description": "Distinct nodes, not series. slurm_exporter publishes one series per (node, partition), so a node in three partitions is three series and one node - which is the count a stat panel over the raw metric gets wrong, and the reason this one counts by node first.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -102,12 +175,43 @@
       "gridPos": {
         "h": 5,
         "w": 3,
-        "x": 4,
+        "x": 8,
         "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(count by (node) (slurm_node_status))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard"
       },
       "fieldConfig": {
         "defaults": {
           "unit": "none",
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -116,13 +220,37 @@
                 "value": null
               }
             ]
-          },
-          "color": {
-            "mode": "thresholds"
           }
         },
         "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Working",
+      "description": "Nodes carrying work: allocated and mixed. Slurm keeps the two apart because ALLOCATED means every CPU is taken while MIXED means only some are, and a node is one or the other, never both. Both are nodes with jobs on them, so counting only ALLOCATED under-reports what the cluster is doing. The degree is in the floor plan's colours below.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
       },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 11,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(count by (node) (slurm_node_status{status=~\"alloc.*|mix.*\",status!~\".*[*~]\"})) or vector(0)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "instant": true
+        }
+      ],
       "options": {
         "reduceOptions": {
           "calcs": [
@@ -140,34 +268,12 @@
         "showPercentChange": false,
         "percentChangeColorMode": "standard"
       },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "count(count by (node) (slurm_node_status))",
-          "instant": false,
-          "range": true,
-          "editorMode": "code"
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "type": "stat",
-      "title": "Allocated",
-      "description": "Nodes running work. A node whose state carries the `*` suffix has stopped answering whatever it was doing, and is left out here because the floor beside it paints that node orange rather than this tile's colour.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "slurm-views-prom"
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 7,
-        "y": 0
-      },
       "fieldConfig": {
         "defaults": {
           "unit": "none",
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -176,105 +282,16 @@
                 "value": null
               }
             ]
-          },
-          "color": {
-            "mode": "thresholds"
           }
         },
         "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "background",
-        "graphMode": "none",
-        "textMode": "auto",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "wideLayout": true,
-        "showPercentChange": false,
-        "percentChangeColorMode": "standard"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "count(count by (node) (slurm_node_status{status=~\"alloc.*\",status!~\".*[*~]\"})) or vector(0)",
-          "instant": false,
-          "range": true,
-          "editorMode": "code"
-        }
-      ]
+      }
     },
     {
-      "id": 11,
-      "type": "stat",
-      "title": "Mixed",
-      "description": "Nodes partly allocated. A node whose state carries the `*` suffix has stopped answering whatever it was doing, and is left out here because the floor beside it paints that node orange rather than this tile's colour.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "slurm-views-prom"
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 3,
-        "x": 11,
-        "y": 0
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "semi-dark-green",
-                "value": null
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "background",
-        "graphMode": "none",
-        "textMode": "auto",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "wideLayout": true,
-        "showPercentChange": false,
-        "percentChangeColorMode": "standard"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "count(count by (node) (slurm_node_status{status=~\"mix.*\",status!~\".*[*~]\"})) or vector(0)",
-          "instant": false,
-          "range": true,
-          "editorMode": "code"
-        }
-      ]
-    },
-    {
-      "id": 4,
+      "id": 5,
       "type": "stat",
       "title": "Idle",
-      "description": "Capacity sitting free. Nothing is wrong with it and nothing is earning on it. A node whose state carries the `*` suffix has stopped answering whatever it was doing, and is left out here because the floor beside it paints that node orange rather than this tile's colour.",
+      "description": "Nodes with no work and nothing wrong: capacity available right now.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -282,12 +299,43 @@
       "gridPos": {
         "h": 5,
         "w": 3,
-        "x": 14,
+        "x": 15,
         "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(count by (node) (slurm_node_status{status=~\"idle.*\",status!~\".*[*~]\"})) or vector(0)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard"
       },
       "fieldConfig": {
         "defaults": {
           "unit": "none",
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -296,13 +344,37 @@
                 "value": null
               }
             ]
-          },
-          "color": {
-            "mode": "thresholds"
           }
         },
         "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Unavailable",
+      "description": "Nodes no job can land on, whatever the reason: drained, draining, down, failed, unknown, invalid, reserved, under maintenance, or not answering. The maintenance backlog in one number, and the exact complement of Serviceable.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
       },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 18,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(count by (node) (slurm_node_status{status=~\"drain.*|drng.*|down.*|fail.*|unk.*|inval.*|maint.*|resv.*|.*[*]\"})) or vector(0)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "instant": true
+        }
+      ],
       "options": {
         "reduceOptions": {
           "calcs": [
@@ -320,34 +392,12 @@
         "showPercentChange": false,
         "percentChangeColorMode": "standard"
       },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "count(count by (node) (slurm_node_status{status=~\"idle.*\",status!~\".*[*~]\"})) or vector(0)",
-          "instant": false,
-          "range": true,
-          "editorMode": "code"
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "type": "stat",
-      "title": "Drained",
-      "description": "Taken out of service by a human. The reasons are in the table below. A node whose state carries the `*` suffix has stopped answering whatever it was doing, and is left out here because the floor beside it paints that node orange rather than this tile's colour.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "slurm-views-prom"
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 3,
-        "x": 17,
-        "y": 0
-      },
       "fieldConfig": {
         "defaults": {
           "unit": "none",
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -356,13 +406,37 @@
                 "value": null
               }
             ]
-          },
-          "color": {
-            "mode": "thresholds"
           }
         },
         "overrides": []
+      }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Down",
+      "description": "Down, failed or unknown - the part of Unavailable nobody chose. Drained is a decision; down is a fault. Grey at zero so the tile only lights up when there is something to look at.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
       },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 21,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(count by (node) (slurm_node_status{status=~\"down.*|fail.*|unk.*\",status!~\".*[*~]\"})) or vector(0)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "instant": true
+        }
+      ],
       "options": {
         "reduceOptions": {
           "calcs": [
@@ -380,34 +454,12 @@
         "showPercentChange": false,
         "percentChangeColorMode": "standard"
       },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "count(count by (node) (slurm_node_status{status=~\"drain.*|drng.*\",status!~\".*[*~]\"})) or vector(0)",
-          "instant": false,
-          "range": true,
-          "editorMode": "code"
-        }
-      ]
-    },
-    {
-      "id": 6,
-      "type": "stat",
-      "title": "Down",
-      "description": "The only tile allowed to turn red on its own. A node whose state carries the `*` suffix has stopped answering whatever it was doing, and is left out here because the floor beside it paints that node orange rather than this tile's colour.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "slurm-views-prom"
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 20,
-        "y": 0
-      },
       "fieldConfig": {
         "defaults": {
           "unit": "none",
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -420,206 +472,229 @@
                 "value": 1
               }
             ]
-          },
-          "color": {
-            "mode": "thresholds"
           }
         },
         "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "background",
-        "graphMode": "none",
-        "textMode": "auto",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "wideLayout": true,
-        "showPercentChange": false,
-        "percentChangeColorMode": "standard"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "count(count by (node) (slurm_node_status{status=~\"down.*|fail.*|unk.*\",status!~\".*[*~]\"})) or vector(0)",
-          "instant": false,
-          "range": true,
-          "editorMode": "code"
-        }
-      ]
-    },
-    {
-      "id": 7,
-      "type": "bargauge",
-      "title": "CPU allocated",
-      "description": "Cores, deduplicated per node the same way the gauge is.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "slurm-views-prom"
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 12,
-        "x": 0,
-        "y": 5
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "value": null,
-                "color": "red"
-              },
-              {
-                "value": 40,
-                "color": "orange"
-              },
-              {
-                "value": 60,
-                "color": "yellow"
-              },
-              {
-                "value": 80,
-                "color": "green"
-              }
-            ]
-          },
-          "color": {
-            "mode": "continuous-RdYlGr"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "displayMode": "lcd",
-        "orientation": "horizontal",
-        "showUnfilled": true,
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "valueMode": "text",
-        "namePlacement": "auto",
-        "minVizHeight": 16,
-        "minVizWidth": 8,
-        "maxVizHeight": 300,
-        "sizing": "auto",
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(max by (node) (slurm_node_cpu_alloc)) / sum(max by (node) (slurm_node_cpu_total)) * 100",
-          "instant": false,
-          "range": true,
-          "editorMode": "code",
-          "legendFormat": "{{gres_type}}"
-        }
-      ]
+      }
     },
     {
       "id": 8,
-      "type": "bargauge",
-      "title": "GPU allocated, by type",
-      "description": "Per GPU type. `gres_type` is the label slurm_exporter attaches to the gres series, and a node with no GPU contributes nothing rather than a zero.",
+      "type": "timeseries",
+      "title": "Where the nodes have been",
+      "description": "The question a snapshot cannot answer: is it getting worse? Stacked, so the top of the stack is the cluster and each band is a state - a drain storm shows as purple eating green, and a recovery shows as the same in reverse. Reading the tiles above alone, a backlog that doubled this morning and one that has been flat for a month look identical.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 4,
-        "w": 12,
-        "x": 12,
+        "h": 7,
+        "w": 14,
+        "x": 0,
         "y": 5
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 40
-              },
-              {
-                "color": "yellow",
-                "value": 50
-              },
-              {
-                "color": "green",
-                "value": 60
-              }
-            ]
-          },
-          "color": {
-            "mode": "continuous-RdYlGr"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "displayMode": "lcd",
-        "orientation": "horizontal",
-        "showUnfilled": true,
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "valueMode": "text",
-        "namePlacement": "auto",
-        "minVizHeight": 16,
-        "minVizWidth": 8,
-        "maxVizHeight": 300,
-        "sizing": "auto",
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        }
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (gres_type) (max by (node, gres_type) (slurm_node_gres_used)) / sum by (gres_type) (max by (node, gres_type) (slurm_node_gres_total)) * 100",
-          "instant": false,
+          "expr": "count(count by (node) (slurm_node_status{status=~\"alloc.*|mix.*\",status!~\".*[*~]\"})) or vector(0)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
           "range": true,
-          "editorMode": "code",
-          "legendFormat": "{{gres_type}}"
+          "legendFormat": "Working"
+        },
+        {
+          "refId": "B",
+          "expr": "count(count by (node) (slurm_node_status{status=~\"idle.*\",status!~\".*[*~]\"})) or vector(0)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "range": true,
+          "legendFormat": "Idle"
+        },
+        {
+          "refId": "C",
+          "expr": "count(count by (node) (slurm_node_status{status=~\"drain.*|drng.*\",status!~\".*[*~]\"})) or vector(0)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "range": true,
+          "legendFormat": "Drained"
+        },
+        {
+          "refId": "D",
+          "expr": "count(count by (node) (slurm_node_status{status=~\"down.*|fail.*|unk.*\",status!~\".*[*~]\"})) or vector(0)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "range": true,
+          "legendFormat": "Down"
         }
-      ]
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 25,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Working"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Idle"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Drained"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Down"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": 9,
+      "type": "timeseries",
+      "title": "Cores that cannot take work",
+      "description": "sinfo reports a node's cores as allocated, idle or other, and other is the ones that exist and cannot be given to a job - the cores sitting inside a drained or down node. Counting nodes says twenty-seven are out; this says what that costs, and a drained bigmem node costs far more than a drained visu one.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 10,
+        "x": 14,
+        "y": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(slurm_node_cpu_other)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "range": true,
+          "legendFormat": "Cores held out"
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "min": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 25,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 10,
       "type": "tomzone-slurm-panel",
       "title": "The floor",
       "description": "Six cabinets against live Prometheus, two nodes to a blade, each declared at twenty-one slots so the floor is flat and every cabinet keeps one free position visible above its contents. The rack label comes from Prometheus relabelling at scrape time, the first of the three routes to a topology and the only one that needs no per-dashboard configuration. Hover a node for its state, its cores, its GPUs and, when it is drained, the reason and how long it has been out.",
@@ -631,7 +706,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 12
       },
       "fieldConfig": {
         "defaults": {},
@@ -665,7 +740,6 @@
         "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2",
         "slotsPerRack": 20,
         "slotOverrides": "",
-        "shapeChannel": true,
         "colorMode": "state",
         "gap": 2,
         "centreRacks": true,
@@ -731,7 +805,274 @@
       ]
     },
     {
-      "id": 10,
+      "id": 11,
+      "type": "bargauge",
+      "title": "CPU allocated, by partition",
+      "description": "One bar per partition rather than one number for the cluster: a floor at 63% can be a bigmem tier at 94% with nowhere left to put a large job, next to a visu tier nobody is using. The single figure hides exactly the thing worth acting on.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 23
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (partition) (slurm_node_cpu_alloc{partition=~\"cpu|bigmem|visu|gpu\"}) / sum by (partition) (slurm_node_cpu_total{partition=~\"cpu|bigmem|visu|gpu\"}) * 100",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "instant": true,
+          "legendFormat": "{{partition}}"
+        }
+      ],
+      "options": {
+        "displayMode": "lcd",
+        "orientation": "horizontal",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "valueMode": "text",
+        "namePlacement": "auto",
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "maxVizHeight": 300,
+        "sizing": "auto",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "text": {
+          "titleSize": 13,
+          "valueSize": 22
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "color": {
+            "mode": "continuous-RdYlGr"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "red"
+              },
+              {
+                "value": 40,
+                "color": "orange"
+              },
+              {
+                "value": 60,
+                "color": "yellow"
+              },
+              {
+                "value": 80,
+                "color": "green"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 12,
+      "type": "bargauge",
+      "title": "Memory allocated, by partition",
+      "description": "Beside the CPU bars, not instead of them. Jobs are rarely balanced - some fill the cores and barely touch the memory - and a bigmem partition exists because the opposite happens. A tier whose memory bar runs well ahead of its CPU bar is a tier that will refuse work while looking half idle.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 23
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (partition) (slurm_node_mem_alloc{partition=~\"cpu|bigmem|visu|gpu\"}) / sum by (partition) (slurm_node_mem_total{partition=~\"cpu|bigmem|visu|gpu\"}) * 100",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "instant": true,
+          "legendFormat": "{{partition}}"
+        }
+      ],
+      "options": {
+        "displayMode": "lcd",
+        "orientation": "horizontal",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "valueMode": "text",
+        "namePlacement": "auto",
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "maxVizHeight": 300,
+        "sizing": "auto",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "text": {
+          "titleSize": 13,
+          "valueSize": 22
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "color": {
+            "mode": "continuous-RdYlGr"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "red"
+              },
+              {
+                "value": 40,
+                "color": "orange"
+              },
+              {
+                "value": 60,
+                "color": "yellow"
+              },
+              {
+                "value": 80,
+                "color": "green"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 13,
+      "type": "bargauge",
+      "title": "GPU allocated, by partition",
+      "description": "Only the partitions that have GPUs at all: eight per node on gpu, two on visu. A partition with none is absent here rather than drawn at zero, because zero of nothing is not a measurement.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 23
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (partition) (slurm_node_gres_used{partition=~\"gpu|visu\"}) / sum by (partition) (slurm_node_gres_total{partition=~\"gpu|visu\"}) * 100",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "instant": true,
+          "legendFormat": "{{partition}}"
+        }
+      ],
+      "options": {
+        "displayMode": "lcd",
+        "orientation": "horizontal",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "valueMode": "text",
+        "namePlacement": "auto",
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "maxVizHeight": 300,
+        "sizing": "auto",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "text": {
+          "titleSize": 13,
+          "valueSize": 22
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "color": {
+            "mode": "continuous-RdYlGr"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "red"
+              },
+              {
+                "value": 40,
+                "color": "orange"
+              },
+              {
+                "value": 60,
+                "color": "yellow"
+              },
+              {
+                "value": 80,
+                "color": "green"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 14,
       "type": "table",
       "title": "Why these nodes are out",
       "description": "slurm_node_drain_reason_info carries no partition label, so it cannot be joined to slurm_node_status by any stock panel, which is the gap this plugin was written to close. Here it is as a table for the record; the same join is in every drained node's tooltip on the floor above.",
@@ -743,7 +1084,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 30
       },
       "fieldConfig": {
         "defaults": {

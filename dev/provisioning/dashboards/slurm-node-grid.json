@@ -88,7 +88,6 @@
         "layout": "rack",
         "cellWidth": 14,
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "state"
       },
       "fieldConfig": {

@@ -75,7 +75,6 @@
         "multiValueLabel": false,
         "layout": "rack",
         "cellWidth": 14,
-        "shapeChannel": true,
         "colorMode": "state",
         "cellHeight": 34
       },
@@ -129,7 +128,6 @@
         "layout": "rack",
         "cellWidth": 16,
         "gap": 2,
-        "shapeChannel": true,
         "colorMode": "state"
       },
       "fieldConfig": {
@@ -245,7 +243,6 @@
         "layout": "wrap",
         "cellWidth": 18,
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "state"
       },
       "fieldConfig": {
@@ -358,7 +355,6 @@
         "layout": "rack",
         "cellWidth": 14,
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "state"
       },
       "fieldConfig": {

@@ -59,7 +59,6 @@
         "layout": "rack",
         "cellWidth": 18,
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "state"
       },
       "fieldConfig": {
@@ -112,7 +111,6 @@
         "layout": "wrap",
         "cellWidth": 18,
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "state"
       },
       "fieldConfig": {
@@ -165,7 +163,6 @@
         "layout": "wrap",
         "cellWidth": 18,
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "state"
       },
       "fieldConfig": {
@@ -217,7 +214,6 @@
         "layout": "wrap",
         "cellWidth": 18,
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "state"
       },
       "fieldConfig": {
@@ -270,7 +266,6 @@
         "layout": "wrap",
         "cellWidth": 14,
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "state"
       },
       "fieldConfig": {
@@ -333,7 +328,6 @@
         "layout": "wrap",
         "cellWidth": 14,
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "state"
       },
       "fieldConfig": {
@@ -395,7 +389,6 @@
         "layout": "wrap",
         "cellWidth": 14,
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "state"
       },
       "fieldConfig": {
@@ -448,7 +441,6 @@
         "layout": "wrap",
         "cellWidth": 14,
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "state"
       },
       "fieldConfig": {
@@ -501,7 +493,6 @@
         "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2",
         "slotOverrides": "",
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "state",
         "slotsPerRack": 20
       },
@@ -554,7 +545,6 @@
         "nodesPerBlade": 1,
         "slotOverrides": "cpu1: 12",
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "state",
         "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2"
       },
@@ -608,7 +598,6 @@
         "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2",
         "slotOverrides": "gpu[1-2]: 26",
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "state",
         "slotsPerRack": 20
       },
@@ -662,7 +651,6 @@
         "bladeOverrides": "cpu[1-4]: 4",
         "slotOverrides": "",
         "gap": 2,
-        "shapeChannel": false,
         "colorMode": "state",
         "slotsPerRack": 20
       },
