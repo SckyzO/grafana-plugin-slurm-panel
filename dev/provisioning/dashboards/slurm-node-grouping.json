@@ -247,7 +247,7 @@
             "type": "prometheus",
             "uid": "slurm-views-prom"
           },
-          "expr": "slurm_node_status{node=~\"c[1-5]|c4[1-5]|g[1-5]\"}",
+          "expr": "slurm_node_status{node=~\"c[1-5]|c9[1-5]|g[1-5]\"}",
           "instant": true
         }
       ],
@@ -442,7 +442,7 @@
         },
         "grouping": {
           "kind": "ranges",
-          "table": "rack1: c[1-40]"
+          "table": "rack1: c[1-80]"
         },
         "multiValueLabel": false,
         "layout": "wrap",
@@ -460,7 +460,7 @@
       "id": 9,
       "type": "tomzone-slurm-panel",
       "title": "Blades -- a mixed floor, against live Prometheus",
-      "description": "rack1-rack4 are quads and gpu1-gpu2 are duos, declared as two hostlist lines rather than six. The cabinets are the same width whichever blade they hold, because a floor plan whose cabinets differ in width does not read as a floor plan. rack1-rack4 also declare 12 slots and gpu1-gpu2 declare 24, rather than deriving a height from what each cabinet holds, so the two stand at different heights for a stated reason. Whatever that difference, every cabinet's foot lands on the same line, the property this panel's e2e test measures.",
+      "description": "Blade density, against live Prometheus. Nodes per blade, by group gives the four compute racks quad blades and the two gpu racks duos, so a compute cabinet is drawn four sleds wide and a gpu cabinet two. The floor is level and every cabinet is full because the fixture's rack sizes follow from that density rather than ignoring it: eighty nodes at four per blade and forty at two both come to twenty rows, which is what Slots per rack declares. Give every rack the same node count and the quad cabinets draw half empty - hardware nobody owns. Declared heights that differ are panel 10's job, not this one's.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -499,10 +499,11 @@
         "cellWidth": 14,
         "nodesPerBlade": 1,
         "bladeOverrides": "rack[1-4]: 4\ngpu[1-2]: 2",
-        "slotOverrides": "rack[1-4]: 12\ngpu[1-2]: 24",
+        "slotOverrides": "",
         "gap": 2,
         "shapeChannel": false,
-        "colorMode": "state"
+        "colorMode": "state",
+        "slotsPerRack": 20
       },
       "fieldConfig": {
         "defaults": {},
@@ -551,10 +552,65 @@
         "layout": "rack",
         "cellWidth": 14,
         "nodesPerBlade": 1,
-        "slotOverrides": "rack1: 4",
+        "slotOverrides": "rack1: 12",
         "gap": 2,
         "shapeChannel": false,
-        "colorMode": "state"
+        "colorMode": "state",
+        "bladeOverrides": "rack[1-4]: 4\ngpu[1-2]: 2"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 10,
+      "type": "tomzone-slurm-panel",
+      "title": "Two declared heights, one floor",
+      "description": "Slots per rack, by group, against live Prometheus. Both cabinet kinds draw twenty rows here - eighty compute nodes at four per blade, forty gpu nodes at two - so the only thing separating their heights is the declaration: twenty slots against twenty-six. A cabinet's height is a property of the hardware, not of what is currently plugged into it, and the gpu cabinets are drawn with six empty slots above their last row rather than shrunk to fit. Both kinds still stand on the same floor: a short cabinet sits on it, it does not hang from the ceiling. That is the defect this option exists to fix, and the e2e suite measures it on this panel.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 49
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_node_status",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "queries": {
+          "state": "A"
+        },
+        "grouping": {
+          "kind": "label",
+          "label": "rack"
+        },
+        "multiValueLabel": false,
+        "layout": "rack",
+        "cellWidth": 14,
+        "nodesPerBlade": 1,
+        "bladeOverrides": "rack[1-4]: 4\ngpu[1-2]: 2",
+        "slotOverrides": "rack[1-4]: 20\ngpu[1-2]: 26",
+        "gap": 2,
+        "shapeChannel": false,
+        "colorMode": "state",
+        "slotsPerRack": 20
       },
       "fieldConfig": {
         "defaults": {},

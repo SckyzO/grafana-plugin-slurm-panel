@@ -66,8 +66,13 @@ services:
       # is — in which case RACKS has no effect on the exporter at all.
       RACKS: ${SYNTH_RACKS:-6}
       NODES_PER_RACK: ${SYNTH_NODES_PER_RACK:-0}
-      NODES: ${SYNTH_NODES:-240}
-      PARTITIONS: ${SYNTH_PARTITIONS:-cpu,gpu,debug}
+      NODES: ${SYNTH_NODES:-400}
+      # Empty on purpose: serve.py owns the default partition cycle, because
+      # that cycle also fixes the gpu-to-compute ratio the rack sizes depend
+      # on. Spelling a default here too meant two places claimed it and this
+      # one won silently, which is how a 1-in-3 ratio survived an edit to the
+      # exporter. SYNTH_PARTITIONS still overrides.
+      PARTITIONS: ${SYNTH_PARTITIONS:-}
       SEED: ${SYNTH_SEED:-1}
       # Shape of the state distribution, independent of cluster size:
       # production (default) is a cluster that is working; incident is the

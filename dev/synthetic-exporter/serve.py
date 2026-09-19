@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Publish a synthetic Slurm cluster in the Prometheus text format.
 
-Shape is set by environment variable, so one image covers a 240-node smoke
+Shape is set by environment variable, so one image covers a 400-node smoke
 test, a 3000-node scale test, and everything between:
 
     RACKS=4  NODES_PER_RACK=80          # 320 nodes
@@ -41,8 +41,15 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 RACKS = max(1, int(os.environ.get("RACKS", "6")))
 NODES_PER_RACK = int(os.environ.get("NODES_PER_RACK", "0"))
-NODES = RACKS * NODES_PER_RACK if NODES_PER_RACK > 0 else int(os.environ.get("NODES", "240"))
-PARTITIONS = os.environ.get("PARTITIONS", "cpu,gpu,debug").split(",")
+NODES = RACKS * NODES_PER_RACK if NODES_PER_RACK > 0 else int(os.environ.get("NODES", "400"))
+# One gpu node in five, not one in three. The ratio is what makes a floor of
+# equal-height cabinets possible: a compute cabinet takes quad blades and a
+# gpu cabinet duos, so at the same twenty slots the compute rack holds eighty
+# nodes and the gpu rack forty. Four compute racks and two gpu racks at those
+# sizes is 400. A three-name cycle gave every rack the same forty nodes
+# whatever its blade density, which drew the compute cabinets half empty and
+# described hardware that does not exist.
+PARTITIONS = (os.environ.get("PARTITIONS") or "cpu,gpu,debug,cpu,cpu").split(",")
 SEED = int(os.environ.get("SEED", "1"))
 
 _KNOWN_PROFILES = ("production", "incident", "showcase")

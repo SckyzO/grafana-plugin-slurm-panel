@@ -243,3 +243,10 @@ for the occasion would prove less.
   two-logical-racks escape hatch may mean it is never wanted.
 - The legibility of a panel drawing 125 cabinets at once. That is a limit of
   the panel today; density neither causes it nor cures it.
+
+## Revision (2026-09-19)
+
+| Was | Is |
+|---|---|
+| "The dev fixture suits it: 240 nodes over six racks of forty gives ten rows" | 400 nodes over four compute racks of eighty and two gpu racks of forty. A compute rack gives twenty rows at four per blade, a gpu rack twenty at two — the point of the sizes is that both fill the same cabinet |
+| The e2e test proved blade density by counting rows, ten against twenty | It counts sleds across, four against two. Row count no longer separates the two densities, because the rack sizes now follow them; width is what blade density decides, and it is what that test always claimed to check |

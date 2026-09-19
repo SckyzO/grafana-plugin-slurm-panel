@@ -68,11 +68,12 @@ test.describe('the node grid renders against a real Grafana', () => {
 
     await expect(page.getByTestId('slurm-node-grid')).toBeVisible({ timeout: 15_000 });
     const cells = page.locator('[data-testid^="node-cell-"]');
-    // The synthetic exporter publishes 240 nodes across 6 racks. A bound of
-    // 10 would pass even if a frame-shape defect silently dropped 200 of
-    // them; 200 catches a partial ingest failure, not only a total one, and
-    // stays a lower bound so it survives someone changing SYNTH_NODES.
-    await expect.poll(() => cells.count(), { timeout: 15_000 }).toBeGreaterThan(200);
+    // The synthetic exporter publishes 400 nodes across 6 racks: four compute
+    // racks of eighty and two gpu racks of forty. A bound of 10 would pass
+    // even if a frame-shape defect silently dropped most of them; 350 catches
+    // a partial ingest failure, not only a total one, and stays a lower bound
+    // so it survives someone changing SYNTH_NODES.
+    await expect.poll(() => cells.count(), { timeout: 15_000 }).toBeGreaterThan(350);
   });
 
   test('paints different states different colours', async ({ gotoDashboardPage, readProvisionedDashboard, page }) => {
@@ -84,11 +85,12 @@ test.describe('the node grid renders against a real Grafana', () => {
     await gotoDashboardPage(dashboard);
 
     const mapped = page.locator('[data-testid^="node-cell-"][data-mapped="true"]');
-    // 173 of the 240 synthetic nodes match a shipped mapping today. 100 stays
-    // a lower bound (survives a SYNTH_NODES change) while still failing on a
-    // partial render (e.g. one rack's worth, ~29 cells) that a bound of 10
-    // would let through unnoticed.
-    await expect.poll(() => mapped.count(), { timeout: 15_000 }).toBeGreaterThan(100);
+    // All 400 synthetic nodes match a shipped mapping today: the twenty-one
+    // rules cover every sinfo state in both spellings, suffixes included. 300
+    // stays a lower bound (survives a SYNTH_NODES change) while still failing
+    // on a partial render — one rack's worth is eighty cells, which a bound of
+    // 10 would let through unnoticed.
+    await expect.poll(() => mapped.count(), { timeout: 15_000 }).toBeGreaterThan(300);
 
     const colours = await mapped.evaluateAll((nodes) =>
       Array.from(new Set(nodes.map((n) => getComputedStyle(n).backgroundColor)))
@@ -164,10 +166,13 @@ test.describe('the panel supplies its own state colours', () => {
     // form searches for a mapped element *inside* each cell and matches
     // nothing, which reports zero on a grid that is fully coloured.
     const mapped = page.locator('[data-testid^="node-cell-"][data-mapped="true"]');
-    // The four panels carry 231 cells between them and 220 match a shipped
-    // rule. A bound of 1 would pass on a single lucky cell; 150 fails if the
-    // defaults reach only one panel, and stays clear of 220 so that adding an
-    // unmapped state to the reference panel does not break it.
+    // 203 cells are mounted and mapped at this viewport — not every panel on
+    // the dashboard: Grafana mounts a panel only once it scrolls into view,
+    // and this test does not scroll. Counting the whole dashboard gives 643,
+    // which is why a bound read off a scrolled page fails here. A bound of 1
+    // would pass on a single lucky cell; 150 fails if the defaults reach only
+    // one panel, and stays clear of 203 so that adding an unmapped state to
+    // the reference panel does not break it.
     await expect.poll(() => mapped.count(), { timeout: 15_000 }).toBeGreaterThan(150);
 
     // Mapped is not the same as coloured: a uniformly grey grid would still
@@ -189,7 +194,7 @@ test.describe('the continuous colour modes', () => {
 
     // Every synthetic node reports cpu_alloc and cpu_total, so every cell has
     // a value and none may be drawn empty — if the facet queries stopped being
-    // read this would be 240, not 0.
+    // read this would be 400, not 0.
     const cpu = (await gridIn(dashboardPage, 'CPU occupancy')).locator('[data-testid^="node-cell-"]');
     await expect.poll(() => cpu.count(), { timeout: 20_000 }).toBeGreaterThan(200);
     expect(await cpu.locator(':scope[data-filled="false"]').count()).toBe(0);
@@ -393,25 +398,25 @@ test.describe('the coverage signal, proven by a source that deliberately covers 
   test('an incomplete range table draws the orphans as unplaced and names a wider label', async ({ page }) => {
     await gotoPanelWithData(page, 8, 'rack1');
 
-    // The table names only rack1: c[1-40] against the full 240-node cluster,
-    // so 40 nodes are placed and the other 200 fall outside every range.
+    // The table names only rack1: c[1-80] against the full 400-node cluster,
+    // so 80 nodes are placed and the other 320 fall outside every range.
     const placed = page.getByTestId('node-group-rack1');
     await expect(placed).toBeVisible({ timeout: 15_000 });
-    await expect.poll(() => placed.locator('[data-testid^="node-cell-"]').count(), { timeout: 15_000 }).toBe(40);
+    await expect.poll(() => placed.locator('[data-testid^="node-cell-"]').count(), { timeout: 15_000 }).toBe(80);
 
     const orphaned = page.getByTestId('node-group-ungrouped');
     await expect(orphaned).toBeVisible();
     await expect(orphaned).toHaveAttribute('data-unplaced', 'true');
-    await expect.poll(() => orphaned.locator('[data-testid^="node-cell-"]').count(), { timeout: 15_000 }).toBe(200);
+    await expect.poll(() => orphaned.locator('[data-testid^="node-cell-"]').count(), { timeout: 15_000 }).toBe(320);
 
     // Both signals on one panel: the orphan line names what the range table
     // missed, and the coverage line names the label that would have covered
-    // all 240 - the measurement that stays silent on every other panel here,
+    // all 400 - the measurement that stays silent on every other panel here,
     // because their sources already cover every node.
     const strip = page.getByTestId('panel-warnings').first();
     await expect(strip).toBeVisible({ timeout: 15_000 });
-    await expect(strip).toContainText('200 nodes matched no range');
-    await expect(strip).toContainText('Label "rack" would group all 240');
+    await expect(strip).toContainText('320 nodes matched no range');
+    await expect(strip).toContainText('Label "rack" would group all 400');
   });
 });
 
@@ -457,23 +462,31 @@ test.describe('blades, against the same live data', () => {
     // cells actually are, and toBeVisible passes for anything mounted.
     await gotoPanelWithData(page, 9, 'rack1');
 
-    const rows = async (group: string) => {
-      const boxes = await page
+    // Sleds across, not rows down. Row count used to carry this — forty nodes
+    // made ten rows at four per blade and twenty at two — but the fixture now
+    // sizes a rack to its blade density, so a compute rack of eighty and a gpu
+    // rack of forty both come to twenty rows. Width is what blade density
+    // actually decides, and it is what this test has always claimed to check.
+    const sledsAcross = async (group: string) => {
+      const lefts = await page
         .getByTestId(`node-group-${group}`)
         .locator('[data-testid^="node-cell-"]')
-        .evaluateAll((cells) => cells.map((c) => Math.round(c.getBoundingClientRect().top)));
-      return new Set(boxes).size;
+        .evaluateAll((cells) => cells.map((c) => Math.round(c.getBoundingClientRect().left)));
+      return new Set(lefts).size;
     };
 
-    // Forty nodes: ten rows at four per blade, twenty at two.
-    expect(await rows('rack1')).toBe(10);
-    expect(await rows('gpu1')).toBe(20);
+    expect(await sledsAcross('rack1')).toBe(4);
+    expect(await sledsAcross('gpu1')).toBe(2);
   });
 });
 
 test.describe('cabinet height, against the same live data', () => {
   test('draws each cabinet at its declared height, standing on one floor', async ({ page }) => {
-    await gotoPanelWithData(page, 9, 'rack1');
+    // Panel 10, not panel 9. Panel 9 is the blade demo and its floor is
+    // deliberately level now — every cabinet declared at twenty slots and
+    // full. Panel 10 exists to hold the two declarations apart: twenty slots
+    // against twenty-six, over cabinets that both draw twenty rows.
+    await gotoPanelWithData(page, 10, 'rack1');
 
     const frame = async (group: string) => {
       const box = await page.getByTestId(`node-group-${group}`).getByTestId('rack-frame').boundingBox();
@@ -484,8 +497,8 @@ test.describe('cabinet height, against the same live data', () => {
     const rack = await frame('rack1');
     const gpu = await frame('gpu1');
 
-    // Twelve slots against twenty-four: the declaration decides the height,
-    // not the contents — both cabinets hold forty nodes.
+    // Twenty slots against twenty-six: the declaration decides the height,
+    // not the contents — both cabinets draw exactly twenty rows.
     expect(gpu.height).toBeGreaterThan(rack.height);
 
     // And the shorter one is not hanging: both feet land on the same line.
@@ -506,7 +519,7 @@ test.describe('cabinet height, against the same live data', () => {
     const tops = await group
       .locator('[data-testid^="node-cell-"]')
       .evaluateAll((cells) => cells.map((c) => c.getBoundingClientRect().top));
-    expect(tops.length).toBe(40);
+    expect(tops.length).toBe(80);
     const highest = Math.min(...tops);
 
     // Up, not down: the frame fills from its floor, so the rows that do not
@@ -520,7 +533,7 @@ test.describe('cabinet height, against the same live data', () => {
 
   test('names the cabinet that outgrew its declaration', async ({ page }) => {
     await gotoPanelWithData(page, 40, 'rack1');
-    await expect(page.getByText('rack1 needs 40 slots but 4 were declared.')).toBeVisible();
+    await expect(page.getByText('rack1 needs 20 slots but 12 were declared.')).toBeVisible();
   });
 
   test('gives the rows the whole content box, with nothing leaking past the padding', async ({ page }) => {

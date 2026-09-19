@@ -6,14 +6,20 @@
 # the whole claim, one table and two destinations, and
 # tests/contract/relabel.test.cjs is what keeps it true.
 #
-# It describes the exporter's default shape. Run the stack with a different
-# RACKS or NODES and some nodes will fall outside every range — which is not a
-# bug to hide but the orphan path working: the panel draws them under
-# "ungrouped" and names them in its warnings strip.
+# It describes the exporter's default shape: 400 nodes, four compute racks of
+# eighty and two gpu racks of forty. Those sizes are not arbitrary — a compute
+# cabinet takes quad blades and a gpu cabinet duos, so both fill the same
+# twenty slots. Give every rack the same node count and the quad cabinets draw
+# half empty, describing hardware nobody owns.
+#
+# Run the stack with a different RACKS or NODES and some nodes will fall
+# outside every range — which is not a bug to hide but the orphan path
+# working: the panel draws them under "ungrouped" and names them in its
+# warnings strip.
 
-rack1: c[1-40]
-rack2: c[41-80]
-rack3: c[81-120]
-rack4: c[121-160]
+rack1: c[1-80]
+rack2: c[81-160]
+rack3: c[161-240]
+rack4: c[241-320]
 gpu1:  g[1-40]
 gpu2:  g[41-80]

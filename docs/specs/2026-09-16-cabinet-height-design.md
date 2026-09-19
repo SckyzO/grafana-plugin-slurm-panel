@@ -398,3 +398,18 @@ Read back against the implementation before tagging 0.1.0.
 | `**Status:** design approved, not implemented` | Implemented. `packages/core/src/layout/slots.ts`, `layoutSlots` in `rackGeometry.ts`, and the e2e block `cabinet height, against the same live data` |
 | `frameHeight` adds `RACK_BORDER * 2` | The vertical chrome is asymmetric: `RACK_PADDING * 2 + RACK_BORDER + RACK_FOOT`, because the cabinet's foot is heavier than its top edge. The width formula is the symmetric one; this axis is not |
 | "a 42-slot cabinet holds 42 nodes of duos on 21 slots, or 160 nodes of quads on 40 slots" | 42 slots hold 42 nodes of single-node servers, 84 of duos and 168 of quads. The old sentence mixed a cabinet's capacity with the slots a fixed node count needs |
+
+## Revision (2026-09-19)
+
+The dev fixture changed shape, which retires this document's own opening
+complaint.
+
+| Was | Is |
+|---|---|
+| "all six racks in the dev fixture hold exactly forty nodes, so every screenshot shows six cabinets of equal height" | The fixture is 400 nodes: four compute racks of eighty and two gpu racks of forty. Those sizes follow from blade density, so both kinds fill the same twenty slots. Equal height is now the *correct* drawing, not a demonstration gap |
+| The declared-height demonstration lives on the blades panel, which declared twelve slots against twenty-four | It has its own panel, `Two declared heights, one floor` (id 10 of the grouping dashboard): twenty slots against twenty-six, over cabinets that both draw twenty rows. The blades panel is level and full, because that is what the hardware it describes looks like |
+
+The old arrangement made the compute cabinets read as half empty. They were:
+forty nodes in a quad-blade cabinet occupy ten slots, and a cabinet holding a
+quarter of what it can take is a half-empty cabinet drawn faithfully. The
+defect was in the fixture's arithmetic, not in the rendering.
