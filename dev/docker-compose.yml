@@ -98,6 +98,13 @@ services:
       # Inside the compose network Grafana answers on its own port, whatever
       # GRAFANA_PORT publishes it as on the host.
       GRAFANA_URL: ${GRAFANA_URL:-http://grafana:3000}
+      # Playwright's scaffolded config reads CI to decide two things, and a
+      # container that never receives it silently gets neither. Retries are
+      # the visible one and we switch them back off in playwright.config.ts;
+      # `forbidOnly` is the one that matters, because without it a committed
+      # `test.only` narrows the suite to a single test and CI still reports
+      # success. Empty when unset, which reads as false.
+      CI: ${CI:-}
     volumes:
       - ..:/work
       # node_modules never touches the host. Named volumes rather than bind
