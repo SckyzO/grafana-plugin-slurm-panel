@@ -142,6 +142,38 @@ test.describe('the node grid renders against a real Grafana', () => {
     // colours, and these five panels between them reach most of them.
     expect(coloursSeen.size).toBeGreaterThan(4);
   });
+
+  test('cuts the cells on the panel that asks for shapes, and only that panel', async ({ page }) => {
+    // The unit tests pin shapeFor. This pins the wiring: that the option set
+    // on a dashboard reaches the DOM through the real Grafana, which is the
+    // half a pure function cannot prove. Both panels draw the same nodes from
+    // the same query and differ only in shapeChannel, so the comparison is
+    // the option and nothing else.
+    const clipsOn = async (id: number): Promise<string[]> => {
+      await page.goto(`/d/slurm-node-colour/colour?viewPanel=${id}`);
+      const cells = page.locator('[data-testid^="node-cell-"]');
+      await expect.poll(() => cells.count(), { timeout: 20_000 }).toBeGreaterThan(0);
+      return cells.evaluateAll((nodes) => nodes.map((n) => getComputedStyle(n).clipPath));
+    };
+
+    // 6 is "Shape channel off, the default": every cell square. Asserted
+    // first, because it is what the majority who configure nothing see.
+    const off = await clipsOn(6);
+    expect(off.every((c) => c === 'none')).toBe(true);
+
+    // 7 is the same grid with shapeChannel on. Some cells are cut — not all,
+    // because the channel separates two families rather than labelling every
+    // state.
+    const on = await clipsOn(7);
+    const cut = on.filter((c) => c !== 'none');
+    expect(cut.length).toBeGreaterThan(0);
+    expect(cut.length).toBeLessThan(on.length);
+
+    // And the cuts carry information: more than one distinct shape. A single
+    // shape everywhere is the mutation that passed the whole suite before
+    // these assertions existed.
+    expect(new Set(cut).size).toBeGreaterThan(1);
+  });
 });
 
 test.describe('the continuous colour modes', () => {

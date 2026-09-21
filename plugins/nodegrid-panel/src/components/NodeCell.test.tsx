@@ -166,6 +166,73 @@ describe('NodeCell', () => {
     expect(classNameOf(noMemoryData)).toBe(emptyClass);
   });
 
+  // The shape channel is the accessibility claim the shipped README makes over
+  // three paragraphs, two screenshots and a Delta E measurement — and until
+  // these tests it was invisible to the suite. Both of these mutations passed
+  // 285 unit tests and 22 browser tests: shapeFor returning undefined for
+  // everything, and shapeFor returning one single shape for every state, which
+  // notches `idle` exactly like `down`.
+  //
+  // Read off the inline style rather than a class, because clipPath is what
+  // the browser actually cuts and what a reader in greyscale actually sees.
+  const cutFor = (state: string, shapeChannel = true): string => {
+    render(
+      <NodeCell
+        node={nodeWith(state)}
+        width={14}
+        height={14}
+        stateDisplay={displayFor(state)}
+        valueDisplay={displayFor(state)}
+        colorMode="state"
+        shapeChannel={shapeChannel}
+      />
+    );
+    return screen.getByTestId(`node-cell-node-${state}`).style.clipPath;
+  };
+
+  it('cuts a corner off the states the fill cannot separate, and leaves the rest square', () => {
+    // `drained` is purple and `not responding` orange, but under protanopia
+    // the orange sits 4.8 from allocated — no palette fixed it, which is the
+    // whole reason this channel exists.
+    expect(cutFor('drained')).toMatch(/^polygon\(/);
+    expect(cutFor('down')).toMatch(/^polygon\(/);
+
+    // A working node stays square. If this ever returns a polygon the channel
+    // has stopped carrying information: every cell notched is every cell the
+    // same.
+    expect(cutFor('idle')).toBe('');
+    expect(cutFor('allocated')).toBe('');
+  });
+
+  it('gives the two families different cuts, which is the information the channel carries', () => {
+    // The mutation that survived the whole suite was one shape for everything.
+    // Nothing above catches it; this does.
+    expect(cutFor('drained')).not.toBe(cutFor('down'));
+  });
+
+  it('cuts a node suspended with ~ like a broken one, because the match is on the mapped text', () => {
+    // Documented in shapeFor and worth pinning, because it is not obvious and
+    // nothing else would catch a change to it. The match is a substring of the
+    // *mapped* text, not the raw state, and the `~` suffix maps to "powered
+    // down" — which contains "down", so it takes the down cut although the
+    // palette puts it in the grey family rather than the red one.
+    expect(cutFor('idle~')).toBe(cutFor('down'));
+
+    // And the distinction that makes it subtle: the raw state `power_down`
+    // maps to "power management", which contains no "down" at all, so it
+    // stays square. Two states a reader would call the same thing, cut
+    // differently, entirely as a consequence of the mapped wording.
+    expect(cutFor('power_down')).toBe('');
+  });
+
+  it('draws nothing but squares when the channel is off, which is the shipped default', () => {
+    // DEFAULT_OPTIONS.shapeChannel is false: the majority who configure
+    // nothing get no notches, and this is the test that says so at the cell.
+    for (const state of ['drained', 'down', 'idle']) {
+      expect(cutFor(state, false)).toBe('');
+    }
+  });
+
   it('marks a filled cell as filled, so data-filled discriminates', () => {
     render(
       <NodeCell
