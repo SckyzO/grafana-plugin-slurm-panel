@@ -1,5 +1,6 @@
 import React from 'react';
 import { css, cx } from '@emotion/css';
+import { textUtil } from '@grafana/data';
 import type { DisplayProcessor, GrafanaTheme2 } from '@grafana/data';
 import { Tooltip, useTheme2 } from '@grafana/ui';
 import type { SlurmNode } from '@slurm-views/core';
@@ -122,7 +123,13 @@ export function NodeCell({
           background,
           clipPath: shapeChannel ? shapeFor(dv.text) : undefined,
         }}
-        onClick={href ? () => window.open(href, '_self') : undefined}
+        // Sanitised at the boundary too, in NodeGridPanel's hrefFor, which is
+        // where the interpolated string is produced and the only producer
+        // today. Repeated here because NodeCell is exported and `href` is
+        // typed `string | undefined` — nothing in the type stops a future
+        // caller handing it an unsanitised one. sanitizeUrl is idempotent,
+        // so the second pass costs a comparison and removes the asymmetry.
+        onClick={href ? () => window.open(textUtil.sanitizeUrl(href), '_self') : undefined}
       />
     </Tooltip>
   );
