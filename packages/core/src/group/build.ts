@@ -15,7 +15,6 @@ export interface GroupedModel {
   nodeCount: number;
   /** Cells drawn. Larger than nodeCount when a node sits in several groups. */
   cellCount: number;
-  duplicated: boolean;
 }
 
 export interface BuildOptions {
@@ -51,7 +50,7 @@ export function buildGroups(
   opts: BuildOptions = {}
 ): GroupedModel {
   if (nodes.length === 0) {
-    return { groups: [], nodeCount: 0, cellCount: 0, duplicated: false };
+    return { groups: [], nodeCount: 0, cellCount: 0 };
   }
 
   const keyFn = makeKeyFn(source);
@@ -78,7 +77,11 @@ export function buildGroups(
 
   for (const node of nodes) {
     if (multiValued && source.kind === 'label' && source.label === 'partition' && node.partitions.length > 0) {
-      // A node in three partitions is drawn three times. The header says so.
+      // A node in three partitions is drawn three times, which is the whole
+      // of what multiValueLabel asks for. cellCount then exceeds nodeCount by
+      // design; there is deliberately no flag saying so, because ingest keys
+      // nodes by name and this branch is the only thing that can widen the
+      // gap - a flag for it could only ever report the option working.
       for (const partition of node.partitions) {
         place(node, partition, false);
       }
@@ -106,5 +109,5 @@ export function buildGroups(
       return collator.compare(a.key, b.key);
     });
 
-  return { groups, nodeCount: nodes.length, cellCount, duplicated: cellCount > nodes.length };
+  return { groups, nodeCount: nodes.length, cellCount };
 }

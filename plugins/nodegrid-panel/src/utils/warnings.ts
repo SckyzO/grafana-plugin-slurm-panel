@@ -210,11 +210,6 @@ export function summarise(
 ): string[] {
   const lines: string[] = [];
 
-  if (model.duplicated) {
-    // A count that silently disagrees with sinfo is worse than no count.
-    lines.push(`${model.nodeCount} nodes drawn in ${model.cellCount} cells`);
-  }
-
   if (unmapped.length > 0) {
     // Count and name states, not state-and-flag combinations. Name them rather
     // than only counting, so a state introduced by a Slurm upgrade is

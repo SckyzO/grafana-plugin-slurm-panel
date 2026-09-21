@@ -15,7 +15,6 @@ describe('buildGroups', () => {
     expect(model.groups.map((g) => g.key)).toEqual(['r01', 'r02']);
     expect(model.nodeCount).toBe(2);
     expect(model.cellCount).toBe(2);
-    expect(model.duplicated).toBe(false);
   });
 
   it('orders within a group by the ordinal, not lexically', () => {
@@ -38,7 +37,6 @@ describe('buildGroups', () => {
     expect(model.groups.map((g) => g.key)).toEqual(['cpu', 'debug', 'high']);
     expect(model.nodeCount).toBe(2);
     expect(model.cellCount).toBe(4);
-    expect(model.duplicated).toBe(true);
   });
 
   it('marks a group assumed when the key was invented', () => {
@@ -61,7 +59,7 @@ describe('buildGroups', () => {
 
   it('returns an empty model for no nodes rather than one empty group', () => {
     expect(buildGroups([], { kind: 'none' })).toEqual({
-      groups: [], nodeCount: 0, cellCount: 0, duplicated: false,
+      groups: [], nodeCount: 0, cellCount: 0,
     });
   });
 });

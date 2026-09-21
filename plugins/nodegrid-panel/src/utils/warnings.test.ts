@@ -42,11 +42,18 @@ describe('collectUnmapped', () => {
 
 describe('summarise', () => {
   const model = (nodeCount: number, cellCount: number): GroupedModel => ({
-    groups: [], nodeCount, cellCount, duplicated: cellCount > nodeCount,
+    groups: [], nodeCount, cellCount,
   });
 
-  it('reports both counts when grouping duplicated nodes', () => {
-    expect(summarise(model(20, 25), [], [], notes())).toContain('20 nodes drawn in 25 cells');
+  it('says nothing when there are more cells than nodes', () => {
+    // More cells than nodes has exactly one cause - Multi-value label, which
+    // asks for a cell per (node, partition) - and the strip used to report it
+    // as a fault. Grouping the dev cluster by partition said "540 nodes drawn
+    // in 617 cells" under a warning triangle, and no setting removed it,
+    // because the setting was the cause. Nothing here now says so; the option
+    // that produced it says what it does, and each group header carries its
+    // own count.
+    expect(summarise(model(20, 25), [], [], notes())).toEqual([]);
   });
 
   it('says nothing about counts when they agree', () => {
@@ -240,7 +247,7 @@ const notes = (over: Partial<GroupingNotes> = {}): GroupingNotes => ({
 
 describe('grouping warnings', () => {
   const model = (nodeCount: number): GroupedModel => ({
-    groups: [], nodeCount, cellCount: nodeCount, duplicated: false,
+    groups: [], nodeCount, cellCount: nodeCount,
   });
 
   it('names orphan nodes collapsed back to hostlist syntax', () => {
@@ -331,7 +338,7 @@ describe('grouping warnings', () => {
 
 describe('blade warnings', () => {
   const noGrouping: GroupingNotes = { source: { kind: 'none' }, orphans: [], emptyGroups: [], problems: [] };
-  const empty = { groups: [], nodeCount: 0, cellCount: 0, duplicated: false };
+  const empty = { groups: [], nodeCount: 0, cellCount: 0 };
 
   it('says nothing at all when there are no blade notes', () => {
     // Every wrap-layout panel is this case, and it must stay silent.
@@ -393,7 +400,7 @@ describe('groupingNotes', () => {
         { key: 'rack1', nodes: [mkNode('c1')], assumed: false },
         { key: UNGROUPED, nodes: [mkNode('c9')], assumed: false },
       ],
-      nodeCount: 2, cellCount: 2, duplicated: false,
+      nodeCount: 2, cellCount: 2,
     };
     const notes = groupingNotes({ model, nodes: [mkNode('c1'), mkNode('c9')], source: ranges, ...args });
     expect(notes.orphans).toEqual(['c9']);
@@ -402,7 +409,7 @@ describe('groupingNotes', () => {
   it('reports no orphans when nothing landed in the ungrouped bucket', () => {
     const model: GroupedModel = {
       groups: [{ key: 'rack1', nodes: [mkNode('c1')], assumed: false }],
-      nodeCount: 1, cellCount: 1, duplicated: false,
+      nodeCount: 1, cellCount: 1,
     };
     expect(groupingNotes({ model, nodes: [mkNode('c1')], source: ranges, ...args }).orphans).toEqual([]);
   });
@@ -413,7 +420,7 @@ describe('groupingNotes', () => {
         { key: 'rack1', nodes: [mkNode('c1')], assumed: false },
         { key: 'rack7', nodes: [], assumed: false },
       ],
-      nodeCount: 1, cellCount: 1, duplicated: false,
+      nodeCount: 1, cellCount: 1,
     };
     const notes = groupingNotes({
       model, nodes: [mkNode('c1')], source: ranges,
@@ -423,7 +430,7 @@ describe('groupingNotes', () => {
   });
 
   it('carries the table problems through', () => {
-    const model: GroupedModel = { groups: [], nodeCount: 0, cellCount: 0, duplicated: false };
+    const model: GroupedModel = { groups: [], nodeCount: 0, cellCount: 0 };
     const notes = groupingNotes({
       model, nodes: [], source: { kind: 'ranges', table: 'broken line' },
       table: parseRangeTable('broken line'), ...args,
@@ -435,7 +442,7 @@ describe('groupingNotes', () => {
   it('has no problems and no empty groups when there is no table', () => {
     const model: GroupedModel = {
       groups: [{ key: 'p1', nodes: [mkNode('c1')], assumed: false }],
-      nodeCount: 1, cellCount: 1, duplicated: false,
+      nodeCount: 1, cellCount: 1,
     };
     const notes = groupingNotes({
       model, nodes: [mkNode('c1')], source: { kind: 'label', label: 'partition' }, ...args,
