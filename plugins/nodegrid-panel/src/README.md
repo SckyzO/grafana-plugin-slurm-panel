@@ -332,6 +332,15 @@ not be trusted to separate, cutting the top-right corner of `not responding`,
 down`. Every other state is drawn as a plain square. Turning it on is a choice
 a reader makes; nobody else's grid changes.
 
+**The shape reads the mapped text, not the raw state, and it is a
+case-sensitive match.** That is worth knowing before you rename anything in
+the colour table above: a rule whose result reads `Drained` rather than
+`drained` loses its notch, and a healthy state relabelled to something
+containing `down` gains one. Nothing warns about it, because from the panel's
+side a renamed label is a legitimate choice. If you rely on the shape channel,
+treat the wording of those rules as part of the encoding rather than as a
+caption.
+
 `sinfo` appends one of nine flags to a state: `*` not responding, `~` powered
 off, `#` powering up, `!` pending power down, `%` powering down, `$`
 reservation maintenance, `@` pending reboot, `^` reboot issued, and `-`
