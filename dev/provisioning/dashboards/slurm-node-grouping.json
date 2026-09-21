@@ -664,7 +664,7 @@
         "w": 12,
         "h": 15
       },
-      "id": 41,
+      "id": 13,
       "options": {
         "grouping": {
           "kind": "label",
@@ -748,7 +748,7 @@
       }
     },
     {
-      "id": 40,
+      "id": 12,
       "type": "tomzone-slurm-panel",
       "title": "Slot declaration too small",
       "description": "cpu1 is declared at twelve slots and needs twenty. The rows that do not fit spill above the frame rather than being truncated, and the strip says so.",

@@ -503,7 +503,7 @@ test.describe('cabinet height, against the same live data', () => {
   });
 
   test('spills what does not fit above the frame, clear of the group header', async ({ page }) => {
-    await gotoPanelWithData(page, 40, 'cpu1');
+    await gotoPanelWithData(page, 12, 'cpu1');
 
     const group = page.getByTestId('node-group-cpu1');
     const frameBox = await group.getByTestId('rack-frame').boundingBox();
@@ -527,7 +527,7 @@ test.describe('cabinet height, against the same live data', () => {
   });
 
   test('names the cabinet that outgrew its declaration', async ({ page }) => {
-    await gotoPanelWithData(page, 40, 'cpu1');
+    await gotoPanelWithData(page, 12, 'cpu1');
     await expect(page.getByText('cpu1 needs 20 slots but 12 were declared.')).toBeVisible();
   });
 
