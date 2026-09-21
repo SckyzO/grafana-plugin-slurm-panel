@@ -211,11 +211,19 @@ describe('NodeCell', () => {
   });
 
   it('cuts a node suspended with ~ like a broken one, because the match is on the mapped text', () => {
-    // Documented in shapeFor and worth pinning, because it is not obvious and
-    // nothing else would catch a change to it. The match is a substring of the
-    // *mapped* text, not the raw state, and the `~` suffix maps to "powered
-    // down" — which contains "down", so it takes the down cut although the
-    // palette puts it in the grey family rather than the red one.
+    // Recorded, not endorsed. The match is a substring of the *mapped* text,
+    // not the raw state, and the `~` suffix maps to "powered down" — which
+    // contains "down", so it takes the down cut although the palette puts it
+    // in the grey family rather than the red one.
+    //
+    // The wider consequence is a known defect, not a design: the test is a
+    // case-sensitive substring of a label the README invites an operator to
+    // edit. Renaming `drained` to `Drained` silently removes its cut, and a
+    // healthy state relabelled to anything containing "down" silently gains
+    // one. The channel is off by default, so the readers it fails are exactly
+    // the ones who turned it on because they depend on it. This test pins
+    // today's behaviour so a fix is visible as a change; it does not argue
+    // that today's behaviour is right.
     expect(cutFor('idle~')).toBe(cutFor('down'));
 
     // And the distinction that makes it subtle: the raw state `power_down`
