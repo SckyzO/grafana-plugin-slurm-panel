@@ -269,7 +269,7 @@
         "x": 16,
         "y": 34,
         "w": 8,
-        "h": 20
+        "h": 7
       },
       "targets": [
         {
@@ -388,7 +388,8 @@
         "slotOverrides": "",
         "gap": 2,
         "colorMode": "state",
-        "slotsPerRack": 20
+        "slotsPerRack": 20,
+        "cellHeight": 11
       },
       "fieldConfig": {
         "defaults": {},
@@ -442,7 +443,8 @@
         "gap": 2,
         "colorMode": "state",
         "slotsPerRack": 20,
-        "shapeChannel": true
+        "shapeChannel": true,
+        "cellHeight": 11
       },
       "fieldConfig": {
         "defaults": {},

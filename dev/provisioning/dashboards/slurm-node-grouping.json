@@ -59,7 +59,8 @@
         "layout": "rack",
         "cellWidth": 18,
         "gap": 2,
-        "colorMode": "state"
+        "colorMode": "state",
+        "cellHeight": 16
       },
       "fieldConfig": {
         "defaults": {},
@@ -79,7 +80,7 @@
         "x": 8,
         "y": 0,
         "w": 6,
-        "h": 7
+        "h": 5
       },
       "targets": [
         {
@@ -131,7 +132,7 @@
         "x": 14,
         "y": 0,
         "w": 5,
-        "h": 7
+        "h": 5
       },
       "targets": [
         {
@@ -234,7 +235,7 @@
         "x": 0,
         "y": 7,
         "w": 8,
-        "h": 6
+        "h": 9
       },
       "targets": [
         {
@@ -264,7 +265,7 @@
         },
         "multiValueLabel": false,
         "layout": "wrap",
-        "cellWidth": 14,
+        "cellWidth": 48,
         "gap": 2,
         "colorMode": "state"
       },
@@ -286,7 +287,7 @@
         "x": 8,
         "y": 7,
         "w": 8,
-        "h": 6
+        "h": 9
       },
       "targets": [
         {
@@ -326,7 +327,7 @@
         },
         "multiValueLabel": false,
         "layout": "wrap",
-        "cellWidth": 14,
+        "cellWidth": 48,
         "gap": 2,
         "colorMode": "state"
       },
@@ -357,7 +358,7 @@
         "x": 16,
         "y": 7,
         "w": 8,
-        "h": 6
+        "h": 9
       },
       "targets": [
         {
@@ -387,7 +388,7 @@
         },
         "multiValueLabel": false,
         "layout": "wrap",
-        "cellWidth": 14,
+        "cellWidth": 48,
         "gap": 2,
         "colorMode": "state"
       },
@@ -407,7 +408,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 13,
+        "y": 16,
         "w": 12,
         "h": 15
       },
@@ -684,7 +685,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 13,
+        "y": 16,
         "w": 12,
         "h": 15
       },
@@ -733,7 +734,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 28,
+        "y": 31,
         "w": 12,
         "h": 10
       },
@@ -768,7 +769,8 @@
         "slotOverrides": "",
         "gap": 2,
         "colorMode": "state",
-        "slotsPerRack": 20
+        "slotsPerRack": 20,
+        "cellHeight": 11
       },
       "fieldConfig": {
         "defaults": {},
@@ -786,7 +788,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 28,
+        "y": 31,
         "w": 12,
         "h": 10
       },
@@ -838,7 +840,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 38,
+        "y": 41,
         "w": 12,
         "h": 11
       },
@@ -873,7 +875,8 @@
         "slotOverrides": "gpu[1-2]: 26",
         "gap": 2,
         "colorMode": "state",
-        "slotsPerRack": 20
+        "slotsPerRack": 20,
+        "cellHeight": 9
       },
       "fieldConfig": {
         "defaults": {},
@@ -891,7 +894,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 38,
+        "y": 41,
         "w": 12,
         "h": 11
       },
@@ -920,13 +923,14 @@
         },
         "multiValueLabel": false,
         "layout": "rack",
-        "cellWidth": 14,
+        "cellWidth": 22,
         "nodesPerBlade": 1,
         "bladeOverrides": "cpu[1-4]: 4",
         "slotOverrides": "",
         "gap": 2,
         "colorMode": "state",
-        "slotsPerRack": 20
+        "slotsPerRack": 20,
+        "cellHeight": 12
       },
       "fieldConfig": {
         "defaults": {},

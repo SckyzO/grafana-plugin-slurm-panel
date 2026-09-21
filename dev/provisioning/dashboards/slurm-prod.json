@@ -743,7 +743,8 @@
         "colorMode": "state",
         "gap": 2,
         "centreRacks": true,
-        "showNodeCount": true
+        "showNodeCount": true,
+        "cellHeight": 14
       },
       "targets": [
         {
