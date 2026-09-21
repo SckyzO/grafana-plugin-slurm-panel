@@ -74,7 +74,11 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
         name: 'Cell width',
         description: 'Below 10px a cell stops being a usable hover target.',
         defaultValue: DEFAULT_OPTIONS.cellWidth,
-        settings: { min: 6, max: 48, step: 1 },
+        // Up to 64: a rack cabinet is as wide as its blade is deep, so a quad
+        // blade at the old ceiling of 48 already ran to 200px and a floor of
+        // nine cabinets no longer fit a half-width panel. The ceiling exists
+        // to stop a slider producing a grid of four cells, not to pick a size.
+        settings: { min: 6, max: 64, step: 1 },
         category: ['Layout'],
       })
       .addNumberInput({

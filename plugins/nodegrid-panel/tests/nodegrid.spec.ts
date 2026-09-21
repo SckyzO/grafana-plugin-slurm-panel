@@ -93,19 +93,17 @@ test.describe('the node grid renders against a real Grafana', () => {
     await expect(tooltip.getByText('State', { exact: true })).toBeVisible();
   });
 
-  test('names a state the shipped rules have never seen', async ({
-    gotoDashboardPage,
-    readProvisionedDashboard,
-    page,
-  }) => {
+  test('names a state the shipped rules have never seen', async ({ page }) => {
     // Against the synthetic exporter this used to fire on perfctrs, blocked
     // and inval — all real Slurm states the rules did not cover, and all
     // covered now. Pointing it back at the exporter would make it a test of
     // which states happen to be unmapped this week. The scenarios dashboard
     // carries one state that is not a Slurm state at all and never will be,
     // standing in for whatever a future Slurm introduces.
-    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-colour.json' });
-    await gotoDashboardPage(dashboard);
+    // Panel 2 on its own: the strip belongs to that panel, and reading it off
+    // the whole dashboard makes the assertion depend on which panels Grafana
+    // mounted, which is not what this test is about.
+    await page.goto('/d/slurm-node-colour/colour?viewPanel=2');
 
     const strip = page.getByTestId('panel-warnings').first();
     await expect(strip).toBeVisible({ timeout: 20_000 });
@@ -209,16 +207,16 @@ test.describe('the continuous colour modes', () => {
     );
     expect(bands.length).toBeGreaterThan(1);
 
-    // Most synthetic nodes have no GPU at all. Those must be drawn as empty
-    // rather than filled: an undefined background on a <button> falls back to
-    // the browser's ButtonFace grey, which reads as a real measurement and
-    // once covered two thirds of this panel.
+    // The GPU panel now asks only for the partitions that have GPUs, so every
+    // cell on it carries a measurement and none is empty. That is the point of
+    // the filter, and it means this panel can no longer stand in for the
+    // empty-cell behaviour - NodeCell's own tests pin that, on a cell with no
+    // value in every colour mode. What is left to check here is the opposite:
+    // a filtered facet query still reaches the cells it does cover.
     await page.goto('/d/slurm-node-colour/colour?viewPanel=5');
     const gpu = page.locator('[data-testid^="node-cell-"]');
-    await expect.poll(() => gpu.locator(':scope[data-filled="false"]').count(), { timeout: 20_000 })
-      .toBeGreaterThan(50);
-    const empty = gpu.locator(':scope[data-filled="false"]').first();
-    expect(await empty.evaluate((n) => getComputedStyle(n).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+    await expect.poll(() => gpu.count(), { timeout: 20_000 }).toBeGreaterThan(50);
+    expect(await gpu.locator(':scope[data-filled="false"]').count()).toBe(0);
   });
 
   test('groups the same nodes four different ways', async ({ page }) => {
@@ -344,8 +342,17 @@ test.describe('the occupancy panels group the same nine racks', () => {
     // render one "ungrouped" block instead of nine named racks, with nothing
     // failing. Only the three occupancy panels are listed: the fourth grid on
     // this dashboard groups by state, so it has no racks to count.
-    const racks = ['cpu1', 'cpu2', 'cpu3', 'cpu4', 'bigmem1', 'bigmem2', 'visu1', 'gpu1', 'gpu2'];
-    for (const [id, title] of [[3, 'CPU'], [4, 'Memory'], [5, 'GPU']] as Array<[number, string]>) {
+    const whole = ['cpu1', 'cpu2', 'cpu3', 'cpu4', 'bigmem1', 'bigmem2', 'visu1', 'gpu1', 'gpu2'];
+    // The GPU panel asks only for the partitions that have GPUs, so it draws
+    // three of the nine on purpose. Listing them rather than skipping the
+    // panel keeps the grouping key under test there too - a wrong key would
+    // still collapse it to one "ungrouped" block.
+    const panels: Array<[number, string, string[]]> = [
+      [3, 'CPU', whole],
+      [4, 'Memory', whole],
+      [5, 'GPU', ['gpu1', 'gpu2', 'visu1']],
+    ];
+    for (const [id, title, racks] of panels) {
       await page.goto(`/d/slurm-node-colour/colour?viewPanel=${id}`);
       for (const key of racks) {
         await expect(page.getByTestId(`node-group-${key}`), `${title}: ${key} missing`)

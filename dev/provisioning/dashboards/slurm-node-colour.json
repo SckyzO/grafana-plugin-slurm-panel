@@ -22,7 +22,7 @@
         "x": 0,
         "y": 0,
         "w": 24,
-        "h": 13
+        "h": 17
       },
       "options": {
         "mode": "markdown",
@@ -42,9 +42,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 13,
+        "y": 17,
         "w": 24,
-        "h": 13
+        "h": 17
       },
       "targets": [
         {
@@ -95,7 +95,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 26,
+        "y": 34,
         "w": 8,
         "h": 20
       },
@@ -181,7 +181,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 26,
+        "y": 34,
         "w": 8,
         "h": 20
       },
@@ -260,31 +260,31 @@
       "id": 5,
       "type": "tomzone-slurm-panel",
       "title": "GPU utilisation by node",
-      "description": "slurm_node_gres_used over slurm_node_gres_total, summed across models: a node with two GPU models has one occupancy, not two. Nodes with no GPU have nothing to say and are drawn empty.",
+      "description": "Only the partitions that have GPUs: eight per node on gpu, two on visu. Filtering is done in the query rather than left to the panel, because a grid of 540 cells where 440 are empty outlines is four fifths of nothing - the empty cell is right, it just should not be the whole panel. A node with no GPU is still drawn empty rather than zero wherever one turns up; NodeCell's own tests pin that.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
       },
       "gridPos": {
         "x": 16,
-        "y": 26,
+        "y": 34,
         "w": 8,
         "h": 20
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "slurm_node_status",
+          "expr": "slurm_node_status{partition=~\"gpu|visu\"}",
           "instant": true
         },
         {
           "refId": "B",
-          "expr": "slurm_node_gres_used",
+          "expr": "slurm_node_gres_used{partition=~\"gpu|visu\"}",
           "instant": true
         },
         {
           "refId": "C",
-          "expr": "slurm_node_gres_total",
+          "expr": "slurm_node_gres_total{partition=~\"gpu|visu\"}",
           "instant": true
         }
       ],
@@ -353,7 +353,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 46,
+        "y": 54,
         "w": 12,
         "h": 10
       },
@@ -406,7 +406,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 46,
+        "y": 54,
         "w": 12,
         "h": 10
       },

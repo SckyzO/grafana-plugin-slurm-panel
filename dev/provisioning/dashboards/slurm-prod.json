@@ -50,7 +50,7 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true,
+        "showThresholdMarkers": false,
         "minVizWidth": 75,
         "minVizHeight": 75,
         "sizing": "auto"
@@ -124,7 +124,7 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true,
+        "showThresholdMarkers": false,
         "minVizWidth": 75,
         "minVizHeight": 75,
         "sizing": "auto"
@@ -697,14 +697,14 @@
       "id": 10,
       "type": "tomzone-slurm-panel",
       "title": "Nodes by rack",
-      "description": "Six cabinets against live Prometheus, two nodes to a blade, each declared at twenty-one slots so the floor is flat and every cabinet keeps one free position visible above its contents. The rack label comes from Prometheus relabelling at scrape time, the first of the three routes to a topology and the only one that needs no per-dashboard configuration. Hover a node for its state, its cores, its GPUs and, when it is drained, the reason and how long it has been out.",
+      "description": "Six cabinets against live Prometheus, two nodes to a blade, each declared at twenty-one slots so the floor is flat and every cabinet keeps one free position visible above its contents. The rack label comes from Prometheus relabelling at scrape time, the first of the three routes to a topology and the only one that needs no per-dashboard configuration. Hover a node for its state, its cores, its GPUs and, when it is drained, the reason and how long it has been out. Nine cabinets at this cell width need about 890px, and half of a 1600px screen offers 780, so the floor wraps to two rows here rather than shrinking its cells - seven of the nine are floored by the width of their own header, not by their cells, so a narrower cell does not buy the row back. Give the panel the full width and it draws as one line.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 11,
-        "w": 24,
+        "h": 21,
+        "w": 12,
         "x": 0,
         "y": 12
       },
@@ -735,7 +735,7 @@
         },
         "multiValueLabel": false,
         "layout": "rack",
-        "cellWidth": 24,
+        "cellWidth": 26,
         "nodesPerBlade": 1,
         "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2",
         "slotsPerRack": 20,
@@ -817,7 +817,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 23
+        "y": 33
       },
       "targets": [
         {
@@ -906,7 +906,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 23
+        "y": 33
       },
       "targets": [
         {
@@ -995,7 +995,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 23
+        "y": 33
       },
       "targets": [
         {
@@ -1081,10 +1081,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 9,
-        "w": 24,
-        "x": 0,
-        "y": 30
+        "h": 21,
+        "w": 12,
+        "x": 12,
+        "y": 12
       },
       "fieldConfig": {
         "defaults": {
@@ -1092,7 +1092,8 @@
             "align": "auto",
             "cellOptions": {
               "type": "auto"
-            }
+            },
+            "filterable": true
           }
         },
         "overrides": [
@@ -1176,7 +1177,8 @@
             "sum"
           ]
         },
-        "cellHeight": "sm"
+        "cellHeight": "sm",
+        "enablePagination": true
       },
       "targets": [
         {
