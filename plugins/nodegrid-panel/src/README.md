@@ -293,7 +293,11 @@ cell's tooltip and in its accessible label, in every colour mode.
 | <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#8F3BB8;vertical-align:middle"></span> `#8F3BB8` | `dark-purple` | **a human claimed it** | `drained`, `draining`, `drng`, `maintenance`, `reserved`, `resv`, `npc`, `perfctrs` |
 | <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#FF9830;vertical-align:middle"></span> `#FF9830` | `orange` | **not answering, or moving** | the `*` suffix, `blocked`, `reboot` |
 | <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#C4162A;vertical-align:middle"></span> `#C4162A` | `dark-red` | **broken** | `down`, `fail`, `unknown`, `invalid` |
-| the theme's own ink | `text` | **absent from the floor** | the `~` suffix, `power_down`, `powering_up`, `future` |
+| the theme's own ink | `text` | **absent from the floor** | the `~` suffix, `power_down`, `powering_up`, `future`, `futr` |
+
+`future` and `futr` are one state under two spellings, both matched by a single rule: a node declared
+in `slurm.conf` that does not exist yet, pre-defined so it can be brought into service later without
+restarting the controller. Grey for the same reason `powered_down` is — there is nothing on the floor.
 
 Hex values are the dark theme's. Every colour is a Grafana theme name rather
 than a literal, so a light theme or a custom one resolves its own value and the
