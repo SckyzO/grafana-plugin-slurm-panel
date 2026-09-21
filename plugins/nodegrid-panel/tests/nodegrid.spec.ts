@@ -147,7 +147,7 @@ test.describe('the panel supplies its own state colours', () => {
       // Only the panels that colour by state: 3, 4 and 5 resolve their fill
       // through Thresholds instead, so their cells carry no mapping at all
       // and counting them here would measure the wrong thing.
-      [2, 'All Slurm states, default mappings'],
+      [2, 'Every mapping, resolved live'],
       [6, 'Shape channel off, the default'],
       [7, 'Shape channel on'],
     ];
