@@ -241,6 +241,34 @@ describe('NodeCell', () => {
     }
   });
 
+  it('sanitises an href it is handed, not only one hrefFor built', () => {
+    // NodeGridPanel sanitises at the boundary, which covers the only producer
+    // there is today. This covers the other half: NodeCell is exported and
+    // `href` is a plain `string | undefined`, so the type permits a caller
+    // that never went through hrefFor. Without this test the second pass was
+    // an assertion in a comment — removing it left all 292 tests green.
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+    openSpy.mockClear();
+
+    render(
+      <NodeCell
+        node={nodeWith('idle')}
+        width={14}
+        height={14}
+        stateDisplay={displayFor('idle')}
+        valueDisplay={displayFor('idle')}
+        colorMode="state"
+        shapeChannel={false}
+        href="javascript:alert(document.domain)"
+      />
+    );
+    screen.getByTestId('node-cell-node-idle').click();
+
+    expect(openSpy).toHaveBeenCalledWith('about:blank', '_self');
+
+    openSpy.mockRestore();
+  });
+
   it('marks a filled cell as filled, so data-filled discriminates', () => {
     render(
       <NodeCell
