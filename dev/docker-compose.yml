@@ -9,7 +9,7 @@ services:
     # running container when a tag moves, so a floating tag silently does not
     # move — slurm_exporter's own stack sat on 12.4.2 for nine days while
     # :latest was 13.2.1. A pinned version that is visibly bumped is honest.
-    image: grafana/${GRAFANA_IMAGE:-grafana}:${GRAFANA_VERSION:-13.2.1}
+    image: grafana/${GRAFANA_IMAGE:-grafana}:${GRAFANA_VERSION:-13.2.2}
     ports:
       # The published port is the caller's, not this repository's. The default
       # is 3000 because that is where every Grafana reader expects to find one;
