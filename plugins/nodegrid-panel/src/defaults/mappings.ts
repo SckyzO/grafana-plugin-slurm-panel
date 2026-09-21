@@ -1,5 +1,6 @@
 import { MappingType } from '@grafana/data';
 import type { ValueMapping } from '@grafana/data';
+import RULES from './mappings.json';
 
 const rule = (pattern: string, text: string, color: string): ValueMapping => ({
   type: MappingType.RegexToText,
@@ -54,52 +55,40 @@ const rule = (pattern: string, text: string, color: string): ValueMapping => ({
  * not (see `shapeFor` in NodeCell), which is what makes that pair safe.
  *
  * Colours are theme names, resolved by the theme. No hex.
+ *
+ * The rules themselves live in `mappings.json`, beside this file, because the
+ * contract suite has to assert against the list that actually ships. It used
+ * to keep a transcribed copy, and the copy drifted: same patterns, a wholly
+ * different palette, and a discrimination threshold calibrated on colours no
+ * build had produced in months. Data in one file both readers load cannot
+ * drift; a transcription always can.
+ *
+ * **The order is behaviour, not presentation.** Grafana applies mappings in
+ * order and the first match wins, so `/^idle.*-$/` has to precede
+ * `/^idle.*$/` or the backfill variants disappear into the general rule.
+ * Never sort that file.
+ *
+ * What each family means, in the order the file lists them:
+ *
+ * - **Suffix overrides** come first: whatever the node was doing, it is not
+ *   doing it now. The other seven suffixes ( # ! % $ @ ^ - ) leave the state
+ *   readable and are absorbed by the `.*` in the rules below.
+ * - **Green** — work is running here. Brighter as the node fills, so a busy
+ *   cluster reads bright and the commonest state carries the most contrast.
+ *   The backfill variants keep their own label and share the colour: an
+ *   operator scanning a floor does not act differently on one. ALLOCATED+
+ *   (allocated with jobs still completing) is deliberately not its own rule:
+ *   it reads as allocated, which is what it is, and the raw state stays
+ *   visible in the tooltip.
+ * - **Blue** — capacity sitting free. Nothing is wrong with it and nothing is
+ *   earning on it.
+ * - **Purple** — a human claimed this node. Drained, under maintenance,
+ *   reserved or counting performance events are one decision for the operator
+ *   (find out who and why) so they are one colour, and the label says which.
+ * - **Orange** — not answering, or on its way somewhere. Not broken, not
+ *   usable.
+ * - **Dark red** — broken. Dark on purpose: this is the half of the red-green
+ *   pair that a deuteranope has to tell from a working node.
+ * - **Grey** — present in the configuration, absent from the floor.
  */
-export const DEFAULT_MAPPINGS: ValueMapping[] = [
-  // Suffixes that override the state entirely: whatever the node was doing,
-  // it is not doing it now. The other seven suffixes ( # ! % $ @ ^ - ) leave
-  // the state readable and are absorbed by the `.*` in the rules below.
-  rule('/^.*\\*$/', 'not responding', 'orange'),
-  rule('/^.*~$/', 'powered down', 'text'),
-
-  // Green: work is running here. Brighter as the node fills, so a busy
-  // cluster reads bright and the commonest state carries the most contrast.
-  // The backfill variants keep their own label and share the colour: an
-  // operator scanning a floor does not act differently on one.
-  rule('/^alloc.*-$/', 'allocated, backfill', 'light-green'),
-  // ALLOCATED+ (allocated with jobs still completing) is deliberately not its
-  // own rule: it reads as allocated, which is what it is, and the raw state
-  // stays visible in the tooltip.
-  rule('/^alloc.*$/', 'allocated', 'light-green'),
-  rule('/^mix.*-$/', 'mixed, backfill', 'green'),
-  rule('/^mix.*$/', 'mixed', 'green'),
-  rule('/^comp.*$/', 'completing', 'semi-dark-green'),
-
-  // Blue: capacity sitting free. Nothing is wrong with it and nothing is
-  // earning on it.
-  rule('/^idle.*-$/', 'idle, backfill', 'blue'),
-  rule('/^idle.*$/', 'idle', 'blue'),
-  rule('/^(planned|plnd).*$/', 'planned', 'light-blue'),
-
-  // Purple: a human claimed this node. Drained, under maintenance, reserved or
-  // counting performance events are one decision for the operator (find out
-  // who and why) so they are one colour, and the label says which.
-  rule('/^(drain|drng).*$/', 'drained', 'dark-purple'),
-  rule('/^maint.*$/', 'maintenance', 'dark-purple'),
-  rule('/^res.*$/', 'reserved', 'dark-purple'),
-  rule('/^(npc|perfctrs).*$/', 'perf counters', 'dark-purple'),
-
-  // Orange: not answering, or on its way somewhere. Not broken, not usable.
-  rule('/^block.*$/', 'blocked', 'orange'),
-  rule('/^reboot.*$/', 'reboot', 'orange'),
-
-  // Dark red: broken. Dark on purpose: this is the half of the red-green
-  // pair that a deuteranope has to tell from a working node.
-  rule('/^(down|fail).*$/', 'down', 'dark-red'),
-  rule('/^unk.*$/', 'unknown', 'dark-red'),
-  rule('/^inval.*$/', 'invalid registration', 'dark-red'),
-
-  // Grey: present in the configuration, absent from the floor.
-  rule('/^pow.*$/', 'power management', 'text'),
-  rule('/^fut.*$/', 'future', 'text'),
-];
+export const DEFAULT_MAPPINGS: ValueMapping[] = RULES.map(({ pattern, text, color }) => rule(pattern, text, color));

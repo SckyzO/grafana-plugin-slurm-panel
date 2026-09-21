@@ -1,0 +1,107 @@
+[
+  {
+    "pattern": "/^.*\\*$/",
+    "text": "not responding",
+    "color": "orange"
+  },
+  {
+    "pattern": "/^.*~$/",
+    "text": "powered down",
+    "color": "text"
+  },
+  {
+    "pattern": "/^alloc.*-$/",
+    "text": "allocated, backfill",
+    "color": "light-green"
+  },
+  {
+    "pattern": "/^alloc.*$/",
+    "text": "allocated",
+    "color": "light-green"
+  },
+  {
+    "pattern": "/^mix.*-$/",
+    "text": "mixed, backfill",
+    "color": "green"
+  },
+  {
+    "pattern": "/^mix.*$/",
+    "text": "mixed",
+    "color": "green"
+  },
+  {
+    "pattern": "/^comp.*$/",
+    "text": "completing",
+    "color": "semi-dark-green"
+  },
+  {
+    "pattern": "/^idle.*-$/",
+    "text": "idle, backfill",
+    "color": "blue"
+  },
+  {
+    "pattern": "/^idle.*$/",
+    "text": "idle",
+    "color": "blue"
+  },
+  {
+    "pattern": "/^(planned|plnd).*$/",
+    "text": "planned",
+    "color": "light-blue"
+  },
+  {
+    "pattern": "/^(drain|drng).*$/",
+    "text": "drained",
+    "color": "dark-purple"
+  },
+  {
+    "pattern": "/^maint.*$/",
+    "text": "maintenance",
+    "color": "dark-purple"
+  },
+  {
+    "pattern": "/^res.*$/",
+    "text": "reserved",
+    "color": "dark-purple"
+  },
+  {
+    "pattern": "/^(npc|perfctrs).*$/",
+    "text": "perf counters",
+    "color": "dark-purple"
+  },
+  {
+    "pattern": "/^block.*$/",
+    "text": "blocked",
+    "color": "orange"
+  },
+  {
+    "pattern": "/^reboot.*$/",
+    "text": "reboot",
+    "color": "orange"
+  },
+  {
+    "pattern": "/^(down|fail).*$/",
+    "text": "down",
+    "color": "dark-red"
+  },
+  {
+    "pattern": "/^unk.*$/",
+    "text": "unknown",
+    "color": "dark-red"
+  },
+  {
+    "pattern": "/^inval.*$/",
+    "text": "invalid registration",
+    "color": "dark-red"
+  },
+  {
+    "pattern": "/^pow.*$/",
+    "text": "power management",
+    "color": "text"
+  },
+  {
+    "pattern": "/^fut.*$/",
+    "text": "future",
+    "color": "text"
+  }
+]

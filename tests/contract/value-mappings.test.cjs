@@ -29,35 +29,29 @@ const rule = (pattern, text, color) => ({
   options: { pattern, result: { text, color } },
 });
 
-// The plugin keeps its own copy of this list at
-// plugins/nodegrid-panel/src/defaults/mappings.ts. The duplication is
-// deliberate: this file pins GRAFANA's behaviour, and importing our own
-// plugin here would turn a contract test into a test of ourselves.
-const DEFAULTS = [
-  rule('/^.*\\*$/', 'not responding', 'semi-dark-orange'),
-  rule('/^.*~$/', 'powered down', 'text'),
-  rule('/^idle.*-$/', 'idle, backfill', 'semi-dark-green'),
-  rule('/^idle.*$/', 'idle', 'green'),
-  rule('/^(planned|plnd).*$/', 'planned', 'light-green'),
-  rule('/^comp.*$/', 'completing', 'super-light-blue'),
-  rule('/^mix.*-$/', 'mixed, backfill', 'light-blue'),
-  rule('/^mix.*$/', 'mixed', 'blue'),
-  rule('/^alloc.*-$/', 'allocated, backfill', 'semi-dark-blue'),
-  rule('/^alloc.*$/', 'allocated', 'dark-blue'),
-  rule('/^(drain|drng).*$/', 'drained', 'yellow'),
-  rule('/^maint.*$/', 'maintenance', 'purple'),
-  rule('/^res.*$/', 'reserved', 'semi-dark-purple'),
-  rule('/^(npc|perfctrs).*$/', 'perf counters', 'light-purple'),
-  rule('/^(down|fail).*$/', 'down', 'red'),
-  rule('/^unk.*$/', 'unknown', 'semi-dark-red'),
-  rule('/^inval.*$/', 'invalid registration', 'semi-dark-red'),
-  rule('/^block.*$/', 'blocked', 'orange'),
-  rule('/^reboot.*$/', 'reboot', 'light-orange'),
-  rule('/^pow.*$/', 'power management', 'text'),
-  rule('/^fut.*$/', 'future', 'text'),
-];
+// The rules the plugin ships, read from the file it ships them in. This used
+// to be a transcription, and the transcription drifted: the patterns stayed
+// in step, the palette did not, and the colour assertions below were pinning
+// eighteen colours no build had produced in months. Two readers, one file.
+//
+// This does not make the file a test of ourselves. Every assertion below is
+// about what *Grafana* does with these rules — that a RegexToText mapping
+// resolves on a string field, that the colour survives the display processor,
+// that first-match-wins holds. The rules are the input; Grafana is the
+// subject. The three trap tests further down supply their own fixtures
+// precisely because they must not depend on what we happen to ship.
+const SHIPPED_RULES = require('../../plugins/nodegrid-panel/src/defaults/mappings.json');
+const SHIPPED = SHIPPED_RULES.map((r) => rule(r.pattern, r.text, r.color));
 
-const displayFor = (values, mappings = DEFAULTS) =>
+// The colour the source declares for a value, resolved by the same
+// first-match-wins walk Grafana performs, using Grafana's own pattern
+// compiler rather than a second interpretation of the syntax.
+const declaredColourFor = (value) => {
+  const hit = SHIPPED_RULES.find((r) => stringToJsRegex(r.pattern).test(value));
+  return hit === undefined ? undefined : hit.color;
+};
+
+const displayFor = (values, mappings = SHIPPED) =>
   getDisplayProcessor({
     field: { name: 'status', type: FieldType.string, values, config: { mappings } },
     theme: createTheme(),
@@ -133,16 +127,41 @@ test('every state in that list also resolves a colour, and the set discriminates
   // A rule naming a colour the theme does not know still "maps": it returns
   // text and a falsy or fallback colour, and the grid comes out uniform. Check
   // the colours land, and that they are not all the same one.
+  const probes = ['idle', 'mixed', 'allocated', 'drained', 'down', 'maint',
+                  'reserved', 'perfctrs', 'blocked', 'completing', 'planned',
+                  'unknown', 'reboot_issued', 'power_down', 'future'];
+
   const colours = new Set();
-  for (const value of ['idle', 'mixed', 'allocated', 'drained', 'down', 'maint',
-                       'reserved', 'perfctrs', 'blocked', 'completing', 'planned',
-                       'unknown', 'reboot_issued', 'power_down', 'future']) {
+  for (const value of probes) {
     const dv = displayFor([value])(value);
     assert.ok(dv.color, `expected a colour for ${value}`);
     assert.match(dv.color, /^(#|rgb)/, `${value} resolved to a non-colour: ${dv.color}`);
     colours.add(dv.color);
   }
-  assert.ok(colours.size >= 10, `expected the palette to discriminate, got ${colours.size} colours`);
+
+  // Counted from the rules, never written down. The old literal said ten and
+  // was calibrated on a palette the plugin had stopped shipping, so it
+  // described nothing and failed against the real one.
+  //
+  // Two different claims, and both are needed. The first is about the source:
+  // a palette that painted every state the same would satisfy any
+  // resolved-equals-declared check, so the source itself has to discriminate.
+  const declared = new Set(probes.map(declaredColourFor));
+  assert.ok(
+    declared.size >= 5,
+    `the shipped rules paint these ${probes.length} states in only ${declared.size} colours`
+  );
+
+  // The second is about Grafana, which is what this file exists to pin: every
+  // colour the source distinguishes must survive the display processor. Fewer
+  // resolved than declared means two rules collapsed into one — a regex that
+  // swallows its neighbour, which is exactly the failure the escaping traps
+  // below describe and which no amount of reading the list would reveal.
+  assert.equal(
+    colours.size,
+    declared.size,
+    `the rules declare ${declared.size} colours for these states, Grafana resolved ${colours.size}`
+  );
 });
 
 test('a state matching no mapping keeps its raw text', () => {
@@ -204,7 +223,7 @@ const displayWithThresholds = (values) =>
       type: FieldType.string,
       values,
       config: {
-        mappings: DEFAULTS,
+        mappings: SHIPPED,
         thresholds: { mode: 'absolute', steps: [{ value: -Infinity, color: 'green' }] },
       },
     },
