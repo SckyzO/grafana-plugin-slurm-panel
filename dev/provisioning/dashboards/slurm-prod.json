@@ -727,7 +727,7 @@
       "id": 10,
       "type": "tomzone-slurm-panel",
       "title": "Nodes by rack",
-      "description": "Six cabinets against live Prometheus, two nodes to a blade, each declared at twenty-one slots so the floor is flat and every cabinet keeps one free position visible above its contents. The rack label comes from Prometheus relabelling at scrape time, the first of the three routes to a topology and the only one that needs no per-dashboard configuration. Hover a node for its state, its cores, its GPUs and, when it is drained, the reason and how long it has been out. Fourteen pixels a cell, measured rather than chosen: at this panel's half width and height, nine cabinets fit on one line up to 14 and wrap to two from 16 - seven of the nine are floored by the width of their own header, not by their cells. Give the panel the full width and it carries a far larger cell on one line.",
+      "description": "The floor: nine cabinets against live Prometheus, each drawn as many sleds wide as its blade holds - four for the cpu racks, three for bigmem, two for gpu, one for visu - and twenty slots tall, which is what makes them level and full. The rack label comes from Prometheus relabelling at scrape time, the first of the three routes to a topology and the only one that needs no per-dashboard configuration. Hover a node for its state, its cores, its GPUs and, when it is drained, the reason and how long it has been out.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"

@@ -58,7 +58,7 @@ describe('NodeCell', () => {
   // the trap: a test for unmapped behaviour must not be written against a
   // value that can quietly become mapped. This stands in for whatever a future
   // Slurm introduces.
-  const UNKNOWN_STATE = 'a_state_slurm_adds_tomorrow';
+  const UNKNOWN_STATE = 'a_future_state';
 
   it('renders a state the rules have never seen as unmapped: ring, no fill', () => {
     render(
