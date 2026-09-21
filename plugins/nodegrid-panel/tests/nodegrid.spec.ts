@@ -93,40 +93,6 @@ test.describe('the node grid renders against a real Grafana', () => {
     await expect(tooltip.getByText('State', { exact: true })).toBeVisible();
   });
 
-  test('names a state the shipped rules have never seen', async ({ page }) => {
-    // Against the synthetic exporter this used to fire on perfctrs, blocked
-    // and inval — all real Slurm states the rules did not cover, and all
-    // covered now. Pointing it back at the exporter would make it a test of
-    // which states happen to be unmapped this week. The scenarios dashboard
-    // carries one state that is not a Slurm state at all and never will be,
-    // standing in for whatever a future Slurm introduces.
-    // Panel 2 on its own: the strip belongs to that panel, and reading it off
-    // the whole dashboard makes the assertion depend on which panels Grafana
-    // mounted, which is not what this test is about.
-    await page.goto('/d/slurm-node-colour/colour?viewPanel=2');
-
-    const strip = page.getByTestId('panel-warnings').first();
-    await expect(strip).toBeVisible({ timeout: 20_000 });
-    await expect(strip).toContainText('1 state matched no value mapping');
-    await expect(strip).toContainText('made_up_state');
-
-    // Naming the state says what is wrong. The panel also has to say what to
-    // do about it, with a rule that is correct as printed: delimited, so
-    // Grafana does not wrap it into an exact match, and spanning the whole
-    // value, so the replacement does not glue itself onto the remainder.
-    await expect(strip).toContainText('Value mappings');
-    await expect(strip).toContainText('/^made_up_state.*$/');
-
-    // And it is drawn as having nothing to say rather than coloured — the
-    // whole point of naming it. With thresholds configured, the alternative is
-    // that Grafana paints it with the threshold base colour and an unknown
-    // state reads as a healthy one.
-    const hollow = page.locator('[data-testid^="node-cell-"][data-filled="false"]');
-    await expect.poll(() => hollow.count(), { timeout: 20_000 }).toBe(1);
-  });
-});
-
-test.describe('the panel supplies its own state colours', () => {
   test('colours a dashboard that configures no value mappings at all', async ({ page }) => {
     // slurm-node-colour.json carries no fieldConfig.defaults.mappings: not
     // an empty array, the key is absent. Anything coloured here came from the

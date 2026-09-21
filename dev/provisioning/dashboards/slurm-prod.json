@@ -19,7 +19,7 @@
       "id": 1,
       "type": "gauge",
       "title": "Node availability",
-      "description": "Share of the cluster a job could land on: everything minus the nodes drained, down, failed, unknown, invalid, reserved, under maintenance or not answering. The gauge beside it says how much of the cluster is working; this one says how much of it still could. The gap between them is the maintenance backlog - a cluster at 100% use over 60% serviceable is a cluster in trouble, and no single number says so.",
+      "description": "Share of nodes a job could land on: everything except drained, draining, down, failed, unknown, invalid, reserved, under maintenance or not answering.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -107,7 +107,7 @@
       "id": 2,
       "type": "gauge",
       "title": "Cluster utilisation",
-      "description": "Share of the nodes carrying work, allocated and mixed together. Green at the top, not red: on an HPC cluster a busy machine is the point and an idle one is capacity earning nothing. Every utilisation scale on this dashboard reads the same way.",
+      "description": "Share of nodes carrying work, allocated and mixed together.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -195,7 +195,7 @@
       "id": 3,
       "type": "stat",
       "title": "Total nodes",
-      "description": "Distinct nodes, not series. slurm_exporter publishes one series per (node, partition), so a node in three partitions is three series and one node - which is the count a stat panel over the raw metric gets wrong, and the reason this one counts by node first.",
+      "description": "Distinct nodes. slurm_exporter publishes one series per (node, partition), so the count is taken by node first.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -257,7 +257,7 @@
       "id": 4,
       "type": "stat",
       "title": "Nodes running jobs",
-      "description": "Nodes carrying work: allocated and mixed. Slurm keeps the two apart because ALLOCATED means every CPU is taken while MIXED means only some are, and a node is one or the other, never both. Both are nodes with jobs on them, so counting only ALLOCATED under-reports what the cluster is doing. The degree is in the floor plan's colours below.",
+      "description": "Allocated and mixed. Slurm keeps the two apart - ALLOCATED means every CPU is taken, MIXED means some are - but both are nodes with jobs on them.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -319,7 +319,7 @@
       "id": 5,
       "type": "stat",
       "title": "Idle nodes",
-      "description": "Nodes with no work and nothing wrong: capacity available right now.",
+      "description": "No work and nothing wrong: capacity available now.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -381,7 +381,7 @@
       "id": 6,
       "type": "stat",
       "title": "Unavailable nodes",
-      "description": "Nodes no job can land on, whatever the reason: drained, draining, down, failed, unknown, invalid, reserved, under maintenance, or not answering. The maintenance backlog in one number, and the exact complement of Serviceable.",
+      "description": "Nodes no job can land on, whatever the reason: drained, draining, down, failed, unknown, invalid, reserved, under maintenance, or not answering.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -443,7 +443,7 @@
       "id": 7,
       "type": "stat",
       "title": "Nodes down",
-      "description": "Down, failed or unknown - the part of Unavailable nobody chose. Drained is a decision; down is a fault. Grey at zero so the tile only lights up when there is something to look at.",
+      "description": "Down, failed or unknown. Grey at zero, red above it.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -509,7 +509,7 @@
       "id": 8,
       "type": "timeseries",
       "title": "Node state over time",
-      "description": "The question a snapshot cannot answer: is it getting worse? Stacked, so the top of the stack is the cluster and each band is a state - a drain storm shows as purple eating green, and a recovery shows as the same in reverse. Reading the tiles above alone, a backlog that doubled this morning and one that has been flat for a month look identical.",
+      "description": "Node states over the window, stacked to the size of the cluster.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -663,7 +663,7 @@
       "id": 9,
       "type": "timeseries",
       "title": "Unavailable CPU cores",
-      "description": "sinfo reports a node's cores as allocated, idle or other, and other is the ones that exist and cannot be given to a job - the cores sitting inside a drained or down node. Counting nodes says twenty-seven are out; this says what that costs, and a drained bigmem node costs far more than a drained visu one.",
+      "description": "Cores inside unavailable nodes. sinfo splits a node's CPUs into allocated, idle and other; this is other.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -727,7 +727,7 @@
       "id": 10,
       "type": "tomzone-slurm-panel",
       "title": "Nodes by rack",
-      "description": "The floor: nine cabinets against live Prometheus, each drawn as many sleds wide as its blade holds - four for the cpu racks, three for bigmem, two for gpu, one for visu - and twenty slots tall, which is what makes them level and full. The rack label comes from Prometheus relabelling at scrape time, the first of the three routes to a topology and the only one that needs no per-dashboard configuration. Hover a node for its state, its cores, its GPUs and, when it is drained, the reason and how long it has been out.",
+      "description": "One cell per node, grouped by the rack label Prometheus relabelling adds at scrape time. Each cabinet is drawn as many sleds wide as its blade holds and twenty slots tall. Hover a node for its state, cores, GPUs and, when drained, the reason and how long it has been out.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -832,7 +832,7 @@
       "id": 11,
       "type": "bargauge",
       "title": "CPU allocation by partition",
-      "description": "One bar per partition rather than one number for the cluster: a floor at 63% can be a bigmem tier at 94% with nowhere left to put a large job, next to a visu tier nobody is using. The single figure hides exactly the thing worth acting on.",
+      "description": "CPU allocated over CPU total, per partition.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -921,7 +921,7 @@
       "id": 12,
       "type": "bargauge",
       "title": "Memory allocation by partition",
-      "description": "Beside the CPU bars, not instead of them. Jobs are rarely balanced - some fill the cores and barely touch the memory - and a bigmem partition exists because the opposite happens. A tier whose memory bar runs well ahead of its CPU bar is a tier that will refuse work while looking half idle.",
+      "description": "Memory allocated over memory total, per partition. Jobs are rarely balanced, so this and the CPU bars differ.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -1010,7 +1010,7 @@
       "id": 13,
       "type": "bargauge",
       "title": "GPU allocation by partition",
-      "description": "Only the partitions that have GPUs at all: eight per node on gpu, two on visu. A partition with none is absent here rather than drawn at zero, because zero of nothing is not a measurement.",
+      "description": "GPUs in use over GPUs present, for the two partitions that have them.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -1099,7 +1099,7 @@
       "id": 14,
       "type": "table",
       "title": "Unavailable nodes by reason",
-      "description": "slurm_node_drain_reason_info carries no partition label, so it cannot be joined to slurm_node_status by any stock panel, which is the gap this plugin was written to close. Here it is as a table for the record; the same join is in every drained node's tooltip on the floor above.",
+      "description": "Nodes that are out, with the reason and how long. The reason comes from slurm_node_drain_reason_info, which carries no partition label and so cannot be joined by a stock panel.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"

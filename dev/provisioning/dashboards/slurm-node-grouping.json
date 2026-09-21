@@ -18,7 +18,7 @@
       "id": 1,
       "type": "tomzone-slurm-panel",
       "title": "Grouped by label, rack layout",
-      "description": "The best case: the exporter already publishes the structure. Rack layout stacks each group as a chassis instead of wrapping it. The rack column in this CSV is hand-written: slurm_exporter publishes no such label, and there is nowhere for one to come from because it reads sinfo. Grouping by a label is only available if you add the label yourself, through Prometheus relabelling or a join against an inventory.",
+      "description": "Grouping by a label the data already carries. The rack column in this CSV is hand-written: slurm_exporter reads sinfo, which has no concept of a rack, so a label has to come from relabelling or a join.",
       "datasource": {
         "type": "grafana-testdata-datasource",
         "uid": "slurm-views-testdata"
@@ -67,7 +67,7 @@
       "id": 2,
       "type": "tomzone-slurm-panel",
       "title": "Grouped by name capture",
-      "description": "Not a location grouping, and it no longer pretends to be one: the dev cluster's node names are flat (c1..c160, g1..g80) with nothing encoding a rack, so '^([a-z]+)' recovers only the node's class - compute or GPU - not its position on the floor. That is genuinely useful on its own, which is why the panel stays, but do not read it as the realistic answer for topology; the live-Prometheus panels below (label, join, ranges) are that answer, because they read from something outside the node name.",
+      "description": "A capture on the node name. Here it recovers the node's class, compute or GPU, not its position on the floor.",
       "datasource": {
         "type": "grafana-testdata-datasource",
         "uid": "slurm-views-testdata"
@@ -116,7 +116,7 @@
       "id": 4,
       "type": "tomzone-slurm-panel",
       "title": "Ungrouped",
-      "description": "One flat grid. Below a few hundred nodes this is often the honest answer: a grouping nobody asked for is structure you invented.",
+      "description": "One flat grid. Below a few hundred nodes this is often the honest answer.",
       "datasource": {
         "type": "grafana-testdata-datasource",
         "uid": "slurm-views-testdata"
@@ -164,7 +164,7 @@
       "id": 3,
       "type": "tomzone-slurm-panel",
       "title": "Grouped by ordinal chunk",
-      "description": "The fallback when the name carries no structure either. This is the one grouping that asserts something the data never said - it assumes the numbering follows the floor - so the panel marks the groups as assumed.",
+      "description": "The fallback when the name carries no structure. It assumes the numbering follows the floor, so the groups are marked assumed.",
       "datasource": {
         "type": "grafana-testdata-datasource",
         "uid": "slurm-views-testdata"
@@ -213,7 +213,7 @@
       "id": 5,
       "type": "tomzone-slurm-panel",
       "title": "Topology 1: relabelled Prometheus label",
-      "description": "Rung 1 of three routes to the same topology: slurm_node_status carries a real rack label because dev/relabel/racks.txt was turned into Prometheus relabelling by make scrape. Grouping > Group by > Label needs nothing else. Same 15-node slice as the join and ranges panels beside it, so all three can be compared directly.",
+      "description": "Route 1 of three to the same topology: a rack label added by Prometheus relabelling, from dev/relabel/racks.txt. Same fifteen nodes as the two panels beside it.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -262,7 +262,7 @@
       "id": 6,
       "type": "tomzone-slurm-panel",
       "title": "Topology 2: joined inventory",
-      "description": "Rung 2 of three routes to a topology, and the one available to anyone whose Prometheus carries no location dimension at all: query A reads slurm_node_status live with Format set to Table, so Prometheus hands back one row per node instead of one frame per series; query B is a hand-maintained CSV inventory (node,zone) against the TestData source, naming a zone that exists nowhere in the scraped metrics. The panel's own datasource is set to -- Mixed --, which is what makes Grafana actually run a query-B target when the panel datasource is Prometheus. Join by field (byField node, mode outer) merges the two into one frame, whose refId becomes \"joinByField-A-B\" rather than \"A\", which is why Data > State query points at that name rather than the query's own refId. Grouping by \"zone\" rather than \"rack\" is deliberate: a value that only the join could have supplied is proof the join ran, not an assertion resting on which of two agreeing columns Grafana happened to keep.",
+      "description": "Route 2: a CSV inventory joined onto the metric frame, carrying a zone dimension that exists nowhere in Prometheus. The panel datasource is -- Mixed --, and the join renames the frame to joinByField-A-B, which is what Data > State query points at.",
       "datasource": {
         "type": "datasource",
         "uid": "-- Mixed --"
@@ -330,7 +330,7 @@
       "id": 7,
       "type": "tomzone-slurm-panel",
       "title": "Topology 3: range table",
-      "description": "Rung 3 of three routes to the same topology: no rack label and no join, just a range table typed into the panel and held in the $racks dashboard variable. Same 15-node slice as the label and join panels beside it.",
+      "description": "Route 3: a range table typed into the panel, held in the $racks dashboard variable. Same fifteen nodes as the two panels beside it.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -379,7 +379,7 @@
       "id": 8,
       "type": "tomzone-slurm-panel",
       "title": "Incomplete range table",
-      "description": "Not a bug: this panel's range table names only cpu1: c[1-80], against the full 540-node cluster. 460 nodes match no range and are drawn under \"ungrouped\", in a dashed frame marked unplaced, because a node that exists and is not drawn is a node nobody is watching. The warnings strip names them and, separately, reports that the rack label would have placed all 540 - the coverage signal, which stays silent on every other panel here because their sources already cover every node.",
+      "description": "A range table naming one rack of nine, against the whole cluster. The rest match no range and are drawn under ungrouped, in a dashed frame: a node that exists and is not drawn is a node nobody is watching. The strip also reports that the rack label would have placed them all.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -697,13 +697,13 @@
       ],
       "title": "Grouped by partition",
       "type": "tomzone-slurm-panel",
-      "description": "The one grouping key a node can hold several values of at once. Grouping > Group by > Label on partition, with Multi-value label switched on: a node in cpu and debug is drawn in both, so the cells add up to more than the cluster - 617 over 540 here, and that is the option working rather than a miscount. Leave Multi-value label off and each node is drawn once, in whichever partition sorts first, which is tidier and answers a different question. This is also the one key the panel cannot get from a rack label: a partition is a scheduling decision, not a place, and the same cabinet usually carries several."
+      "description": "Grouping by partition, with Multi-value label on: a node in several partitions is drawn in each, so the cells outnumber the nodes. A partition is a scheduling decision, not a place, and one cabinet usually carries several."
     },
     {
       "id": 9,
       "type": "tomzone-slurm-panel",
       "title": "Blade density by rack",
-      "description": "Blade density, against live Prometheus. Nodes per blade, by group puts four densities on one floor: the four cpu racks take quad blades, bigmem1 and bigmem2 triples, visu1 single-node servers, and the two gpu racks duos - so a cabinet is drawn four, three, one or two sleds wide. visu1's line restates the default of 1 on purpose: a floor plan that names every cabinet reads better than one where the quiet ones are inferred. Every cabinet is twenty slots and every one is full, because the fixture sizes a rack at twenty times its density rather than giving them all the same node count. Declared heights that differ are panel 10's job.",
+      "description": "Nodes per blade, by group. Four densities on one floor - quad for cpu, triple for bigmem, duo for gpu, single for visu - so a cabinet is drawn four, three, two or one sled wide.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -751,7 +751,7 @@
       "id": 40,
       "type": "tomzone-slurm-panel",
       "title": "Slot declaration too small",
-      "description": "cpu1 is declared at twelve slots and holds eighty nodes on quad blades, which needs twenty. The panel draws all twenty rows: the eight that do not fit spill above the frame's top edge rather than being truncated, because a node that exists and is not drawn is a node nobody is watching. The warnings strip says so. This panel exists to pin the direction of that spill and the clearance above it, which jsdom cannot see.",
+      "description": "cpu1 is declared at twelve slots and needs twenty. The rows that do not fit spill above the frame rather than being truncated, and the strip says so.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -799,7 +799,7 @@
       "id": 10,
       "type": "tomzone-slurm-panel",
       "title": "Declared cabinet heights",
-      "description": "Slots per rack, by group, against live Prometheus. Every cabinet here draws twenty rows - eighty cpu nodes at four per blade, sixty bigmem at three, twenty visu at one, forty gpu at two - so the only thing separating their heights is the declaration: the gpu cabinets are declared at twenty-six slots and the rest keep the panel-wide twenty. A cabinet's height is a property of the hardware, not of what is currently plugged into it, so the gpu cabinets are drawn with six empty slots above their last row rather than shrunk to fit. They still stand on the same floor: a short cabinet sits on it, it does not hang from the ceiling. That is the defect this option exists to fix, and the e2e suite measures it on this panel.",
+      "description": "Slots per rack, by group. Every cabinet here holds twenty rows, so only the declaration separates their heights: the gpu cabinets are declared at twenty-six and keep six empty slots above their last row. A short cabinet stands on the floor rather than hanging from the ceiling.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
@@ -848,7 +848,7 @@
       "id": 11,
       "type": "tomzone-slurm-panel",
       "title": "Filtered to CPU racks",
-      "description": "One panel for one part of the cluster, which is done in the query rather than in the panel: this one asks for rack=~\"cpu.*\" and gets the four cpu cabinets, nothing else. Group by Label on rack then names exactly what came back and the warnings strip stays empty - the nodes that are missing were never asked for, so nothing is hidden. There is deliberately no \"only these groups\" option: that would hide nodes the query did return, which is the one thing this panel refuses to do. Filtering on partition=\"bigmem\" or any other label works the same way. What does have to follow the query is every declaration table - Nodes per blade, Slots per rack and a Ranges table alike. Each of them asserts that those groups exist, so one naming a cabinet the query no longer returns says so: \"Nodes per blade named 5 groups that are not drawn\". That is the same signal that catches a rack nobody has plugged back in, so this panel's blade table names cpu[1-4] and nothing else.",
+      "description": "One part of the cluster, narrowed in the query rather than in the panel. Every declaration table has to follow: a Nodes per blade, Slots per rack or Ranges entry naming a group the query no longer returns is reported, which is the same signal that catches a rack nobody plugged back in.",
       "datasource": {
         "type": "prometheus",
         "uid": "slurm-views-prom"
