@@ -400,14 +400,15 @@ not fully resolve:
   `and N more`), together with the exact rule to paste under Value mappings
   to fix it;
 - nodes the active grouping source could not place, drawn under
-  `ungrouped` and why, e.g. `3 nodes matched no range: c[41-43]. Drawn
-  under "ungrouped".`;
+  `ungrouped` and why, e.g.
+  `3 nodes matched no range: c[41-43]. Drawn under "ungrouped".`;
 - a declared range that matched no node, drawn empty in its place, e.g.
   `Range "rack5" matched no node: r[501-502].`;
 - a label that would group the data more completely than the source
-  configured today, e.g. `Label "rack" would group all 240. Grouping >
-  Group by > Label.` It is measured, never acted on; the panel does not
-  switch sources by itself.
+  configured today, e.g.
+  `Label "rack" would group all 240. Grouping > Group by > Label.`
+  It is measured, never acted on; the panel does not switch sources by
+  itself.
 
 ![A warnings strip naming 200 unplaced nodes above a grid that still draws every one of them](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-unplaced.png)
 
