@@ -396,9 +396,9 @@ A strip above the grid names, rather than hides, anything the panel could
 not fully resolve:
 
 - a query skipped for carrying no node identity;
-- states that matched no value mapping (capped at eight named, then `and N
-  more`), together with the exact rule to paste under Value mappings to fix
-  it;
+- states that matched no value mapping (capped at eight named, then
+  `and N more`), together with the exact rule to paste under Value mappings
+  to fix it;
 - nodes the active grouping source could not place, drawn under
   `ungrouped` and why, e.g. `3 nodes matched no range: c[41-43]. Drawn
   under "ungrouped".`;
