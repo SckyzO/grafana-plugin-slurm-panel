@@ -1,5 +1,5 @@
-import { expect, test, type DashboardPage } from '@grafana/plugin-e2e';
-import type { Locator, Page } from '@playwright/test';
+import { expect, test } from '@grafana/plugin-e2e';
+import type { Page } from '@playwright/test';
 
 /**
  * Open a panel of the grouping dashboard and wait until it has live data.
@@ -38,26 +38,6 @@ async function gotoPanelWithData(page: Page, viewPanel: number, anchor: string):
   }
 }
 
-/**
- * The node grid drawn by the panel with this title.
- *
- * Panels used to be reached with `grids.nth(i)` over every grid on the page,
- * which turned each assertion into a claim about where a panel sits rather
- * than about which panel it is. Resizing one panel reorders that list, and
- * the first time it happened it broke two tests that had nothing to do with
- * the change — so a cosmetic fix to a dashboard had to be reverted. A title
- * is what the dashboard JSON actually promises, and renaming a panel is a
- * deliberate act that should fail loudly here.
- *
- * Scrolling first is not decoration: from Grafana 13 the scenes renderer
- * mounts a panel only once its container enters the viewport, so a panel
- * below the fold has no grid in the DOM at all.
- */
-async function gridIn(dashboardPage: DashboardPage, title: string): Promise<Locator> {
-  const panel = dashboardPage.getPanelByTitle(title);
-  await panel.scrollIntoView();
-  return panel.locator.getByTestId('slurm-node-grid');
-}
 
 test.describe('the node grid renders against a real Grafana', () => {
   test('draws one cell per node from the provisioned dashboard', async ({
@@ -206,16 +186,19 @@ test.describe('the panel supplies its own state colours', () => {
 
 test.describe('the continuous colour modes', () => {
   test('resolves occupancy through thresholds and leaves a node with no data empty', async ({
-    gotoDashboardPage,
-    readProvisionedDashboard,
+    page,
   }) => {
-    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-colour.json' });
-    const dashboardPage = await gotoDashboardPage(dashboard);
+    // ?viewPanel, not scrollIntoView. These panels sit a full screen down the
+    // colour dashboard, and scrolling a panel into view mounts it on some
+    // Grafana versions and not others: the same call worked on 13.1 and later
+    // and left this reading zero cells on 12.3, 12.4 and 13.0. Opening a panel
+    // on its own has nothing left to mount.
+    await page.goto('/d/slurm-node-colour/colour?viewPanel=3');
 
     // Every synthetic node reports cpu_alloc and cpu_total, so every cell has
     // a value and none may be drawn empty — if the facet queries stopped being
     // read this would be 540, not 0.
-    const cpu = (await gridIn(dashboardPage, 'CPU utilisation by node')).locator('[data-testid^="node-cell-"]');
+    const cpu = page.locator('[data-testid^="node-cell-"]');
     await expect.poll(() => cpu.count(), { timeout: 20_000 }).toBeGreaterThan(200);
     expect(await cpu.locator(':scope[data-filled="false"]').count()).toBe(0);
 
@@ -230,7 +213,8 @@ test.describe('the continuous colour modes', () => {
     // rather than filled: an undefined background on a <button> falls back to
     // the browser's ButtonFace grey, which reads as a real measurement and
     // once covered two thirds of this panel.
-    const gpu = (await gridIn(dashboardPage, 'GPU utilisation by node')).locator('[data-testid^="node-cell-"]');
+    await page.goto('/d/slurm-node-colour/colour?viewPanel=5');
+    const gpu = page.locator('[data-testid^="node-cell-"]');
     await expect.poll(() => gpu.locator(':scope[data-filled="false"]').count(), { timeout: 20_000 })
       .toBeGreaterThan(50);
     const empty = gpu.locator(':scope[data-filled="false"]').first();
@@ -351,8 +335,7 @@ test.describe('the primary overview dashboard groups by the rack it now has', ()
 
 test.describe('the occupancy panels group the same nine racks', () => {
   test('shows all nine named racks and drops nothing into ungrouped, on every panel', async ({
-    gotoDashboardPage,
-    readProvisionedDashboard,
+    page,
   }) => {
     // Regression coverage for the occupancy panels' grouping: this once
     // switched from a capture pattern ('^(r\\d+)') to the relabelled `rack`
@@ -361,16 +344,14 @@ test.describe('the occupancy panels group the same nine racks', () => {
     // render one "ungrouped" block instead of nine named racks, with nothing
     // failing. Only the three occupancy panels are listed: the fourth grid on
     // this dashboard groups by state, so it has no racks to count.
-    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-colour.json' });
-    const dashboardPage = await gotoDashboardPage(dashboard);
-
     const racks = ['cpu1', 'cpu2', 'cpu3', 'cpu4', 'bigmem1', 'bigmem2', 'visu1', 'gpu1', 'gpu2'];
-    for (const title of ['CPU utilisation by node', 'Memory utilisation by node', 'GPU utilisation by node']) {
-      const grid = await gridIn(dashboardPage, title);
+    for (const [id, title] of [[3, 'CPU'], [4, 'Memory'], [5, 'GPU']] as Array<[number, string]>) {
+      await page.goto(`/d/slurm-node-colour/colour?viewPanel=${id}`);
       for (const key of racks) {
-        await expect(grid.getByTestId(`node-group-${key}`)).toBeVisible({ timeout: 15_000 });
+        await expect(page.getByTestId(`node-group-${key}`), `${title}: ${key} missing`)
+          .toBeVisible({ timeout: 20_000 });
       }
-      await expect(grid.getByTestId('node-group-ungrouped')).toHaveCount(0);
+      await expect(page.getByTestId('node-group-ungrouped')).toHaveCount(0);
     }
   });
 });
