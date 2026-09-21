@@ -98,6 +98,71 @@ describe('NodeGridPanel', () => {
     overrides: [],
   };
 
+  // Grafana sanitises the data links it renders itself. A panel that opens a
+  // link by hand does not inherit that, and has to do it at the same boundary
+  // — where an untrusted string becomes a URL, not where it is clicked.
+  it.each([
+    // The editor pasted the scheme. Needs panel-edit rights.
+    ['a literal javascript: link', 'javascript:alert(document.domain)', {}],
+    // The link is a variable reference, and the value rides in on the query
+    // string: `?var-target=javascript:…`. Anyone who can *view* the dashboard
+    // can set it, which is what makes this the route that matters.
+    [
+      'a dashboard variable a viewer can set from the URL',
+      '${target}',
+      { target: 'javascript:alert(document.domain)' },
+    ],
+  ])('refuses to navigate to %s', (_name, url, vars) => {
+    // spyOn hands back the existing mock if one is already installed, so a
+    // case that failed before its restore would lend its call count to the
+    // next. Cleared, each case counts only its own click.
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+    openSpy.mockClear();
+    setTemplateSrv(fakeTemplateSrv(vars));
+
+    const fieldConfig: FieldConfigSource = {
+      defaults: {
+        mappings: DEFAULT_MAPPINGS,
+        thresholds: { mode: ThresholdsMode.Absolute, steps: [{ value: -Infinity, color: 'green' }] },
+        links: [{ title: 'Node detail', url }],
+      },
+      overrides: [],
+    };
+
+    render(<NodeGridPanel {...baseProps} data={rackData()} options={DEFAULT_OPTIONS} fieldConfig={fieldConfig} />);
+    screen.getByTestId('node-cell-c1').click();
+
+    // Asserted on what reached window.open, not on what hrefFor returned:
+    // navigation is the step that executes the script.
+    expect(openSpy).toHaveBeenCalledTimes(1);
+    const [href] = openSpy.mock.calls[0];
+    expect(String(href).toLowerCase()).not.toContain('javascript:');
+    expect(href).toBe('about:blank');
+
+    openSpy.mockRestore();
+  });
+
+  // The other half of the fix: sanitising must not cost the feature.
+  it('still navigates to an ordinary interpolated dashboard link', () => {
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+    const fieldConfig: FieldConfigSource = {
+      defaults: {
+        mappings: DEFAULT_MAPPINGS,
+        thresholds: { mode: ThresholdsMode.Absolute, steps: [{ value: -Infinity, color: 'green' }] },
+        links: [{ title: 'Node detail', url: '/d/some-dash?var-node=${__node}' }],
+      },
+      overrides: [],
+    };
+
+    render(<NodeGridPanel {...baseProps} data={rackData()} options={DEFAULT_OPTIONS} fieldConfig={fieldConfig} />);
+    screen.getByTestId('node-cell-c1').click();
+
+    expect(openSpy).toHaveBeenCalledWith('/d/some-dash?var-node=c1', '_self');
+
+    openSpy.mockRestore();
+  });
+
   const rackOptions: PanelOptions = {
     ...DEFAULT_OPTIONS,
     layout: 'rack',

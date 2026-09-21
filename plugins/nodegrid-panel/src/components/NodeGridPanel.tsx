@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import { css } from '@emotion/css';
-import { FieldType, getDisplayProcessor } from '@grafana/data';
+import { FieldType, getDisplayProcessor, textUtil } from '@grafana/data';
 import type { Field, GrafanaTheme2, PanelProps } from '@grafana/data';
 import { getTemplateSrv } from '@grafana/runtime';
 import { useTheme2 } from '@grafana/ui';
@@ -70,15 +70,26 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
   // the user cannot address with ${__node} / ${__state} is worse than no
   // link, so this goes through getTemplateSrv() rather than naive string
   // substitution.
+  //
+  // Sanitised here rather than at the click, because this is the boundary
+  // where an untrusted string becomes a URL: the template can name a
+  // dashboard variable, and a dashboard variable is settable from the query
+  // string by anyone who can view the dashboard — `?var-target=javascript:…`
+  // needs no edit rights at all. Grafana sanitises the links it renders
+  // itself; a panel that navigates by hand does not inherit that.
+  // sanitizeUrl turns a javascript: URL into about:blank and leaves an
+  // ordinary relative link untouched.
   const linkTemplate = fieldConfig.defaults.links?.[0]?.url;
   const hrefFor = useCallback(
     (node: SlurmNode): string | undefined =>
       linkTemplate === undefined
         ? undefined
-        : getTemplateSrv().replace(linkTemplate, {
-            __node: { text: node.name, value: node.name },
-            __state: { text: node.state, value: node.state },
-          }),
+        : textUtil.sanitizeUrl(
+            getTemplateSrv().replace(linkTemplate, {
+              __node: { text: node.name, value: node.name },
+              __state: { text: node.state, value: node.state },
+            })
+          ),
     [linkTemplate]
   );
 
