@@ -246,8 +246,23 @@ test.describe('the options editor', () => {
     // editor. A provisioned panel of that type opens the same options pane on
     // every version in the matrix, and the panel being installed at all is
     // already proven by the fifteen other tests that render it.
+    //
+    // id 10, and it has to be: slurm-prod's id 1 is a `gauge`, which carries
+    // Standard options and Value mappings of its own. Opening that one made
+    // both assertions below pass with useFieldConfig() deleted from
+    // module.ts — the test named its subject and then measured Grafana.
     const dashboard = await readProvisionedDashboard({ fileName: 'slurm-prod.json' });
-    const panelEditPage = await gotoPanelEditPage({ dashboard, id: '1' });
+    const panelEditPage = await gotoPanelEditPage({ dashboard, id: '10' });
+
+    // Asserted first, and the reason the id above matters: "Data" is a
+    // category this plugin's module.ts declares and no built-in panel has,
+    // so it fails if the editor on screen is not this plugin's.
+    // getCustomOptions is the documented API for a plugin's own option group
+    // and resolves the same way across the matrix, which is the concern the
+    // comment above is about.
+    await expect(panelEditPage.getCustomOptions('Data').getTextInput('Node label')).toBeVisible({
+      timeout: 15_000,
+    });
 
     // A bare `getByRole('button', { name: /Value mappings/i })` is ambiguous:
     // once the group is expanded it also matches the "Add value mappings"
