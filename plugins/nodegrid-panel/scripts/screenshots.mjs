@@ -128,7 +128,10 @@ for (const shot of SHOTS) {
     // A cell near the middle rather than the first one: Grafana anchors the
     // tooltip beside the cursor, so hovering an edge cell pushes half the
     // tooltip outside the panel and the crop then cuts its labels off.
-    await page.locator('[data-testid^="node-cell-"]').nth(Math.floor(cells / 2)).hover();
+    await page
+      .locator('[data-testid^="node-cell-"]')
+      .nth(Math.floor(cells / 2))
+      .hover();
     await page.getByRole('tooltip').waitFor({ state: 'visible', timeout: 10_000 });
     await page.waitForTimeout(300);
   }

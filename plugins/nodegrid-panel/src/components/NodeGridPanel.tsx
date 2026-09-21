@@ -83,7 +83,11 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
   );
 
   const unmapped = useMemo(
-    () => collectUnmapped(model.groups.flatMap((g) => g.nodes), stateDisplay),
+    () =>
+      collectUnmapped(
+        model.groups.flatMap((g) => g.nodes),
+        stateDisplay
+      ),
     [model.groups, stateDisplay]
   );
   // Goes through the same resolution as every other consumer of cell size,

@@ -53,7 +53,16 @@ export interface NodeGroupProps {
   slots: SlotLayout;
 }
 
-export function NodeGroup({ group, stateDisplay, valueDisplay, colorMode, hrefFor, options, blades, slots }: NodeGroupProps) {
+export function NodeGroup({
+  group,
+  stateDisplay,
+  valueDisplay,
+  colorMode,
+  hrefFor,
+  options,
+  blades,
+  slots,
+}: NodeGroupProps) {
   const theme = useTheme2();
   const styles = getStyles(theme, options.gap, slots.bandHeight);
 

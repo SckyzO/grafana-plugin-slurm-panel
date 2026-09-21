@@ -268,10 +268,7 @@ export function layoutSlots({ groups, blades, declared, fallback, cellHeight }: 
   // exists to stop a typo turning one cabinet into a column of a thousand
   // rows, and the panel-wide number is the one path around it. Clamped rather
   // than reported, the way an out-of-range Cell height already is.
-  const panelWide =
-    fallback === undefined
-      ? undefined
-      : Math.min(MAX_SLOT, Math.max(MIN_SLOT, Math.floor(fallback)));
+  const panelWide = fallback === undefined ? undefined : Math.min(MAX_SLOT, Math.max(MIN_SLOT, Math.floor(fallback)));
 
   const declaredFor = (key: string): number | undefined => declared.get(key) ?? panelWide;
 

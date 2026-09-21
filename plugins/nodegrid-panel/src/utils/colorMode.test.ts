@@ -2,7 +2,10 @@ import { fractionFor } from './colorMode';
 import type { SlurmNode } from '@slurm-views/core';
 
 const node = (facets: Partial<SlurmNode['facets']>): SlurmNode => ({
-  name: 'c1', state: 'mixed', partitions: [], labels: {},
+  name: 'c1',
+  state: 'mixed',
+  partitions: [],
+  labels: {},
   facets: { gres: [], ...facets },
 });
 
@@ -20,7 +23,12 @@ describe('fractionFor', () => {
   });
 
   it('sums GRES across models rather than picking one', () => {
-    const n = node({ gres: [{ type: 'gpu:model_a', used: 2, total: 4 }, { type: 'gpu:model_b', used: 2, total: 4 }] });
+    const n = node({
+      gres: [
+        { type: 'gpu:model_a', used: 2, total: 4 },
+        { type: 'gpu:model_b', used: 2, total: 4 },
+      ],
+    });
     expect(fractionFor(n, 'gres')).toBe(50);
   });
 

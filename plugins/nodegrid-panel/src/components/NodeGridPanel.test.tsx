@@ -81,9 +81,7 @@ describe('NodeGridPanel', () => {
   const nodeFrame = (node: string, rack: string) =>
     createDataFrame({
       refId: 'A',
-      fields: [
-        { name: 'Value', type: FieldType.number, values: [1], labels: { node, status: 'idle', rack } },
-      ],
+      fields: [{ name: 'Value', type: FieldType.number, values: [1], labels: { node, status: 'idle', rack } }],
     });
 
   const rackData = (): PanelData => ({
@@ -159,7 +157,10 @@ describe('NodeGridPanel', () => {
     });
     const data: PanelData = { state: LoadingState.Done, series: [frame], timeRange: getDefaultTimeRange() };
     const fieldConfig: FieldConfigSource = {
-      defaults: { mappings: DEFAULT_MAPPINGS, thresholds: { mode: ThresholdsMode.Absolute, steps: [{ value: -Infinity, color: 'green' }] } },
+      defaults: {
+        mappings: DEFAULT_MAPPINGS,
+        thresholds: { mode: ThresholdsMode.Absolute, steps: [{ value: -Infinity, color: 'green' }] },
+      },
       overrides: [],
     };
     const rack = { ...DEFAULT_OPTIONS, layout: 'rack' as const };
@@ -173,5 +174,4 @@ describe('NodeGridPanel', () => {
     );
     expect(getComputedStyle(screen.getByTestId('slurm-node-grid')).justifyContent).toBe('center');
   });
-
 });

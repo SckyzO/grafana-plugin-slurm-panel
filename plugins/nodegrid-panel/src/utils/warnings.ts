@@ -1,6 +1,13 @@
 import type { DisplayProcessor } from '@grafana/data';
 import { collapseHostlist, suggestLabel, UNGROUPED } from '@slurm-views/core';
-import type { CoverageSuggestion, GroupedModel, IngestWarning, KeySource, RangeTable, SlurmNode } from '@slurm-views/core';
+import type {
+  CoverageSuggestion,
+  GroupedModel,
+  IngestWarning,
+  KeySource,
+  RangeTable,
+  SlurmNode,
+} from '@slurm-views/core';
 
 /**
  * A state matched no value mapping when `display()` falls through to the
@@ -249,9 +256,7 @@ export function summarise(
 
   for (const warning of warnings) {
     lines.push(
-      warning.kind === 'no-identity'
-        ? `Query ${warning.refId ?? '?'} skipped: ${warning.detail}`
-        : warning.detail
+      warning.kind === 'no-identity' ? `Query ${warning.refId ?? '?'} skipped: ${warning.detail}` : warning.detail
     );
   }
 

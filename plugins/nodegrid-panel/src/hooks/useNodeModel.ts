@@ -26,11 +26,7 @@ export interface NodeModel {
   grouping: GroupingNotes;
 }
 
-export function useNodeModel(
-  data: PanelData,
-  options: PanelOptions,
-  replaceVariables: InterpolateFunction
-): NodeModel {
+export function useNodeModel(data: PanelData, options: PanelOptions, replaceVariables: InterpolateFunction): NodeModel {
   return useMemo(() => {
     const frames = data.series.map(toMinimal);
     const { nodes, warnings } = ingest({ frames, queries: options.queries, labels: options.labels });

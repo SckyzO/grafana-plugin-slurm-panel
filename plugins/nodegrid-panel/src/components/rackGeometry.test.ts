@@ -53,23 +53,25 @@ describe('resolveCellSize', () => {
     // A fixed default for height would silently double the sled here. Leaving
     // it unset is what keeps the split from changing anything for anyone who
     // has configured nothing.
-    expect(resolveCellSize({ ...DEFAULT_OPTIONS, layout: 'rack' }))
-      .toEqual({ width: 14, height: sledHeightFor(14) });
+    expect(resolveCellSize({ ...DEFAULT_OPTIONS, layout: 'rack' })).toEqual({ width: 14, height: sledHeightFor(14) });
   });
 
   it('follows the width into the derived height', () => {
-    expect(resolveCellSize({ ...DEFAULT_OPTIONS, layout: 'wrap', cellWidth: 30 }))
-      .toEqual({ width: 30, height: 30 });
+    expect(resolveCellSize({ ...DEFAULT_OPTIONS, layout: 'wrap', cellWidth: 30 })).toEqual({ width: 30, height: 30 });
   });
 
   // 6, not 4: what this asserts is that an explicit height wins over the
   // derived one in both layouts, and 4 happened to sit under the floor, where
   // the test below is the one that has something to say.
   it('uses an explicit height in either layout', () => {
-    expect(resolveCellSize({ ...DEFAULT_OPTIONS, layout: 'rack', cellWidth: 30, cellHeight: 6 }))
-      .toEqual({ width: 30, height: 6 });
-    expect(resolveCellSize({ ...DEFAULT_OPTIONS, layout: 'wrap', cellWidth: 30, cellHeight: 6 }))
-      .toEqual({ width: 30, height: 6 });
+    expect(resolveCellSize({ ...DEFAULT_OPTIONS, layout: 'rack', cellWidth: 30, cellHeight: 6 })).toEqual({
+      width: 30,
+      height: 6,
+    });
+    expect(resolveCellSize({ ...DEFAULT_OPTIONS, layout: 'wrap', cellWidth: 30, cellHeight: 6 })).toEqual({
+      width: 30,
+      height: 6,
+    });
   });
 
   // The derived path has always floored a sled at MIN_CELL_HEIGHT, because
@@ -110,7 +112,15 @@ describe('layoutBlades', () => {
     // Not from each rack's own blade: a floor plan whose cabinets have
     // different widths does not read as a floor plan. A duo's sleds are
     // simply wider than a quad's, which is also true of the hardware.
-    const l = layoutBlades({ groupKeys: ['rack1', 'rack2'], sizes: sizes([['rack1', 6], ['rack2', 2]]), fallback: 1, cellWidth: 14 });
+    const l = layoutBlades({
+      groupKeys: ['rack1', 'rack2'],
+      sizes: sizes([
+        ['rack1', 6],
+        ['rack2', 2],
+      ]),
+      fallback: 1,
+      cellWidth: 14,
+    });
     expect(l.rackWidth).toBe(rackWidthFor(14, 6));
     expect(l.sledWidthOf.get('rack1')).toBeLessThan(l.sledWidthOf.get('rack2')!);
   });
@@ -124,7 +134,15 @@ describe('layoutBlades', () => {
   });
 
   it('names the groups a declaration claims that are not drawn', () => {
-    const l = layoutBlades({ groupKeys: ['rack1'], sizes: sizes([['rack1', 4], ['rack9', 4]]), fallback: 1, cellWidth: 14 });
+    const l = layoutBlades({
+      groupKeys: ['rack1'],
+      sizes: sizes([
+        ['rack1', 4],
+        ['rack9', 4],
+      ]),
+      fallback: 1,
+      cellWidth: 14,
+    });
     expect(l.undrawn).toEqual(['rack9']);
   });
 
@@ -216,7 +234,10 @@ describe('layoutSlots', () => {
   it('levels an undeclared floor to the tallest cabinet filled', () => {
     // The default, and the whole point: a 20-node cabinet beside a 40-node one
     // stands on the floor instead of hanging from the ceiling.
-    const { groups, blades } = flat([['rack1', 40], ['rack2', 20]]);
+    const { groups, blades } = flat([
+      ['rack1', 40],
+      ['rack2', 20],
+    ]);
     const l = layoutSlots({ groups, blades, declared: new Map(), fallback: undefined, cellHeight: CELL });
     expect(l.slotsOf.get('rack1')).toBe(40);
     expect(l.slotsOf.get('rack2')).toBe(40);
@@ -227,9 +248,13 @@ describe('layoutSlots', () => {
     // A declaration is an assertion about the hardware. A genuinely small
     // cabinet stays small rather than being levelled up into a claim about
     // empty slots that do not exist.
-    const { groups, blades } = flat([['rack1', 40], ['rack2', 20]]);
+    const { groups, blades } = flat([
+      ['rack1', 40],
+      ['rack2', 20],
+    ]);
     const l = layoutSlots({
-      groups, blades,
+      groups,
+      blades,
       declared: new Map([['rack2', 20]]),
       fallback: undefined,
       cellHeight: CELL,
@@ -242,9 +267,13 @@ describe('layoutSlots', () => {
     // rack1 is nearly empty but declared tall; rack2 declares nothing. The
     // floor stays flat because the levelling height is the tallest cabinet
     // drawn, whatever made it tall.
-    const { groups, blades } = flat([['rack1', 10], ['rack2', 20]]);
+    const { groups, blades } = flat([
+      ['rack1', 10],
+      ['rack2', 20],
+    ]);
     const l = layoutSlots({
-      groups, blades,
+      groups,
+      blades,
       declared: new Map([['rack1', 42]]),
       fallback: undefined,
       cellHeight: CELL,
@@ -254,9 +283,13 @@ describe('layoutSlots', () => {
   });
 
   it('uses the panel-wide number where the table is silent', () => {
-    const { groups, blades } = flat([['rack1', 40], ['rack2', 20]]);
+    const { groups, blades } = flat([
+      ['rack1', 40],
+      ['rack2', 20],
+    ]);
     const l = layoutSlots({
-      groups, blades,
+      groups,
+      blades,
       declared: new Map([['rack1', 24]]),
       fallback: 42,
       cellHeight: CELL,
@@ -284,9 +317,13 @@ describe('layoutSlots', () => {
     // The invariant: a levelled cabinet takes panelRows, which is at least its
     // own rowsNeeded by construction, so it cannot overflow. Only a
     // declaration can be too small.
-    const { groups, blades } = flat([['rack1', 45], ['rack2', 20]]);
+    const { groups, blades } = flat([
+      ['rack1', 45],
+      ['rack2', 20],
+    ]);
     const l = layoutSlots({
-      groups, blades,
+      groups,
+      blades,
       declared: new Map([['rack1', 42]]),
       fallback: undefined,
       cellHeight: CELL,
@@ -299,7 +336,8 @@ describe('layoutSlots', () => {
     // the frame would paint over the group header.
     const { groups, blades } = flat([['rack1', 45]]);
     const l = layoutSlots({
-      groups, blades,
+      groups,
+      blades,
       declared: new Map([['rack1', 10]]),
       fallback: undefined,
       cellHeight: CELL,
@@ -309,9 +347,13 @@ describe('layoutSlots', () => {
   });
 
   it('gives every cabinet the same band, so headers align and cabinets share a floor', () => {
-    const { groups, blades } = flat([['rack1', 40], ['rack2', 20]]);
+    const { groups, blades } = flat([
+      ['rack1', 40],
+      ['rack2', 20],
+    ]);
     const l = layoutSlots({
-      groups, blades,
+      groups,
+      blades,
       declared: new Map([['rack2', 20]]),
       fallback: undefined,
       cellHeight: CELL,
@@ -322,8 +364,12 @@ describe('layoutSlots', () => {
   it('names the groups a declaration claims that are not drawn', () => {
     const { groups, blades } = flat([['rack1', 40]]);
     const l = layoutSlots({
-      groups, blades,
-      declared: new Map([['rack1', 42], ['rack9', 42]]),
+      groups,
+      blades,
+      declared: new Map([
+        ['rack1', 42],
+        ['rack9', 42],
+      ]),
       fallback: undefined,
       cellHeight: CELL,
     });
@@ -333,7 +379,8 @@ describe('layoutSlots', () => {
   it('does not let an undrawn declaration raise the cabinets that are drawn', () => {
     const { groups, blades } = flat([['rack1', 10]]);
     const l = layoutSlots({
-      groups, blades,
+      groups,
+      blades,
       declared: new Map([['rack9', 64]]),
       fallback: undefined,
       cellHeight: CELL,
@@ -368,7 +415,10 @@ describe('layoutSlots', () => {
     // The likeliest first misconfiguration: one number typed for a floor whose
     // cabinets are taller than it. Nothing is declared per group, so this is
     // the path the invariant's narrower wording used to miss.
-    const { groups, blades } = flat([['rack1', 40], ['rack2', 40]]);
+    const { groups, blades } = flat([
+      ['rack1', 40],
+      ['rack2', 40],
+    ]);
     const l = layoutSlots({ groups, blades, declared: new Map(), fallback: 10, cellHeight: CELL });
     expect(l.slotsOf.get('rack1')).toBe(10);
     expect(l.overflowing).toEqual([

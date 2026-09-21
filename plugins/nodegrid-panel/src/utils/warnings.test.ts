@@ -5,7 +5,11 @@ import type { GroupedModel, SlurmNode } from '@slurm-views/core';
 import type { GroupingNotes, SlotNotes } from './warnings';
 
 const node = (name: string, state: string): SlurmNode => ({
-  name, state, partitions: [], labels: {}, facets: { gres: [] },
+  name,
+  state,
+  partitions: [],
+  labels: {},
+  facets: { gres: [] },
 });
 
 // Models Grafana's real shape rather than a convenient one: a matched mapping
@@ -15,8 +19,7 @@ const node = (name: string, state: string): SlurmNode => ({
 const display = ((value: unknown) =>
   value === 'idle'
     ? { text: 'idle', numeric: NaN }
-    : { text: String(value), numeric: NaN, percent: 0 }
-) as unknown as DisplayProcessor;
+    : { text: String(value), numeric: NaN, percent: 0 }) as unknown as DisplayProcessor;
 
 describe('collectUnmapped', () => {
   it('names the states that matched no mapping, once each', () => {
@@ -31,8 +34,7 @@ describe('collectUnmapped', () => {
   it('does not report a state whose mapped text equals its own name', () => {
     // The regression this guards: `idle` maps to "idle", so a text comparison
     // calls the commonest healthy state unmapped and the panel warns about it.
-    expect(collectUnmapped([node('c1', 'idle'), node('c2', 'perfctrs')], display))
-      .toEqual(['perfctrs']);
+    expect(collectUnmapped([node('c1', 'idle'), node('c2', 'perfctrs')], display)).toEqual(['perfctrs']);
   });
 
   it('ignores a node with no state at all, which is a different problem', () => {
@@ -42,7 +44,9 @@ describe('collectUnmapped', () => {
 
 describe('summarise', () => {
   const model = (nodeCount: number, cellCount: number): GroupedModel => ({
-    groups: [], nodeCount, cellCount,
+    groups: [],
+    nodeCount,
+    cellCount,
   });
 
   it('says nothing when there are more cells than nodes', () => {
@@ -61,24 +65,19 @@ describe('summarise', () => {
   });
 
   it('names an unmapped state rather than only counting it', () => {
-    expect(summarise(model(2, 2), [], ['perfctrs'], notes()))
-      .toContain('1 state matched no value mapping: perfctrs');
+    expect(summarise(model(2, 2), [], ['perfctrs'], notes())).toContain('1 state matched no value mapping: perfctrs');
   });
 
   it('pluralises several unmapped states', () => {
-    expect(summarise(model(2, 2), [], ['blocked', 'perfctrs'], notes()))
-      .toContain('2 states matched no value mapping: blocked, perfctrs');
+    expect(summarise(model(2, 2), [], ['blocked', 'perfctrs'], notes())).toContain(
+      '2 states matched no value mapping: blocked, perfctrs'
+    );
   });
 
   it('counts states, not state-and-flag combinations', () => {
     // What a real panel was showing: one unknown state reaching the strip as
     // five strings, reported as five states to write rules for.
-    const line = summarise(
-      model(5, 5),
-      [],
-      ['blocked', 'blocked!', 'blocked#', 'blocked%', 'blocked-'],
-      notes()
-    )[0];
+    const line = summarise(model(5, 5), [], ['blocked', 'blocked!', 'blocked#', 'blocked%', 'blocked-'], notes())[0];
     expect(line).toContain('1 state matched no value mapping: blocked');
     expect(line).toContain('(5 with flags)');
     expect(line).not.toContain('blocked!');
@@ -144,8 +143,9 @@ describe('summarise', () => {
   });
 
   it('passes an ingest warning through with its refId', () => {
-    expect(summarise(model(0, 0), [{ kind: 'no-identity', refId: 'B', detail: 'no node label or column' }], [], notes()))
-      .toContain('Query B skipped: no node label or column');
+    expect(
+      summarise(model(0, 0), [{ kind: 'no-identity', refId: 'B', detail: 'no node label or column' }], [], notes())
+    ).toContain('Query B skipped: no node label or column');
   });
 
   describe('summarise, slot notes', () => {
@@ -157,9 +157,16 @@ describe('summarise', () => {
     });
 
     it('carries the slot table parser problems through as written', () => {
-      const lines = summarise(model(4, 4), [], [], notes(), undefined, slotNotes({
-        problems: ['Line 2 is missing a count.'],
-      }));
+      const lines = summarise(
+        model(4, 4),
+        [],
+        [],
+        notes(),
+        undefined,
+        slotNotes({
+          problems: ['Line 2 is missing a count.'],
+        })
+      );
       expect(lines).toContain('Line 2 is missing a count.');
     });
 
@@ -167,9 +174,16 @@ describe('summarise', () => {
       // rack9 and rack10 are consecutive, so listOf's hostlist collapsing
       // (see packages/core/test/hostlist.test.ts) folds them into one range
       // rather than joining them with a comma.
-      const lines = summarise(model(4, 4), [], [], notes(), undefined, slotNotes({
-        undrawn: ['rack9', 'rack10'],
-      }));
+      const lines = summarise(
+        model(4, 4),
+        [],
+        [],
+        notes(),
+        undefined,
+        slotNotes({
+          undrawn: ['rack9', 'rack10'],
+        })
+      );
       expect(lines).toContain('Slots per rack named 2 groups that are not drawn: rack[9-10].');
     });
 
@@ -182,32 +196,53 @@ describe('summarise', () => {
       // Stated in slots rather than nodes so it stays in the unit the option is
       // written in: under quads "45 nodes but 42 slots" is arithmetic the reader
       // has to redo, where "12 slots but 10" is the comparison the panel made.
-      const lines = summarise(model(45, 45), [], [], notes(), undefined, slotNotes({
-        overflowing: [{ key: 'rack1', needed: 45, declared: 42 }],
-      }));
+      const lines = summarise(
+        model(45, 45),
+        [],
+        [],
+        notes(),
+        undefined,
+        slotNotes({
+          overflowing: [{ key: 'rack1', needed: 45, declared: 42 }],
+        })
+      );
       expect(lines).toContain('rack1 needs 45 slots but 42 were declared.');
     });
 
     it('groups cabinets that outgrew the same declaration by the same amount into one line', () => {
       // A row of identical cabinets that all outgrew the same declaration is one
       // fact, not three sentences.
-      const lines = summarise(model(36, 36), [], [], notes(), undefined, slotNotes({
-        overflowing: [
-          { key: 'rack7', needed: 12, declared: 10 },
-          { key: 'rack8', needed: 12, declared: 10 },
-          { key: 'rack9', needed: 12, declared: 10 },
-        ],
-      }));
+      const lines = summarise(
+        model(36, 36),
+        [],
+        [],
+        notes(),
+        undefined,
+        slotNotes({
+          overflowing: [
+            { key: 'rack7', needed: 12, declared: 10 },
+            { key: 'rack8', needed: 12, declared: 10 },
+            { key: 'rack9', needed: 12, declared: 10 },
+          ],
+        })
+      );
       expect(lines).toContain('rack[7-9] need 12 slots but 10 were declared.');
     });
 
     it('keeps cabinets that overflowed by different amounts on their own lines', () => {
-      const lines = summarise(model(20, 20), [], [], notes(), undefined, slotNotes({
-        overflowing: [
-          { key: 'rack1', needed: 12, declared: 10 },
-          { key: 'rack2', needed: 20, declared: 10 },
-        ],
-      }));
+      const lines = summarise(
+        model(20, 20),
+        [],
+        [],
+        notes(),
+        undefined,
+        slotNotes({
+          overflowing: [
+            { key: 'rack1', needed: 12, declared: 10 },
+            { key: 'rack2', needed: 20, declared: 10 },
+          ],
+        })
+      );
       expect(lines).toContain('rack1 needs 12 slots but 10 were declared.');
       expect(lines).toContain('rack2 needs 20 slots but 10 were declared.');
     });
@@ -215,13 +250,20 @@ describe('summarise', () => {
     it('puts the cabinet whose declaration is most wrong first', () => {
       // The strip's line cap is applied over every source at the end, so these
       // are the lines truncation reaches. Order decides which one survives.
-      const lines = summarise(model(60, 60), [], [], notes(), undefined, slotNotes({
-        overflowing: [
-          { key: 'rack1', needed: 45, declared: 42 },  // short by 3
-          { key: 'rack2', needed: 30, declared: 10 },  // short by 20
-          { key: 'rack3', needed: 14, declared: 10 },  // short by 4
-        ],
-      }));
+      const lines = summarise(
+        model(60, 60),
+        [],
+        [],
+        notes(),
+        undefined,
+        slotNotes({
+          overflowing: [
+            { key: 'rack1', needed: 45, declared: 42 }, // short by 3
+            { key: 'rack2', needed: 30, declared: 10 }, // short by 20
+            { key: 'rack3', needed: 14, declared: 10 }, // short by 4
+          ],
+        })
+      );
       const only = lines.filter((l) => l.includes('were declared.'));
       expect(only).toEqual([
         'rack2 needs 30 slots but 10 were declared.',
@@ -248,21 +290,34 @@ const notes = (over: Partial<GroupingNotes> = {}): GroupingNotes => ({
 
 describe('grouping warnings', () => {
   const model = (nodeCount: number): GroupedModel => ({
-    groups: [], nodeCount, cellCount: nodeCount,
+    groups: [],
+    nodeCount,
+    cellCount: nodeCount,
   });
 
   it('names orphan nodes collapsed back to hostlist syntax', () => {
-    const lines = summarise(model(3), [], [], notes({
-      source: { kind: 'ranges', table: 'rack1: c[1-2]' },
-      orphans: ['c201', 'c202', 'c203'],
-    }));
+    const lines = summarise(
+      model(3),
+      [],
+      [],
+      notes({
+        source: { kind: 'ranges', table: 'rack1: c[1-2]' },
+        orphans: ['c201', 'c202', 'c203'],
+      })
+    );
     expect(lines).toContain('3 nodes matched no range: c[201-203]. Drawn under "ungrouped".');
   });
 
   it('names the cause, which differs by source', () => {
-    const line = summarise(model(1), [], [], notes({
-      source: { kind: 'label', label: 'rack' }, orphans: ['c1'],
-    }))[0];
+    const line = summarise(
+      model(1),
+      [],
+      [],
+      notes({
+        source: { kind: 'label', label: 'rack' },
+        orphans: ['c1'],
+      })
+    )[0];
     expect(line).toContain('1 node carries no "rack" label');
   });
 
@@ -273,43 +328,69 @@ describe('grouping warnings', () => {
   });
 
   it('names a declared range that matched no node', () => {
-    const lines = summarise(model(1), [], [], notes({
-      source: { kind: 'ranges', table: 'x: c[1-1]' },
-      emptyGroups: [{ name: 'rack7', members: ['c213', 'c214'] }],
-    }));
+    const lines = summarise(
+      model(1),
+      [],
+      [],
+      notes({
+        source: { kind: 'ranges', table: 'x: c[1-1]' },
+        emptyGroups: [{ name: 'rack7', members: ['c213', 'c214'] }],
+      })
+    );
     expect(lines).toContain('Range "rack7" matched no node: c[213-214].');
   });
 
   it('passes a table problem straight through', () => {
-    const lines = summarise(model(1), [], [], notes({
-      source: { kind: 'ranges', table: 'bad' },
-      problems: ['Line 2 has no "name: hostlist" separator.'],
-    }));
+    const lines = summarise(
+      model(1),
+      [],
+      [],
+      notes({
+        source: { kind: 'ranges', table: 'bad' },
+        problems: ['Line 2 has no "name: hostlist" separator.'],
+      })
+    );
     expect(lines).toContain('Line 2 has no "name: hostlist" separator.');
   });
 
   it('reports a better label as a measurement, not as advice', () => {
-    const lines = summarise(model(240), [], [], notes({
-      source: { kind: 'chunk', size: 40 },
-      suggestion: { label: 'rack', covered: 240, total: 240 },
-    }));
+    const lines = summarise(
+      model(240),
+      [],
+      [],
+      notes({
+        source: { kind: 'chunk', size: 40 },
+        suggestion: { label: 'rack', covered: 240, total: 240 },
+      })
+    );
     expect(lines).toContain('Label "rack" would group all 240. Grouping > Group by > Label.');
   });
 
   it('says how many when a better label does not cover everything', () => {
-    const lines = summarise(model(240), [], [], notes({
-      source: { kind: 'chunk', size: 40 },
-      suggestion: { label: 'rack', covered: 228, total: 240 },
-    }));
+    const lines = summarise(
+      model(240),
+      [],
+      [],
+      notes({
+        source: { kind: 'chunk', size: 40 },
+        suggestion: { label: 'rack', covered: 228, total: 240 },
+      })
+    );
     expect(lines).toContain('Label "rack" would group 228 of 240. Grouping > Group by > Label.');
   });
 
   it('caps a very long orphan list', () => {
     // The strip clips its overflow, so an unbounded line eats the grid.
     const orphans = Array.from({ length: 20 }, (_, i) => `x${i}y`);
-    const line = summarise(model(20), [], [], notes({
-      source: { kind: 'ranges', table: 'x: c[1-1]' }, orphans,
-    }))[0];
+    const line = summarise(
+      model(20),
+      [],
+      [],
+      notes({
+        source: { kind: 'ranges', table: 'x: c[1-1]' },
+        orphans,
+      })
+    )[0];
     expect(line).toContain('and 12 more');
   });
 
@@ -319,9 +400,15 @@ describe('grouping warnings', () => {
     // each line's own length does nothing when the *count* of lines is what
     // eats the grid. Twelve empty groups exceed STRIP_LINE_LIMIT (8).
     const emptyGroups = Array.from({ length: 12 }, (_, i) => ({ name: `rack${i}`, members: [] }));
-    const lines = summarise(model(1), [], [], notes({
-      source: { kind: 'ranges', table: 'x: c[1-1]' }, emptyGroups,
-    }));
+    const lines = summarise(
+      model(1),
+      [],
+      [],
+      notes({
+        source: { kind: 'ranges', table: 'x: c[1-1]' },
+        emptyGroups,
+      })
+    );
     expect(lines).toHaveLength(9);
     expect(lines.slice(0, 8)).toEqual(emptyGroups.slice(0, 8).map((g) => `Range "${g.name}" matched no node: .`));
     expect(lines[8]).toBe('and 4 more warnings.');
@@ -329,9 +416,15 @@ describe('grouping warnings', () => {
 
   it('does not cap a strip at or under the limit', () => {
     const emptyGroups = Array.from({ length: 8 }, (_, i) => ({ name: `rack${i}`, members: [] }));
-    const lines = summarise(model(1), [], [], notes({
-      source: { kind: 'ranges', table: 'x: c[1-1]' }, emptyGroups,
-    }));
+    const lines = summarise(
+      model(1),
+      [],
+      [],
+      notes({
+        source: { kind: 'ranges', table: 'x: c[1-1]' },
+        emptyGroups,
+      })
+    );
     expect(lines).toHaveLength(8);
     expect(lines.join(' ')).not.toContain('more warnings');
   });
@@ -360,9 +453,7 @@ describe('blade warnings', () => {
     // cabinets, and a hundred lines is a wall rather than a warning.
     const undrawn = Array.from({ length: 100 }, (_, i) => `rack${i + 21}`);
     const lines = summarise(empty, [], [], noGrouping, { problems: [], undrawn, squeezed: [] });
-    expect(lines).toEqual([
-      'Nodes per blade named 100 groups that are not drawn: rack[21-120].',
-    ]);
+    expect(lines).toEqual(['Nodes per blade named 100 groups that are not drawn: rack[21-120].']);
   });
 
   it('says "group that is" for a single one', () => {
@@ -388,7 +479,11 @@ describe('blade warnings', () => {
 
 describe('groupingNotes', () => {
   const mkNode = (name: string): SlurmNode => ({
-    name, state: 'idle', partitions: [], labels: {}, facets: { gres: [] },
+    name,
+    state: 'idle',
+    partitions: [],
+    labels: {},
+    facets: { gres: [] },
   });
   const ranges = { kind: 'ranges', table: 'rack1: c[1-2]\nrack7: c[90-91]' } as const;
   const args = { nodeLabel: 'node', stateLabel: 'status' };
@@ -401,7 +496,8 @@ describe('groupingNotes', () => {
         { key: 'rack1', nodes: [mkNode('c1')], assumed: false },
         { key: UNGROUPED, nodes: [mkNode('c9')], assumed: false },
       ],
-      nodeCount: 2, cellCount: 2,
+      nodeCount: 2,
+      cellCount: 2,
     };
     const notes = groupingNotes({ model, nodes: [mkNode('c1'), mkNode('c9')], source: ranges, ...args });
     expect(notes.orphans).toEqual(['c9']);
@@ -410,7 +506,8 @@ describe('groupingNotes', () => {
   it('reports no orphans when nothing landed in the ungrouped bucket', () => {
     const model: GroupedModel = {
       groups: [{ key: 'rack1', nodes: [mkNode('c1')], assumed: false }],
-      nodeCount: 1, cellCount: 1,
+      nodeCount: 1,
+      cellCount: 1,
     };
     expect(groupingNotes({ model, nodes: [mkNode('c1')], source: ranges, ...args }).orphans).toEqual([]);
   });
@@ -421,11 +518,15 @@ describe('groupingNotes', () => {
         { key: 'rack1', nodes: [mkNode('c1')], assumed: false },
         { key: 'rack7', nodes: [], assumed: false },
       ],
-      nodeCount: 1, cellCount: 1,
+      nodeCount: 1,
+      cellCount: 1,
     };
     const notes = groupingNotes({
-      model, nodes: [mkNode('c1')], source: ranges,
-      table: parseRangeTable(ranges.table), ...args,
+      model,
+      nodes: [mkNode('c1')],
+      source: ranges,
+      table: parseRangeTable(ranges.table),
+      ...args,
     });
     expect(notes.emptyGroups).toEqual([{ name: 'rack7', members: ['c90', 'c91'] }]);
   });
@@ -433,8 +534,11 @@ describe('groupingNotes', () => {
   it('carries the table problems through', () => {
     const model: GroupedModel = { groups: [], nodeCount: 0, cellCount: 0 };
     const notes = groupingNotes({
-      model, nodes: [], source: { kind: 'ranges', table: 'broken line' },
-      table: parseRangeTable('broken line'), ...args,
+      model,
+      nodes: [],
+      source: { kind: 'ranges', table: 'broken line' },
+      table: parseRangeTable('broken line'),
+      ...args,
     });
     expect(notes.problems).toHaveLength(1);
     expect(notes.problems[0]).toContain('separator');
@@ -443,10 +547,14 @@ describe('groupingNotes', () => {
   it('has no problems and no empty groups when there is no table', () => {
     const model: GroupedModel = {
       groups: [{ key: 'p1', nodes: [mkNode('c1')], assumed: false }],
-      nodeCount: 1, cellCount: 1,
+      nodeCount: 1,
+      cellCount: 1,
     };
     const notes = groupingNotes({
-      model, nodes: [mkNode('c1')], source: { kind: 'label', label: 'partition' }, ...args,
+      model,
+      nodes: [mkNode('c1')],
+      source: { kind: 'label', label: 'partition' },
+      ...args,
     });
     expect(notes.problems).toEqual([]);
     expect(notes.emptyGroups).toEqual([]);
@@ -462,12 +570,19 @@ describe('groupingNotes', () => {
     // This model reproduces that fan-out through buildGroups itself, not by
     // hand-asserting the count.
     const withRackAndPartitions = (name: string, rack: string): SlurmNode => ({
-      name, state: 'idle', partitions: ['cpu', 'debug'], labels: { rack }, facets: { gres: [] },
+      name,
+      state: 'idle',
+      partitions: ['cpu', 'debug'],
+      labels: { rack },
+      facets: { gres: [] },
     });
     const nodes = [
-      withRackAndPartitions('c1', 'r1'), withRackAndPartitions('c2', 'r1'),
-      withRackAndPartitions('c3', 'r2'), withRackAndPartitions('c4', 'r2'),
-      withRackAndPartitions('c5', 'r3'), withRackAndPartitions('c6', 'r3'),
+      withRackAndPartitions('c1', 'r1'),
+      withRackAndPartitions('c2', 'r1'),
+      withRackAndPartitions('c3', 'r2'),
+      withRackAndPartitions('c4', 'r2'),
+      withRackAndPartitions('c5', 'r3'),
+      withRackAndPartitions('c6', 'r3'),
     ];
     const source = { kind: 'label', label: 'partition' } as const;
     const model = buildGroups(nodes, source, { multiValueLabel: true });

@@ -17,14 +17,14 @@ disagree.
 One required query, plus a set of optional named facets. Each is bound
 to a query `refId`:
 
-| Role | Query (default) | Notes |
-|---|---|---|
-| `state` (required) | `slurm_node_status` | node identity and Slurm state; drives colour in State mode |
-| `cpuAlloc` / `cpuTotal` | `slurm_node_cpu_alloc` / `slurm_node_cpu_total` | drives colour in CPU mode |
-| `memAlloc` / `memTotal` | `slurm_node_mem_alloc` / `slurm_node_mem_total` | drives colour in Memory mode |
-| `gresUsed` / `gresTotal` | `slurm_node_gres_used` / `slurm_node_gres_total` | keyed by the `gres_type` label; drives colour in GPU mode |
-| `drainReason` | `slurm_node_drain_reason_info` | value read from the `reason` label, shown in the tooltip |
-| `drainSince` | `time() - slurm_node_drain_since_timestamp_seconds` | age in seconds, shown in the tooltip |
+| Role                     | Query (default)                                     | Notes                                                      |
+| ------------------------ | --------------------------------------------------- | ---------------------------------------------------------- |
+| `state` (required)       | `slurm_node_status`                                 | node identity and Slurm state; drives colour in State mode |
+| `cpuAlloc` / `cpuTotal`  | `slurm_node_cpu_alloc` / `slurm_node_cpu_total`     | drives colour in CPU mode                                  |
+| `memAlloc` / `memTotal`  | `slurm_node_mem_alloc` / `slurm_node_mem_total`     | drives colour in Memory mode                               |
+| `gresUsed` / `gresTotal` | `slurm_node_gres_used` / `slurm_node_gres_total`    | keyed by the `gres_type` label; drives colour in GPU mode  |
+| `drainReason`            | `slurm_node_drain_reason_info`                      | value read from the `reason` label, shown in the tooltip   |
+| `drainSince`             | `time() - slurm_node_drain_since_timestamp_seconds` | age in seconds, shown in the tooltip                       |
 
 The label names are options too, defaulting to what `slurm_exporter` emits:
 `node` for node identity, `status` for the state, and `partition`, `gres_type`
@@ -93,6 +93,7 @@ join needs, is in this repository's `docs/grouping.md`.
   alphabetical. The value can be a dashboard variable instead of a literal
   table, so several panels can share one layout and it can be edited in one
   place. See `docs/grouping.md` for the full syntax.
+
 - **Chunk**: slices nodes by ordinal into fixed-size groups.
 
 Chunking is the one source that invents structure the data never stated: HPC
@@ -139,7 +140,6 @@ blade, Slots per rack and a Ranges table each assert that those groups exist,
 so one naming a cabinet the query no longer returns is reported — the same
 line that catches a rack nobody plugged back in. Narrow the tables with the
 query.
-
 
 ## Layout
 
@@ -283,17 +283,17 @@ colours, six decisions.** The hue says what to do; the shade inside a hue says
 the degree, never the decision. The exact state is always spelled out in the
 cell's tooltip and in its accessible label, in every colour mode.
 
-| Default colour | Theme name | What it decides | States it covers |
-|---|---|---|---|
-| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#96D98D;vertical-align:middle"></span> `#96D98D` | `light-green` | **it works** | `allocated`, `allocated+`, `allocated-` |
-| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#73BF69;vertical-align:middle"></span> `#73BF69` | `green` | **it works** | `mixed`, `mix`, `mixed-` |
-| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#56A64B;vertical-align:middle"></span> `#56A64B` | `semi-dark-green` | **it works** | `completing`, `comp` |
-| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#5794F2;vertical-align:middle"></span> `#5794F2` | `blue` | **capacity sitting free** | `idle`, `idle-` |
-| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#8AB8FF;vertical-align:middle"></span> `#8AB8FF` | `light-blue` | **capacity sitting free** | `planned`, `plnd` |
-| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#8F3BB8;vertical-align:middle"></span> `#8F3BB8` | `dark-purple` | **a human claimed it** | `drained`, `draining`, `drng`, `maintenance`, `reserved`, `resv`, `npc`, `perfctrs` |
-| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#FF9830;vertical-align:middle"></span> `#FF9830` | `orange` | **not answering, or moving** | the `*` suffix, `blocked`, `reboot` |
-| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#C4162A;vertical-align:middle"></span> `#C4162A` | `dark-red` | **broken** | `down`, `fail`, `unknown`, `invalid` |
-| the theme's own ink | `text` | **absent from the floor** | the `~` suffix, `power_down`, `powering_up`, `future`, `futr` |
+| Default colour                                                                                                                         | Theme name        | What it decides              | States it covers                                                                    |
+| -------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ---------------------------- | ----------------------------------------------------------------------------------- |
+| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#96D98D;vertical-align:middle"></span> `#96D98D` | `light-green`     | **it works**                 | `allocated`, `allocated+`, `allocated-`                                             |
+| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#73BF69;vertical-align:middle"></span> `#73BF69` | `green`           | **it works**                 | `mixed`, `mix`, `mixed-`                                                            |
+| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#56A64B;vertical-align:middle"></span> `#56A64B` | `semi-dark-green` | **it works**                 | `completing`, `comp`                                                                |
+| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#5794F2;vertical-align:middle"></span> `#5794F2` | `blue`            | **capacity sitting free**    | `idle`, `idle-`                                                                     |
+| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#8AB8FF;vertical-align:middle"></span> `#8AB8FF` | `light-blue`      | **capacity sitting free**    | `planned`, `plnd`                                                                   |
+| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#8F3BB8;vertical-align:middle"></span> `#8F3BB8` | `dark-purple`     | **a human claimed it**       | `drained`, `draining`, `drng`, `maintenance`, `reserved`, `resv`, `npc`, `perfctrs` |
+| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#FF9830;vertical-align:middle"></span> `#FF9830` | `orange`          | **not answering, or moving** | the `*` suffix, `blocked`, `reboot`                                                 |
+| <span style="display:inline-block;width:34px;height:14px;border-radius:3px;background:#C4162A;vertical-align:middle"></span> `#C4162A` | `dark-red`        | **broken**                   | `down`, `fail`, `unknown`, `invalid`                                                |
+| the theme's own ink                                                                                                                    | `text`            | **absent from the floor**    | the `~` suffix, `power_down`, `powering_up`, `future`, `futr`                       |
 
 `future` and `futr` are one state under two spellings, both matched by a single rule: a node declared
 in `slurm.conf` that does not exist yet, pre-defined so it can be brought into service later without
@@ -415,15 +415,15 @@ not fully resolve:
 Four kinds of label are never proposed, however well they would score, so
 their absence from that line is not a bug:
 
-| Never proposed | Why |
-|---|---|
-| The **node label** | One group per node is not a grouping. |
-| The **state label** | It regroups the grid on every scrape. |
+| Never proposed                                                | Why                                                                            |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| The **node label**                                            | One group per node is not a grouping.                                          |
+| The **state label**                                           | It regroups the grid on every scrape.                                          |
 | Any label with **as many distinct values as nodes it covers** | An identity in a different costume: `reason` on a set of drained nodes is one. |
-| Any label with **fewer than two distinct values** | One group for everything, which would win on coverage every single time. |
+| Any label with **fewer than two distinct values**             | One group for everything, which would win on coverage every single time.       |
 
 Grouping set to **None** is also silent: it is a choice, not a failure to
-group. And a label speaks only when it would place *strictly more* nodes than
+group. And a label speaks only when it would place _strictly more_ nodes than
 the active source does. One that merely ties says nothing.
 
 A state matching no mapping keeps its raw text; Grafana would colour it with
@@ -433,7 +433,7 @@ the cell deliberately refuses that colour and draws a hollow ring instead.
 ## In a dashboard
 
 The panel is a floor plan, not a summary: it sits below the counters rather
-than replacing them, and answers the question they raise — *which* nodes, and
-*where*.
+than replacing them, and answers the question they raise — _which_ nodes, and
+_where_.
 
 ![A production dashboard: gauges and counters above, the floor plan and a table of drain reasons below](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-dashboard.png)

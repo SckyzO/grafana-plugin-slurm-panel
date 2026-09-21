@@ -38,7 +38,6 @@ async function gotoPanelWithData(page: Page, viewPanel: number, anchor: string):
   }
 }
 
-
 test.describe('the node grid renders against a real Grafana', () => {
   test('draws one cell per node from the provisioned dashboard', async ({
     gotoDashboardPage,
@@ -124,15 +123,12 @@ test.describe('the node grid renders against a real Grafana', () => {
       // second form searches for a mapped element *inside* each cell and
       // matches nothing, which reports zero on a grid that is fully coloured.
       const mapped = page.locator('[data-testid^="node-cell-"][data-mapped="true"]');
-      await expect
-        .poll(() => cells.count(), { timeout: 20_000, message: `${title} drew nothing` })
-        .toBeGreaterThan(0);
+      await expect.poll(() => cells.count(), { timeout: 20_000, message: `${title} drew nothing` }).toBeGreaterThan(0);
 
       const [drawn, coloured] = [await cells.count(), await mapped.count()];
       // Every cell but the deliberately unknown state on panel 1, which is
       // there precisely to be unmapped.
-      expect(coloured, `${title}: ${coloured} of ${drawn} cells matched a rule`)
-        .toBeGreaterThanOrEqual(drawn - 1);
+      expect(coloured, `${title}: ${coloured} of ${drawn} cells matched a rule`).toBeGreaterThanOrEqual(drawn - 1);
 
       for (const c of await mapped.evaluateAll((n) =>
         Array.from(new Set(n.map((x) => getComputedStyle(x).backgroundColor)))
@@ -149,9 +145,7 @@ test.describe('the node grid renders against a real Grafana', () => {
 });
 
 test.describe('the continuous colour modes', () => {
-  test('resolves occupancy through thresholds and leaves a node with no data empty', async ({
-    page,
-  }) => {
+  test('resolves occupancy through thresholds and leaves a node with no data empty', async ({ page }) => {
     // ?viewPanel, not scrollIntoView. These panels sit a full screen down the
     // colour dashboard, and scrolling a panel into view mounts it on some
     // Grafana versions and not others: the same call worked on 13.1 and later
@@ -298,9 +292,7 @@ test.describe('the primary overview dashboard groups by the rack it now has', ()
 });
 
 test.describe('the occupancy panels group the same nine racks', () => {
-  test('shows all nine named racks and drops nothing into ungrouped, on every panel', async ({
-    page,
-  }) => {
+  test('shows all nine named racks and drops nothing into ungrouped, on every panel', async ({ page }) => {
     // Regression coverage for the occupancy panels' grouping: this once
     // switched from a capture pattern ('^(r\\d+)') to the relabelled `rack`
     // label. The colour test above checks fill behaviour and would keep
@@ -321,8 +313,9 @@ test.describe('the occupancy panels group the same nine racks', () => {
     for (const [id, title, racks] of panels) {
       await page.goto(`/d/slurm-node-colour/colour?viewPanel=${id}`);
       for (const key of racks) {
-        await expect(page.getByTestId(`node-group-${key}`), `${title}: ${key} missing`)
-          .toBeVisible({ timeout: 20_000 });
+        await expect(page.getByTestId(`node-group-${key}`), `${title}: ${key} missing`).toBeVisible({
+          timeout: 20_000,
+        });
       }
       await expect(page.getByTestId('node-group-ungrouped')).toHaveCount(0);
     }
@@ -371,9 +364,7 @@ test.describe('the three ways to get a topology, proven against the same live da
 });
 
 test.describe('showing part of the cluster', () => {
-  test('a filtered query narrows the floor without a warning, because nothing is hidden', async ({
-    page,
-  }) => {
+  test('a filtered query narrows the floor without a warning, because nothing is hidden', async ({ page }) => {
     // The panel has no "only these groups" option on purpose: it would hide
     // nodes the query returned, which is the one thing this panel refuses to
     // do. Narrowing belongs in the query, where the nodes are never asked

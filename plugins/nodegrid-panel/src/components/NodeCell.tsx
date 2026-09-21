@@ -86,8 +86,12 @@ export function NodeCell({
   // carrying both reads well at 200 nodes and turns to noise at 2000.
   const background =
     colorMode === 'state'
-      ? (mapped ? dv.color : undefined)
-      : (fraction === undefined ? undefined : valueDisplay(fraction).color);
+      ? mapped
+        ? dv.color
+        : undefined
+      : fraction === undefined
+        ? undefined
+        : valueDisplay(fraction).color;
 
   // React drops an undefined background, and a <button> with no background of
   // its own falls back to the browser's ButtonFace: a solid mid-grey that

@@ -134,8 +134,7 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
       .addSliderInput({
         path: 'gap',
         name: 'Cell gap',
-        description:
-          'Space between cells in the Wrap layout. The gap is what makes a grid readable, not a border.',
+        description: 'Space between cells in the Wrap layout. The gap is what makes a grid readable, not a border.',
         defaultValue: DEFAULT_OPTIONS.gap,
         settings: { min: 0, max: 8, step: 1 },
         category: ['Layout'],

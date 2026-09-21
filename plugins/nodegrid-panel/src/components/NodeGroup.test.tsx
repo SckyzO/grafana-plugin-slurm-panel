@@ -35,11 +35,7 @@ const mkNode = (name: string): SlurmNode => ({
   facets: { gres: [] },
 });
 
-const renderGroup = (
-  group: NodeGroupModel,
-  options: PanelOptions,
-  overrides: Partial<NodeGroupProps> = {}
-) => {
+const renderGroup = (group: NodeGroupModel, options: PanelOptions, overrides: Partial<NodeGroupProps> = {}) => {
   // blades became a required prop once NodeGroup stopped reimplementing
   // rackWidthFor/sledWidthFor as its own fallback (NodeGridPanel is the only
   // production caller and always resolves one). This default mirrors that
@@ -226,7 +222,10 @@ describe('NodeGroup', () => {
       cellWidth: resolveCellSize(options).width,
     });
     const slots = layoutSlots({
-      groups: [{ key: 'rack1', nodes: 8 }, { key: 'rack2', nodes: 4 }],
+      groups: [
+        { key: 'rack1', nodes: 8 },
+        { key: 'rack2', nodes: 4 },
+      ],
       blades,
       declared: new Map([['rack2', 4]]),
       fallback: undefined,
@@ -254,10 +253,7 @@ describe('NodeGroup', () => {
 
   it('draws no band in the wrap layout', () => {
     // The band is a cabinet's floor. Wrap draws no cabinet.
-    renderGroup(
-      { key: 'rack1', nodes: [mkNode('c1')], assumed: false },
-      { ...DEFAULT_OPTIONS, layout: 'wrap' }
-    );
+    renderGroup({ key: 'rack1', nodes: [mkNode('c1')], assumed: false }, { ...DEFAULT_OPTIONS, layout: 'wrap' });
     expect(screen.queryByTestId('rack-band')).toBeNull();
   });
 });
@@ -315,5 +311,4 @@ describe('groups the panel could not resolve', () => {
     expect(screen.getByText('rack1')).toBeInTheDocument();
     expect(screen.queryByText('2 nodes')).toBeNull();
   });
-
 });
