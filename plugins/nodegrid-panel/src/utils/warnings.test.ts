@@ -592,3 +592,71 @@ describe('groupingNotes', () => {
     expect(notes.suggestion).toBeUndefined();
   });
 });
+
+describe('summarise, the continuous colour modes', () => {
+  // The panel's stated principle is that it names what it cannot resolve. It
+  // held everywhere except here: three of the four Colour by modes are driven
+  // by facets with no field in the options editor, and choosing one without
+  // binding it drew every cell hollow in silence — indistinguishable from the
+  // documented rendering of a node that has no data.
+  const grouped = (nodes: SlurmNode[]): GroupedModel =>
+    buildGroups(nodes, { kind: 'none' }, { multiValueLabel: false });
+
+  const bare = (name: string): SlurmNode => node(name, 'idle');
+
+  const withCpu = (name: string): SlurmNode => ({
+    ...node(name, 'idle'),
+    facets: { gres: [], cpuAlloc: 4, cpuTotal: 8 },
+  });
+
+  const withGpu = (name: string): SlurmNode => ({
+    ...node(name, 'idle'),
+    facets: { gres: [{ type: 'nvidia', used: 2, total: 8 }] },
+  });
+
+  it('says so when a continuous mode is chosen and no node carries the facet', () => {
+    const lines = summarise(grouped([bare('c1'), bare('c2')]), [], [], notes(), undefined, undefined, 'cpu');
+    expect(lines.join(' ')).toContain('Colour by CPU, but no node carries that data');
+  });
+
+  it('names the mode that was actually chosen', () => {
+    const nodes = [bare('c1')];
+    expect(summarise(grouped(nodes), [], [], notes(), undefined, undefined, 'mem').join(' ')).toContain(
+      'Colour by Memory'
+    );
+    expect(summarise(grouped(nodes), [], [], notes(), undefined, undefined, 'gres').join(' ')).toContain(
+      'Colour by GPU'
+    );
+  });
+
+  it('stays silent on partial coverage, which is normal and documented', () => {
+    // "a node with no GPU is drawn empty, not coloured" is a shipped
+    // screenshot caption. A line that fired here would be permanent noise on
+    // every mixed floor, which is worse than the silence it replaced.
+    const lines = summarise(
+      grouped([withGpu('g1'), bare('c1'), bare('c2')]),
+      [],
+      [],
+      notes(),
+      undefined,
+      undefined,
+      'gres'
+    );
+    expect(lines.join(' ')).not.toContain('no node carries');
+  });
+
+  it('stays silent in State mode, where the facets are irrelevant', () => {
+    const lines = summarise(grouped([bare('c1')]), [], [], notes(), undefined, undefined, 'state');
+    expect(lines.join(' ')).not.toContain('no node carries');
+  });
+
+  it('stays silent when the facet is bound', () => {
+    const lines = summarise(grouped([withCpu('c1')]), [], [], notes(), undefined, undefined, 'cpu');
+    expect(lines.join(' ')).not.toContain('no node carries');
+  });
+
+  it('stays silent when the panel has no nodes at all, which the empty state already covers', () => {
+    const lines = summarise(grouped([]), [], [], notes(), undefined, undefined, 'cpu');
+    expect(lines.join(' ')).not.toContain('no node carries');
+  });
+});

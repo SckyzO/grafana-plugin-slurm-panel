@@ -8,6 +8,8 @@ import type {
   RangeTable,
   SlurmNode,
 } from '@slurm-views/core';
+import { fractionFor } from './colorMode';
+import type { ColorMode } from '../types';
 
 /**
  * A state matched no value mapping when `display()` falls through to the
@@ -207,15 +209,46 @@ const causeOf = (source: KeySource, plural: boolean): string => {
   }
 };
 
+/** What the Colour by radio calls each mode, so the line names what was clicked. */
+const COLOUR_MODE_LABEL: Record<Exclude<ColorMode, 'state'>, string> = {
+  cpu: 'CPU',
+  mem: 'Memory',
+  gres: 'GPU',
+};
+
+// Seven parameters, three optional, is past the point where an options object
+// would read better. Left positional because reshaping it touches thirty call
+// sites; the reshape is worth its own change, not a rider on this one.
 export function summarise(
   model: GroupedModel,
   warnings: IngestWarning[],
   unmapped: string[],
   grouping: GroupingNotes,
   blades?: BladeNotes,
-  slots?: SlotNotes
+  slots?: SlotNotes,
+  colorMode?: ColorMode
 ): string[] {
   const lines: string[] = [];
+
+  // Three of the four Colour by modes are driven by facets that have no field
+  // in the options editor — they are bound by editing the panel JSON. Pick one
+  // without binding it and every cell is drawn hollow, which is also exactly
+  // how the panel draws a node that legitimately has no data. The reader
+  // cannot tell "nothing is wired" from "nothing to show", and this was the
+  // one thing the panel could not say about itself.
+  //
+  // Only when *no* node carries the facet. Partial coverage is normal and
+  // documented — a node with no GPU is drawn empty on purpose — so a line that
+  // fired on partial coverage would be permanent noise on any mixed floor.
+  if (colorMode !== undefined && colorMode !== 'state') {
+    const nodes = model.groups.flatMap((g) => g.nodes);
+    if (nodes.length > 0 && nodes.every((n) => fractionFor(n, colorMode) === undefined)) {
+      lines.push(
+        `Colour by ${COLOUR_MODE_LABEL[colorMode]}, but no node carries that data: every cell is drawn empty. ` +
+          'Bind the facet in the panel JSON (panel menu > Edit panel JSON, options.queries).'
+      );
+    }
+  }
 
   if (unmapped.length > 0) {
     // Count and name states, not state-and-flag combinations. Name them rather

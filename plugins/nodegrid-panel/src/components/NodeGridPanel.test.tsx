@@ -169,6 +169,46 @@ describe('NodeGridPanel', () => {
     grouping: { kind: 'label', label: 'rack' },
   };
 
+  // Proves the wiring, which a test of summarise on its own cannot: that the
+  // panel hands its colorMode to the warning pass at all. Before this, the
+  // engine could have known and the panel still said nothing.
+  it('names a continuous colour mode whose facet no node carries', () => {
+    const fieldConfig: FieldConfigSource = {
+      defaults: {
+        mappings: DEFAULT_MAPPINGS,
+        thresholds: { mode: ThresholdsMode.Absolute, steps: [{ value: -Infinity, color: 'green' }] },
+      },
+      overrides: [],
+    };
+
+    // rackData() binds the state query and nothing else, which is exactly the
+    // dashboard a reader lands on after clicking CPU without editing the JSON.
+    render(
+      <NodeGridPanel
+        {...baseProps}
+        data={rackData()}
+        options={{ ...DEFAULT_OPTIONS, colorMode: 'cpu' }}
+        fieldConfig={fieldConfig}
+      />
+    );
+
+    expect(screen.getByTestId('panel-warnings')).toHaveTextContent('Colour by CPU, but no node carries that data');
+  });
+
+  it('says nothing of the kind in State mode, on the same data', () => {
+    const fieldConfig: FieldConfigSource = {
+      defaults: {
+        mappings: DEFAULT_MAPPINGS,
+        thresholds: { mode: ThresholdsMode.Absolute, steps: [{ value: -Infinity, color: 'green' }] },
+      },
+      overrides: [],
+    };
+
+    render(<NodeGridPanel {...baseProps} data={rackData()} options={DEFAULT_OPTIONS} fieldConfig={fieldConfig} />);
+
+    expect(screen.queryByTestId('panel-warnings')).toBeNull();
+  });
+
   it('draws one sled per node when nothing is declared', () => {
     // The default-unchanged promise, asserted rather than assumed: a reader
     // who never opens the option gets the cabinet the panel always drew.

@@ -143,6 +143,24 @@ test.describe('the node grid renders against a real Grafana', () => {
     expect(coloursSeen.size).toBeGreaterThan(4);
   });
 
+  test('leaves the occupancy panels unannotated, because their facets are bound', async ({ page }) => {
+    // The other side of the "no node carries that data" line. These three
+    // panels colour by CPU, Memory and GPU with the facets bound, and the GPU
+    // one is the case that matters: most of the cluster has no GPU at all, so
+    // a warning keyed on partial coverage would sit here permanently. The
+    // line fires only when *nothing* carries the facet.
+    for (const [id, title] of [
+      [3, 'CPU utilisation by node'],
+      [4, 'Memory utilisation by node'],
+      [5, 'GPU utilisation by node'],
+    ] as Array<[number, string]>) {
+      await page.goto(`/d/slurm-node-colour/colour?viewPanel=${id}`);
+      const cells = page.locator('[data-testid^="node-cell-"]');
+      await expect.poll(() => cells.count(), { timeout: 20_000, message: `${title} drew nothing` }).toBeGreaterThan(0);
+      await expect(page.getByTestId('panel-warnings'), title).toHaveCount(0);
+    }
+  });
+
   test('cuts the cells on the panel that asks for shapes, and only that panel', async ({ page }) => {
     // The unit tests pin shapeFor. This pins the wiring: that the option set
     // on a dashboard reaches the DOM through the real Grafana, which is the
