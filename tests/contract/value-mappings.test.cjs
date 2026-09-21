@@ -43,14 +43,6 @@ const rule = (pattern, text, color) => ({
 const SHIPPED_RULES = require('../../plugins/nodegrid-panel/data/mappings.json');
 const SHIPPED = SHIPPED_RULES.map((r) => rule(r.pattern, r.text, r.color));
 
-// The colour the source declares for a value, resolved by the same
-// first-match-wins walk Grafana performs, using Grafana's own pattern
-// compiler rather than a second interpretation of the syntax.
-const declaredColourFor = (value) => {
-  const hit = SHIPPED_RULES.find((r) => stringToJsRegex(r.pattern).test(value));
-  return hit === undefined ? undefined : hit.color;
-};
-
 const displayFor = (values, mappings = SHIPPED) =>
   getDisplayProcessor({
     field: { name: 'status', type: FieldType.string, values, config: { mappings } },
@@ -123,44 +115,65 @@ test('every shipped default maps its state to the intended text', () => {
   }
 });
 
-test('every state in that list also resolves a colour, and the set discriminates', () => {
-  // A rule naming a colour the theme does not know still "maps": it returns
-  // text and a falsy or fallback colour, and the grid comes out uniform. Check
-  // the colours land, and that they are not all the same one.
-  const probes = ['idle', 'mixed', 'allocated', 'drained', 'down', 'maint',
-                  'reserved', 'perfctrs', 'blocked', 'completing', 'planned',
-                  'unknown', 'reboot_issued', 'power_down', 'future'];
+const THEME = createTheme();
 
-  const colours = new Set();
-  for (const value of probes) {
+// The oracle: the colour table in the shipped README, which is what a reader
+// is actually promised, transcribed here by hand.
+//
+// A transcription is the right shape for an *expected output* — it earns its
+// keep precisely by disagreeing when the rules move. It was the wrong shape
+// for the *input*, which is the defect this file used to carry, and the two
+// must not be confused.
+//
+// Nothing computed from mappings.json can do this job. A table recomputed
+// from the rules agrees with the rules by construction, whatever the rules
+// say. This was measured, not assumed: an earlier version of this test
+// compared a resolved colour count against a count derived from the same
+// JSON, and permuting the idle and blocked colours passed it 9 out of 9.
+// Grafana's own RegexToText branch is stringToJsRegex + String.match, first
+// match wins — the same walk — so the two sides could never have diverged.
+const EXPECTED_COLOURS = {
+  allocated: '#96D98D',
+  mixed: '#73BF69',
+  completing: '#56A64B',
+  idle: '#5794F2',
+  planned: '#8AB8FF',
+  drained: '#8F3BB8',
+  maint: '#8F3BB8',
+  reserved: '#8F3BB8',
+  perfctrs: '#8F3BB8',
+  blocked: '#FF9830',
+  reboot_issued: '#FF9830',
+  down: '#C4162A',
+  unknown: '#C4162A',
+  // "the theme's own ink" in the README's table, and deliberately not a hex:
+  // these two states are absent from the floor, so they take whatever colour
+  // the reader's theme writes in.
+  power_down: THEME.colors.text.primary,
+  future: THEME.colors.text.primary,
+};
+
+test('every state in that list resolves the colour the README promises', () => {
+  // A rule naming a colour the theme does not know still "maps": it returns
+  // text and a falsy or fallback colour, and the grid comes out uniform.
+  for (const [value, expected] of Object.entries(EXPECTED_COLOURS)) {
     const dv = displayFor([value])(value);
     assert.ok(dv.color, `expected a colour for ${value}`);
     assert.match(dv.color, /^(#|rgb)/, `${value} resolved to a non-colour: ${dv.color}`);
-    colours.add(dv.color);
+    assert.equal(
+      dv.color.toUpperCase(),
+      expected.toUpperCase(),
+      `${value}: the README promises ${expected}, the rules resolve ${dv.color}`
+    );
   }
 
-  // Counted from the rules, never written down. The old literal said ten and
-  // was calibrated on a palette the plugin had stopped shipping, so it
-  // described nothing and failed against the real one.
-  //
-  // Two different claims, and both are needed. The first is about the source:
-  // a palette that painted every state the same would satisfy any
-  // resolved-equals-declared check, so the source itself has to discriminate.
-  const declared = new Set(probes.map(declaredColourFor));
-  assert.ok(
-    declared.size >= 5,
-    `the shipped rules paint these ${probes.length} states in only ${declared.size} colours`
-  );
-
-  // The second is about Grafana, which is what this file exists to pin: every
-  // colour the source distinguishes must survive the display processor. Fewer
-  // resolved than declared means two rules collapsed into one — a regex that
-  // swallows its neighbour, which is exactly the failure the escaping traps
-  // below describe and which no amount of reading the list would reveal.
+  // And the palette discriminates. Pinned against the README's table, which
+  // has nine rows: collapsing two families is a decision, and this is what
+  // makes it a deliberate one rather than a silent one.
   assert.equal(
-    colours.size,
-    declared.size,
-    `the rules declare ${declared.size} colours for these states, Grafana resolved ${colours.size}`
+    new Set(Object.values(EXPECTED_COLOURS).map((c) => c.toUpperCase())).size,
+    9,
+    'the README documents nine colour families'
   );
 });
 
