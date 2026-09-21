@@ -736,7 +736,7 @@
         "x": 0,
         "y": 31,
         "w": 12,
-        "h": 19
+        "h": 10
       },
       "targets": [
         {
@@ -763,7 +763,7 @@
         },
         "multiValueLabel": false,
         "layout": "rack",
-        "cellWidth": 20,
+        "cellWidth": 14,
         "nodesPerBlade": 1,
         "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2",
         "slotOverrides": "",
@@ -790,7 +790,7 @@
         "x": 12,
         "y": 31,
         "w": 12,
-        "h": 19
+        "h": 10
       },
       "targets": [
         {
@@ -817,7 +817,7 @@
         },
         "multiValueLabel": false,
         "layout": "rack",
-        "cellWidth": 18,
+        "cellWidth": 14,
         "nodesPerBlade": 1,
         "slotOverrides": "cpu1: 12",
         "gap": 2,
@@ -840,7 +840,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 50,
+        "y": 41,
         "w": 12,
         "h": 11
       },
@@ -894,7 +894,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 50,
+        "y": 41,
         "w": 12,
         "h": 11
       },

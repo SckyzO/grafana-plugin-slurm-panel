@@ -703,7 +703,7 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 21,
+        "h": 12,
         "w": 12,
         "x": 0,
         "y": 12
@@ -735,7 +735,7 @@
         },
         "multiValueLabel": false,
         "layout": "rack",
-        "cellWidth": 26,
+        "cellWidth": 14,
         "nodesPerBlade": 1,
         "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2",
         "slotsPerRack": 20,
@@ -743,7 +743,8 @@
         "colorMode": "state",
         "gap": 2,
         "centreRacks": true,
-        "showNodeCount": true
+        "showNodeCount": true,
+        "cellHeight": 14
       },
       "targets": [
         {
@@ -817,7 +818,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 33
+        "y": 24
       },
       "targets": [
         {
@@ -906,7 +907,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 33
+        "y": 24
       },
       "targets": [
         {
@@ -995,7 +996,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 33
+        "y": 24
       },
       "targets": [
         {
@@ -1081,7 +1082,7 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 21,
+        "h": 12,
         "w": 12,
         "x": 12,
         "y": 12
