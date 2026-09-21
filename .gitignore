@@ -17,5 +17,11 @@ dev/prometheus/scrape/
 # Scratch fixtures the contract tests write and remove around themselves.
 tests/contract/.tmp/
 
+# Byte-code from running dev/synthetic-exporter/serve.py on the host. The
+# exporter runs in a container; a .pyc here is a local artefact and a stale
+# one at that — it was compiled by a different Python than the image's.
+__pycache__/
+*.pyc
+
 # Scratch for the plan-execution tooling: ledgers, briefs, review packages.
 .superpowers/
