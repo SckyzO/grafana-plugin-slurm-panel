@@ -48,6 +48,29 @@ const SHOTS = [
   { name: 'node-grid-dashboard', uid: 'slurm-prod' },
 ];
 
+// The dashboard shot carries two time series over a fifteen-minute window.
+// On a stack that has just come up they draw two minutes of data against an
+// empty field, which looks like the panel failing rather than the stack being
+// young. Prometheus knows how long it has been scraping, so ask it.
+const prom = process.env.PROM_URL ?? 'http://prometheus:9090';
+try {
+  // min_over_time, not min: min(timestamp(...)) is the age of the newest
+  // scrape, which is always seconds, and reported an empty history on a
+  // stack that had been up two hours.
+  const q = encodeURIComponent('time() - min_over_time(timestamp(slurm_node_status)[6h:1m])');
+  const r = await (await fetch(`${prom}/api/v1/query?query=${q}`)).json();
+  const seconds = Number(r?.data?.result?.[0]?.value?.[1] ?? 0);
+  if (seconds < 20 * 60) {
+    console.warn(
+      `\n  ! Prometheus holds ${Math.round(seconds / 60)} min of history.` +
+        '\n  ! The dashboard shot needs 20 to fill its time series. Leave `make up`' +
+        '\n  ! running and take it again.\n'
+    );
+  }
+} catch {
+  console.warn('  ! could not ask Prometheus how long it has been scraping');
+}
+
 const browser = await chromium.launch();
 
 for (const shot of SHOTS) {
