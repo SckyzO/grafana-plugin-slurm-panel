@@ -25,10 +25,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 5,
-        "w": 4,
         "x": 0,
-        "y": 0
+        "y": 0,
+        "w": 4,
+        "h": 5
       },
       "targets": [
         {
@@ -53,7 +53,21 @@
         "showThresholdMarkers": true,
         "minVizWidth": 75,
         "minVizHeight": 75,
-        "sizing": "auto"
+        "sizing": "auto",
+        "barShape": "flat",
+        "barWidthFactor": 0.6,
+        "effects": {
+          "barGlow": false,
+          "centerGlow": false,
+          "gradient": true
+        },
+        "endpointMarker": "point",
+        "orientation": "auto",
+        "segmentCount": 1,
+        "segmentSpacing": 0.3,
+        "shape": "gauge",
+        "sparkline": true,
+        "textMode": "auto"
       },
       "fieldConfig": {
         "defaults": {
@@ -99,10 +113,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 5,
-        "w": 4,
         "x": 4,
-        "y": 0
+        "y": 0,
+        "w": 4,
+        "h": 5
       },
       "targets": [
         {
@@ -127,7 +141,21 @@
         "showThresholdMarkers": true,
         "minVizWidth": 75,
         "minVizHeight": 75,
-        "sizing": "auto"
+        "sizing": "auto",
+        "barShape": "flat",
+        "barWidthFactor": 0.6,
+        "effects": {
+          "barGlow": false,
+          "centerGlow": false,
+          "gradient": true
+        },
+        "endpointMarker": "point",
+        "orientation": "auto",
+        "segmentCount": 1,
+        "segmentSpacing": 0.3,
+        "shape": "gauge",
+        "sparkline": true,
+        "textMode": "auto"
       },
       "fieldConfig": {
         "defaults": {
@@ -173,10 +201,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 5,
-        "w": 3,
         "x": 8,
-        "y": 0
+        "y": 0,
+        "w": 3,
+        "h": 5
       },
       "targets": [
         {
@@ -235,10 +263,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 5,
-        "w": 4,
         "x": 11,
-        "y": 0
+        "y": 0,
+        "w": 4,
+        "h": 5
       },
       "targets": [
         {
@@ -297,10 +325,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 5,
-        "w": 3,
         "x": 15,
-        "y": 0
+        "y": 0,
+        "w": 3,
+        "h": 5
       },
       "targets": [
         {
@@ -359,10 +387,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 5,
-        "w": 3,
         "x": 18,
-        "y": 0
+        "y": 0,
+        "w": 3,
+        "h": 5
       },
       "targets": [
         {
@@ -421,10 +449,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 5,
-        "w": 3,
         "x": 21,
-        "y": 0
+        "y": 0,
+        "w": 3,
+        "h": 5
       },
       "targets": [
         {
@@ -487,10 +515,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 7,
-        "w": 14,
         "x": 0,
-        "y": 5
+        "y": 5,
+        "w": 14,
+        "h": 7
       },
       "targets": [
         {
@@ -536,14 +564,15 @@
       ],
       "options": {
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "none"
         },
         "legend": {
-          "showLegend": true,
+          "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
-          "calcs": []
+          "showLegend": true
         }
       },
       "fieldConfig": {
@@ -640,10 +669,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 7,
-        "w": 10,
         "x": 14,
-        "y": 5
+        "y": 5,
+        "w": 10,
+        "h": 7
       },
       "targets": [
         {
@@ -659,14 +688,15 @@
       ],
       "options": {
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "none"
         },
         "legend": {
-          "showLegend": true,
+          "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
-          "calcs": []
+          "showLegend": true
         }
       },
       "fieldConfig": {
@@ -703,10 +733,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 12,
-        "w": 12,
         "x": 0,
-        "y": 12
+        "y": 12,
+        "w": 12,
+        "h": 12
       },
       "fieldConfig": {
         "defaults": {},
@@ -733,18 +763,11 @@
           "kind": "label",
           "label": "rack"
         },
-        "multiValueLabel": false,
         "layout": "rack",
-        "cellWidth": 14,
-        "nodesPerBlade": 1,
+        "cellWidth": 28,
         "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2",
         "slotsPerRack": 20,
-        "slotOverrides": "",
-        "colorMode": "state",
-        "gap": 2,
-        "centreRacks": true,
-        "showNodeCount": true,
-        "cellHeight": 14
+        "centreRacks": true
       },
       "targets": [
         {
@@ -815,10 +838,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 7,
-        "w": 8,
         "x": 0,
-        "y": 24
+        "y": 24,
+        "w": 8,
+        "h": 7
       },
       "targets": [
         {
@@ -904,10 +927,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 7,
-        "w": 8,
         "x": 8,
-        "y": 24
+        "y": 24,
+        "w": 8,
+        "h": 7
       },
       "targets": [
         {
@@ -993,10 +1016,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 7,
-        "w": 8,
         "x": 16,
-        "y": 24
+        "y": 24,
+        "w": 8,
+        "h": 7
       },
       "targets": [
         {
@@ -1082,10 +1105,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 12,
-        "w": 12,
         "x": 12,
-        "y": 12
+        "y": 12,
+        "w": 12,
+        "h": 12
       },
       "fieldConfig": {
         "defaults": {

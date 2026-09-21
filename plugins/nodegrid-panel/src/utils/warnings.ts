@@ -232,10 +232,17 @@ export function summarise(
     // Value mappings UI.
     const example = shown[0];
     if (example !== undefined) {
+      // Short on purpose. The strip sits above the grid and takes the height
+      // it needs, so a sentence that wraps to three lines in a half-width
+      // panel pushes the cells it annotates off the bottom - which is how one
+      // reader ended up deleting the state that produced it rather than the
+      // sentence. Value mappings, Regex, and the pattern: the three things a
+      // reader cannot guess. What to type in the text and colour fields is
+      // visible in the form itself.
       lines.push(
         bases.length === 1
-          ? `Add one under Value mappings — condition Regex, ${ruleFor(example)} — then set its text and colour.`
-          : `Add one per state under Value mappings — condition Regex, e.g. ${ruleFor(example)} — then set its text and colour.`
+          ? `Fix: Value mappings ▸ Regex ${ruleFor(example)}`
+          : `Fix: Value mappings ▸ Regex, one per state, e.g. ${ruleFor(example)}`
       );
     }
   }

@@ -106,7 +106,8 @@ describe('summarise', () => {
   it('prints a rule that can be pasted, for the state it just named', () => {
     const lines = summarise(model(1, 1), [], ['blocked', 'blocked!'], notes());
     expect(lines[0]).toContain('1 state matched no value mapping: blocked');
-    expect(lines[1]).toContain('condition Regex');
+    expect(lines[1]).toContain('Value mappings');
+    expect(lines[1]).toContain('Regex');
     expect(lines[1]).toContain('/^blocked.*$/');
   });
 

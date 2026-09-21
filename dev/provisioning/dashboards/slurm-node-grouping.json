@@ -26,7 +26,7 @@
       "gridPos": {
         "x": 0,
         "y": 0,
-        "w": 8,
+        "w": 6,
         "h": 7
       },
       "targets": [
@@ -55,11 +55,8 @@
           "kind": "label",
           "label": "rack"
         },
-        "multiValueLabel": false,
         "layout": "rack",
-        "cellWidth": 18,
-        "gap": 2,
-        "colorMode": "state"
+        "cellWidth": 20
       },
       "fieldConfig": {
         "defaults": {},
@@ -76,7 +73,7 @@
         "uid": "slurm-views-testdata"
       },
       "gridPos": {
-        "x": 8,
+        "x": 6,
         "y": 0,
         "w": 6,
         "h": 7
@@ -107,11 +104,8 @@
           "kind": "capture",
           "pattern": "^([a-z]+)"
         },
-        "multiValueLabel": false,
         "layout": "wrap",
-        "cellWidth": 18,
-        "gap": 2,
-        "colorMode": "state"
+        "cellWidth": 18
       },
       "fieldConfig": {
         "defaults": {},
@@ -128,9 +122,9 @@
         "uid": "slurm-views-testdata"
       },
       "gridPos": {
-        "x": 14,
+        "x": 12,
         "y": 0,
-        "w": 5,
+        "w": 6,
         "h": 7
       },
       "targets": [
@@ -158,11 +152,8 @@
         "grouping": {
           "kind": "none"
         },
-        "multiValueLabel": false,
         "layout": "wrap",
-        "cellWidth": 18,
-        "gap": 2,
-        "colorMode": "state"
+        "cellWidth": 18
       },
       "fieldConfig": {
         "defaults": {},
@@ -179,9 +170,9 @@
         "uid": "slurm-views-testdata"
       },
       "gridPos": {
-        "x": 19,
+        "x": 18,
         "y": 0,
-        "w": 5,
+        "w": 6,
         "h": 7
       },
       "targets": [
@@ -210,11 +201,8 @@
           "kind": "chunk",
           "size": 8
         },
-        "multiValueLabel": false,
         "layout": "wrap",
-        "cellWidth": 18,
-        "gap": 2,
-        "colorMode": "state"
+        "cellWidth": 18
       },
       "fieldConfig": {
         "defaults": {},
@@ -262,11 +250,8 @@
           "kind": "label",
           "label": "rack"
         },
-        "multiValueLabel": false,
         "layout": "wrap",
-        "cellWidth": 14,
-        "gap": 2,
-        "colorMode": "state"
+        "cellWidth": 20
       },
       "fieldConfig": {
         "defaults": {},
@@ -324,11 +309,8 @@
           "kind": "label",
           "label": "zone"
         },
-        "multiValueLabel": false,
         "layout": "wrap",
-        "cellWidth": 14,
-        "gap": 2,
-        "colorMode": "state"
+        "cellWidth": 20
       },
       "fieldConfig": {
         "defaults": {},
@@ -385,11 +367,8 @@
           "kind": "ranges",
           "table": "$racks"
         },
-        "multiValueLabel": false,
         "layout": "wrap",
-        "cellWidth": 14,
-        "gap": 2,
-        "colorMode": "state"
+        "cellWidth": 20
       },
       "fieldConfig": {
         "defaults": {},
@@ -437,11 +416,8 @@
           "kind": "ranges",
           "table": "cpu1: c[1-80]"
         },
-        "multiValueLabel": false,
         "layout": "wrap",
-        "cellWidth": 14,
-        "gap": 2,
-        "colorMode": "state"
+        "cellWidth": 18
       },
       "fieldConfig": {
         "defaults": {},
@@ -705,7 +681,8 @@
         "multiValueLabel": true,
         "queries": {
           "state": "A"
-        }
+        },
+        "cellWidth": 18
       },
       "targets": [
         {
@@ -760,14 +737,9 @@
           "kind": "label",
           "label": "rack"
         },
-        "multiValueLabel": false,
         "layout": "rack",
-        "cellWidth": 14,
-        "nodesPerBlade": 1,
+        "cellWidth": 18,
         "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2",
-        "slotOverrides": "",
-        "gap": 2,
-        "colorMode": "state",
         "slotsPerRack": 20
       },
       "fieldConfig": {
@@ -813,13 +785,9 @@
           "kind": "label",
           "label": "rack"
         },
-        "multiValueLabel": false,
         "layout": "rack",
-        "cellWidth": 14,
-        "nodesPerBlade": 1,
+        "cellWidth": 18,
         "slotOverrides": "cpu1: 12",
-        "gap": 2,
-        "colorMode": "state",
         "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2"
       },
       "fieldConfig": {
@@ -865,14 +833,10 @@
           "kind": "label",
           "label": "rack"
         },
-        "multiValueLabel": false,
         "layout": "rack",
-        "cellWidth": 14,
-        "nodesPerBlade": 1,
+        "cellWidth": 18,
         "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2",
         "slotOverrides": "gpu[1-2]: 26",
-        "gap": 2,
-        "colorMode": "state",
         "slotsPerRack": 20
       },
       "fieldConfig": {
@@ -918,14 +882,9 @@
           "kind": "label",
           "label": "rack"
         },
-        "multiValueLabel": false,
         "layout": "rack",
-        "cellWidth": 14,
-        "nodesPerBlade": 1,
+        "cellWidth": 18,
         "bladeOverrides": "cpu[1-4]: 4",
-        "slotOverrides": "",
-        "gap": 2,
-        "colorMode": "state",
         "slotsPerRack": 20
       },
       "fieldConfig": {

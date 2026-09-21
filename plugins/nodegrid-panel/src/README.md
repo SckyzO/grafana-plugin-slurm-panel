@@ -361,8 +361,7 @@ paste**, correctly delimited, spanning the value, and escaped:
 
 ```
 2 states matched no value mapping: blocked, completing (11 with flags)
-Add one per state under Value mappings — condition Regex, e.g.
-/^blocked.*$/ — then set its text and colour.
+Fix: Value mappings ▸ Regex, one per state, e.g. /^blocked.*$/
 ```
 
 ## Data links

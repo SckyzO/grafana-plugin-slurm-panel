@@ -21,12 +21,17 @@
       "gridPos": {
         "x": 0,
         "y": 0,
-        "w": 24,
-        "h": 17
+        "w": 12,
+        "h": 15
       },
       "options": {
         "mode": "markdown",
-        "content": "Nine colours for twenty-one states. The hue says what an operator does about the node; the shade inside a hue says the degree, never the decision. The exact state is always spelled out in the tooltip and in the accessible label, in every colour mode.\n\n| | Theme name | What it decides | States it covers |\n|---|---|---|---|\n| <span style=\"display:inline-block;width:30px;height:12px;border-radius:3px;vertical-align:middle;background:#96D98D\"></span> `#96D98D` | `light-green` | **it works** | `allocated, allocated+, allocated-` |\n| <span style=\"display:inline-block;width:30px;height:12px;border-radius:3px;vertical-align:middle;background:#73BF69\"></span> `#73BF69` | `green` | **it works** | `mixed, mix, mixed-` |\n| <span style=\"display:inline-block;width:30px;height:12px;border-radius:3px;vertical-align:middle;background:#56A64B\"></span> `#56A64B` | `semi-dark-green` | **it works** | `completing, comp` |\n| <span style=\"display:inline-block;width:30px;height:12px;border-radius:3px;vertical-align:middle;background:#5794F2\"></span> `#5794F2` | `blue` | **capacity sitting free** | `idle, idle-` |\n| <span style=\"display:inline-block;width:30px;height:12px;border-radius:3px;vertical-align:middle;background:#8AB8FF\"></span> `#8AB8FF` | `light-blue` | **capacity sitting free** | `planned, plnd` |\n| <span style=\"display:inline-block;width:30px;height:12px;border-radius:3px;vertical-align:middle;background:#8F3BB8\"></span> `#8F3BB8` | `dark-purple` | **a human claimed it** | `drained, draining, drng, maintenance, reserved, resv, npc, perfctrs` |\n| <span style=\"display:inline-block;width:30px;height:12px;border-radius:3px;vertical-align:middle;background:#FF9830\"></span> `#FF9830` | `orange` | **not answering, or moving** | `the * suffix, blocked, reboot` |\n| <span style=\"display:inline-block;width:30px;height:12px;border-radius:3px;vertical-align:middle;background:#C4162A\"></span> `#C4162A` | `dark-red` | **broken** | `down, fail, unknown, invalid` |\n| the theme's own ink | `text` | **absent from the floor** | `the ~ suffix, power_down, powering_up, future` |\n\nHex values are the dark theme's. Every colour is a Grafana theme name rather than a literal, so a light theme or a custom one resolves its own value and the panel follows the dashboard around it. Protanopia and deuteranopia collapse the red-green axis and keep light against dark, which is why what works is drawn light and what is broken is drawn dark: `green` against `red` measures \u0394E 32 to a full-colour reader and **4.6** to a deuteranope, while `light-green` against `dark-red` is 32 and **25**."
+        "content": "Nine colours for twenty-one states. The hue says what an operator does about the node; the shade inside a hue says the degree, never the decision. The exact state is always spelled out in the tooltip and in the accessible label, in every colour mode.\n\n| | Theme name | What it decides | States it covers |\n|---|---|---|---|\n| <span style=\"display:inline-block;width:30px;height:12px;border-radius:3px;vertical-align:middle;background:#96D98D\"></span> `#96D98D` | `light-green` | **it works** | `allocated, allocated+, allocated-` |\n| <span style=\"display:inline-block;width:30px;height:12px;border-radius:3px;vertical-align:middle;background:#73BF69\"></span> `#73BF69` | `green` | **it works** | `mixed, mix, mixed-` |\n| <span style=\"display:inline-block;width:30px;height:12px;border-radius:3px;vertical-align:middle;background:#56A64B\"></span> `#56A64B` | `semi-dark-green` | **it works** | `completing, comp` |\n| <span style=\"display:inline-block;width:30px;height:12px;border-radius:3px;vertical-align:middle;background:#5794F2\"></span> `#5794F2` | `blue` | **capacity sitting free** | `idle, idle-` |\n| <span style=\"display:inline-block;width:30px;height:12px;border-radius:3px;vertical-align:middle;background:#8AB8FF\"></span> `#8AB8FF` | `light-blue` | **capacity sitting free** | `planned, plnd` |\n| <span style=\"display:inline-block;width:30px;height:12px;border-radius:3px;vertical-align:middle;background:#8F3BB8\"></span> `#8F3BB8` | `dark-purple` | **a human claimed it** | `drained, draining, drng, maintenance, reserved, resv, npc, perfctrs` |\n| <span style=\"display:inline-block;width:30px;height:12px;border-radius:3px;vertical-align:middle;background:#FF9830\"></span> `#FF9830` | `orange` | **not answering, or moving** | `the * suffix, blocked, reboot` |\n| <span style=\"display:inline-block;width:30px;height:12px;border-radius:3px;vertical-align:middle;background:#C4162A\"></span> `#C4162A` | `dark-red` | **broken** | `down, fail, unknown, invalid` |\n| the theme's own ink | `text` | **absent from the floor** | `the ~ suffix, power_down, powering_up, future` |\n\nHex values are the dark theme's. Every colour is a Grafana theme name rather than a literal, so a light theme or a custom one resolves its own value and the panel follows the dashboard around it. Protanopia and deuteranopia collapse the red-green axis and keep light against dark, which is why what works is drawn light and what is broken is drawn dark: `green` against `red` measures \u0394E 32 to a full-colour reader and **4.6** to a deuteranope, while `light-green` against `dark-red` is 32 and **25**.",
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        }
       },
       "transparent": false,
       "description": "The nine colours and the six decisions they carry, as documented. Hand-written, so read it beside the panel to its right, which renders the same rules and cannot drift."
@@ -41,10 +46,10 @@
         "uid": "slurm-views-testdata"
       },
       "gridPos": {
-        "x": 0,
-        "y": 17,
-        "w": 24,
-        "h": 17
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 15
       },
       "targets": [
         {
@@ -72,11 +77,9 @@
           "kind": "label",
           "label": "status"
         },
-        "multiValueLabel": false,
         "layout": "rack",
-        "cellWidth": 40,
-        "colorMode": "state",
-        "cellHeight": 26,
+        "cellWidth": 29,
+        "cellHeight": 40,
         "showNodeCount": false
       },
       "fieldConfig": {
@@ -95,9 +98,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 34,
+        "y": 15,
         "w": 8,
-        "h": 20
+        "h": 16
       },
       "targets": [
         {
@@ -133,10 +136,8 @@
           "kind": "label",
           "label": "rack"
         },
-        "multiValueLabel": false,
         "layout": "wrap",
         "cellWidth": 13,
-        "gap": 2,
         "colorMode": "cpu"
       },
       "fieldConfig": {
@@ -181,9 +182,9 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 34,
+        "y": 15,
         "w": 8,
-        "h": 20
+        "h": 16
       },
       "targets": [
         {
@@ -219,10 +220,8 @@
           "kind": "label",
           "label": "rack"
         },
-        "multiValueLabel": false,
         "layout": "wrap",
         "cellWidth": 13,
-        "gap": 2,
         "colorMode": "mem"
       },
       "fieldConfig": {
@@ -267,9 +266,9 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 34,
+        "y": 15,
         "w": 8,
-        "h": 7
+        "h": 16
       },
       "targets": [
         {
@@ -305,10 +304,8 @@
           "kind": "label",
           "label": "rack"
         },
-        "multiValueLabel": false,
         "layout": "wrap",
         "cellWidth": 13,
-        "gap": 2,
         "colorMode": "gres"
       },
       "fieldConfig": {
@@ -353,9 +350,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 54,
+        "y": 31,
         "w": 12,
-        "h": 10
+        "h": 12
       },
       "targets": [
         {
@@ -380,16 +377,10 @@
           "kind": "label",
           "label": "rack"
         },
-        "multiValueLabel": false,
         "layout": "rack",
-        "cellWidth": 14,
-        "nodesPerBlade": 1,
+        "cellWidth": 28,
         "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2",
-        "slotOverrides": "",
-        "gap": 2,
-        "colorMode": "state",
-        "slotsPerRack": 20,
-        "cellHeight": 11
+        "slotsPerRack": 20
       },
       "fieldConfig": {
         "defaults": {},
@@ -407,9 +398,9 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 54,
+        "y": 31,
         "w": 12,
-        "h": 10
+        "h": 12
       },
       "targets": [
         {
@@ -434,17 +425,11 @@
           "kind": "label",
           "label": "rack"
         },
-        "multiValueLabel": false,
         "layout": "rack",
-        "cellWidth": 14,
-        "nodesPerBlade": 1,
+        "cellWidth": 28,
         "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2",
-        "slotOverrides": "",
-        "gap": 2,
-        "colorMode": "state",
         "slotsPerRack": 20,
-        "shapeChannel": true,
-        "cellHeight": 11
+        "shapeChannel": true
       },
       "fieldConfig": {
         "defaults": {},

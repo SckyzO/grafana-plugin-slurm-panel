@@ -51,8 +51,13 @@ const SHOTS = [
 const browser = await chromium.launch();
 
 for (const shot of SHOTS) {
+  // `viewport`, not `viewportSize`: newPage takes the former and silently
+  // ignores the latter, which left every shot below taken at Chromium's
+  // 1280px default while this said 1500. A panel crop hides that - the crop
+  // follows the content - so it went unnoticed until a dashboard shot was
+  // measured against the width it claimed.
   const page = await browser.newPage({
-    viewportSize: { width: 1500, height: 900 },
+    viewport: { width: 1500, height: 900 },
     deviceScaleFactor: 2,
   });
 
