@@ -25,7 +25,7 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 12,
+        "w": 6,
         "x": 0,
         "y": 0
       },
@@ -77,8 +77,8 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 12,
-        "x": 12,
+        "w": 6,
+        "x": 6,
         "y": 0
       },
       "targets": [
@@ -119,6 +119,57 @@
       }
     },
     {
+      "id": 4,
+      "type": "tomzone-slurm-panel",
+      "title": "Ungrouped",
+      "description": "One flat grid. Below a few hundred nodes this is often the honest answer: a grouping nobody asked for is structure you invented.",
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "slurm-views-testdata"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "slurm-views-testdata"
+          },
+          "scenarioId": "csv_content",
+          "csvContent": "node,rack,partition,status,Value\nc001,r001,cpu,idle,1\nc002,r001,cpu,mixed,1\nc003,r001,cpu,allocated,1\nc004,r001,cpu,idle,1\nc005,r001,cpu,drained,1\nc006,r001,cpu,mixed,1\nc007,r001,cpu,idle,1\nc008,r001,cpu,down,1\nc009,r002,cpu,idle,1\nc010,r002,cpu,mixed,1\nc011,r002,cpu,allocated,1\nc012,r002,cpu,idle,1\nc013,r002,cpu,drained,1\nc014,r002,cpu,mixed,1\nc015,r002,cpu,idle,1\nc016,r002,cpu,down,1\nc017,r003,cpu,idle,1\nc018,r003,cpu,mixed,1\nc019,r003,cpu,allocated,1\nc020,r003,cpu,idle,1\nc021,r003,cpu,drained,1\nc022,r003,cpu,mixed,1\nc023,r003,cpu,idle,1\nc024,r003,cpu,down,1\ng001,r004,gpu,idle,1\ng002,r004,gpu,drained,1\ng003,r004,gpu,mixed,1\ng004,r004,gpu,idle,1\ng005,r005,gpu,down,1\ng006,r005,gpu,idle,1\ng007,r005,gpu,mixed,1\ng008,r005,gpu,allocated,1\n"
+        }
+      ],
+      "options": {
+        "labels": {
+          "node": "node",
+          "state": "status",
+          "partition": "partition",
+          "gresType": "gres_type",
+          "reason": "reason"
+        },
+        "queries": {
+          "state": "A"
+        },
+        "grouping": {
+          "kind": "none"
+        },
+        "multiValueLabel": false,
+        "layout": "wrap",
+        "cellWidth": 18,
+        "gap": 2,
+        "colorMode": "state"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
       "id": 3,
       "type": "tomzone-slurm-panel",
       "title": "Grouped by ordinal chunk",
@@ -129,9 +180,9 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 12,
-        "x": 0,
-        "y": 6
+        "w": 6,
+        "x": 18,
+        "y": 0
       },
       "targets": [
         {
@@ -171,57 +222,6 @@
       }
     },
     {
-      "id": 4,
-      "type": "tomzone-slurm-panel",
-      "title": "Ungrouped",
-      "description": "One flat grid. Below a few hundred nodes this is often the honest answer: a grouping nobody asked for is structure you invented.",
-      "datasource": {
-        "type": "grafana-testdata-datasource",
-        "uid": "slurm-views-testdata"
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 12,
-        "y": 6
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "type": "grafana-testdata-datasource",
-            "uid": "slurm-views-testdata"
-          },
-          "scenarioId": "csv_content",
-          "csvContent": "node,rack,partition,status,Value\nc001,r001,cpu,idle,1\nc002,r001,cpu,mixed,1\nc003,r001,cpu,allocated,1\nc004,r001,cpu,idle,1\nc005,r001,cpu,drained,1\nc006,r001,cpu,mixed,1\nc007,r001,cpu,idle,1\nc008,r001,cpu,down,1\nc009,r002,cpu,idle,1\nc010,r002,cpu,mixed,1\nc011,r002,cpu,allocated,1\nc012,r002,cpu,idle,1\nc013,r002,cpu,drained,1\nc014,r002,cpu,mixed,1\nc015,r002,cpu,idle,1\nc016,r002,cpu,down,1\nc017,r003,cpu,idle,1\nc018,r003,cpu,mixed,1\nc019,r003,cpu,allocated,1\nc020,r003,cpu,idle,1\nc021,r003,cpu,drained,1\nc022,r003,cpu,mixed,1\nc023,r003,cpu,idle,1\nc024,r003,cpu,down,1\ng001,r004,gpu,idle,1\ng002,r004,gpu,drained,1\ng003,r004,gpu,mixed,1\ng004,r004,gpu,idle,1\ng005,r005,gpu,down,1\ng006,r005,gpu,idle,1\ng007,r005,gpu,mixed,1\ng008,r005,gpu,allocated,1\n"
-        }
-      ],
-      "options": {
-        "labels": {
-          "node": "node",
-          "state": "status",
-          "partition": "partition",
-          "gresType": "gres_type",
-          "reason": "reason"
-        },
-        "queries": {
-          "state": "A"
-        },
-        "grouping": {
-          "kind": "none"
-        },
-        "multiValueLabel": false,
-        "layout": "wrap",
-        "cellWidth": 18,
-        "gap": 2,
-        "colorMode": "state"
-      },
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      }
-    },
-    {
       "id": 5,
       "type": "tomzone-slurm-panel",
       "title": "Topology 1: relabelled Prometheus label",
@@ -232,9 +232,9 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 12,
+        "w": 8,
         "x": 0,
-        "y": 12
+        "y": 6
       },
       "targets": [
         {
@@ -284,9 +284,9 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 12,
-        "x": 12,
-        "y": 12
+        "w": 8,
+        "x": 8,
+        "y": 6
       },
       "targets": [
         {
@@ -355,9 +355,9 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 12,
-        "x": 0,
-        "y": 18
+        "w": 8,
+        "x": 16,
+        "y": 6
       },
       "targets": [
         {
@@ -406,10 +406,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 9,
-        "w": 24,
+        "h": 13,
+        "w": 12,
         "x": 0,
-        "y": 24
+        "y": 12
       },
       "targets": [
         {
@@ -449,6 +449,280 @@
       }
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "slurm-views-prom"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "options": {
+                "pattern": "/^.*\\*$/",
+                "result": {
+                  "color": "orange",
+                  "text": "not responding"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^.*~$/",
+                "result": {
+                  "color": "text",
+                  "text": "powered down"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^alloc.*-$/",
+                "result": {
+                  "color": "light-green",
+                  "text": "allocated, backfill"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^alloc.*$/",
+                "result": {
+                  "color": "light-green",
+                  "text": "allocated"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^mix.*-$/",
+                "result": {
+                  "color": "green",
+                  "text": "mixed, backfill"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^mix.*$/",
+                "result": {
+                  "color": "green",
+                  "text": "mixed"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^comp.*$/",
+                "result": {
+                  "color": "semi-dark-green",
+                  "text": "completing"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^idle.*-$/",
+                "result": {
+                  "color": "blue",
+                  "text": "idle, backfill"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^idle.*$/",
+                "result": {
+                  "color": "blue",
+                  "text": "idle"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^(planned|plnd).*$/",
+                "result": {
+                  "color": "light-blue",
+                  "text": "planned"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^(drain|drng).*$/",
+                "result": {
+                  "color": "dark-purple",
+                  "text": "drained"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^maint.*$/",
+                "result": {
+                  "color": "dark-purple",
+                  "text": "maintenance"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^res.*$/",
+                "result": {
+                  "color": "dark-purple",
+                  "text": "reserved"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^(npc|perfctrs).*$/",
+                "result": {
+                  "color": "dark-purple",
+                  "text": "perf counters"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^block.*$/",
+                "result": {
+                  "color": "orange",
+                  "text": "blocked"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^reboot.*$/",
+                "result": {
+                  "color": "orange",
+                  "text": "reboot"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^(down|fail).*$/",
+                "result": {
+                  "color": "dark-red",
+                  "text": "down"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^unk.*$/",
+                "result": {
+                  "color": "dark-red",
+                  "text": "unknown"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^inval.*$/",
+                "result": {
+                  "color": "dark-red",
+                  "text": "invalid registration"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^pow.*$/",
+                "result": {
+                  "color": "text",
+                  "text": "power management"
+                }
+              },
+              "type": "regex"
+            },
+            {
+              "options": {
+                "pattern": "/^fut.*$/",
+                "result": {
+                  "color": "text",
+                  "text": "future"
+                }
+              },
+              "type": "regex"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
+      "id": 41,
+      "options": {
+        "grouping": {
+          "kind": "label",
+          "label": "partition"
+        },
+        "labels": {
+          "gresType": "gres_type",
+          "node": "node",
+          "partition": "partition",
+          "reason": "reason",
+          "state": "status"
+        },
+        "layout": "wrap",
+        "multiValueLabel": true,
+        "queries": {
+          "state": "A"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "slurm-views-prom"
+          },
+          "expr": "slurm_node_status",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Grouped by partition",
+      "type": "tomzone-slurm-panel",
+      "description": "The one grouping key a node can hold several values of at once. Grouping > Group by > Label on partition, with Multi-value label switched on: a node in cpu and debug is drawn in both, so the cells add up to more than the cluster - 617 over 540 here, and that is the option working rather than a miscount. Leave Multi-value label off and each node is drawn once, in whichever partition sorts first, which is tidier and answers a different question. This is also the one key the panel cannot get from a rack label: a partition is a scheduling decision, not a place, and the same cabinet usually carries several."
+    },
+    {
       "id": 9,
       "type": "tomzone-slurm-panel",
       "title": "Blade density by rack",
@@ -458,10 +732,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 9,
-        "w": 24,
+        "h": 10,
+        "w": 8,
         "x": 0,
-        "y": 33
+        "y": 25
       },
       "targets": [
         {
@@ -511,10 +785,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 9,
-        "w": 24,
-        "x": 0,
-        "y": 42
+        "h": 10,
+        "w": 8,
+        "x": 8,
+        "y": 25
       },
       "targets": [
         {
@@ -564,9 +838,9 @@
       },
       "gridPos": {
         "h": 10,
-        "w": 24,
-        "x": 0,
-        "y": 51
+        "w": 8,
+        "x": 16,
+        "y": 25
       },
       "targets": [
         {
@@ -617,9 +891,9 @@
       },
       "gridPos": {
         "h": 9,
-        "w": 24,
+        "w": 8,
         "x": 0,
-        "y": 61
+        "y": 35
       },
       "targets": [
         {
@@ -670,9 +944,9 @@
       },
       "gridPos": {
         "h": 9,
-        "w": 24,
-        "x": 0,
-        "y": 70
+        "w": 8,
+        "x": 8,
+        "y": 35
       },
       "targets": [
         {

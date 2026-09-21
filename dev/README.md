@@ -189,7 +189,7 @@ query on that live cluster, and the panel plugin's own e2e suite
 (`the three ways to get a topology, proven against the same live data`)
 asserts each of them.
 
-The dashboard's thirteen panels, in provisioned order:
+The dashboard's fourteen panels, in provisioned order:
 
 | # | Panel | Grouping | Data |
 |---|---|---|---|
@@ -206,6 +206,7 @@ The dashboard's thirteen panels, in provisioned order:
 | 11 | Filtered to CPU racks | Label `rack`, query narrowed to `rack=~"cpu.*"` | Prometheus, four cabinets of the nine |
 | 40 | Slot declaration too small | Label `rack`, `cpu1` declared at twelve slots | Prometheus, the full 540-node cluster |
 | 12 | Shape channel | Label `rack` | Prometheus, the one grid in this stack with `shapeChannel: true` |
+| 41 | Grouped by partition | Label `partition`, `multiValueLabel: true` | Prometheus, 617 cells over 540 nodes - a node in two partitions is drawn in both |
 
 Panels 1-4 are the same 32-node CSV, grouped four ways, and need nothing
 running but Grafana. The rest read this dev cluster's live Prometheus:
