@@ -15,8 +15,8 @@ RUN := $(COMPOSE) run --rm tools
 
 .DEFAULT_GOAL := help
 .PHONY: help image deps install lock build watch test lint typecheck react-detect \
-        check scrape e2e up down restart logs logs-once shell screenshots package sign \
-        validate clean
+        format format-check check scrape e2e up down restart logs logs-once shell \
+        screenshots package sign validate clean
 
 help: ## Show this help
 	@awk 'BEGIN { FS = ":.*## "; print "Targets:\n" } \
@@ -57,6 +57,16 @@ test: build ## Run the unit and contract tests
 lint: deps ## Lint
 	$(RUN) pnpm lint
 
+format: deps ## Reformat the panel sources in place
+	$(RUN) pnpm format
+
+format-check: deps ## Fail if any panel source is unformatted
+	@# Prettier is configured in plugins/nodegrid-panel only, so this covers
+	@# the panel and not packages/core. It reads .gitignore as well as
+	@# .prettierignore, which is why dist/ and playwright-report/ stay out of
+	@# it without a second ignore file to keep in step.
+	$(RUN) pnpm format:check
+
 typecheck: deps ## Typecheck
 	$(RUN) pnpm typecheck
 
@@ -72,7 +82,7 @@ react-detect: build ## Check the panel for React 19 incompatibilities
 	@# either side gains support for the other.
 	$(RUN) sh -c 'cd plugins/nodegrid-panel && pnpm exec react-detect'
 
-check: lint typecheck test build react-detect ## Everything CI runs before e2e
+check: format-check lint typecheck test build react-detect ## Everything CI runs before e2e
 
 scrape: build ## Generate the Prometheus scrape config from dev/relabel/racks.txt
 	@# Running the generator here is what keeps it from being dead code: it is
