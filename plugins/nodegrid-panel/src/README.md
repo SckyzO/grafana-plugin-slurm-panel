@@ -156,6 +156,10 @@ Wrap and a sled (about half the cell width) in Rack. **Layout > Cell
 gap** is the space between cells, which is what actually makes a dense grid
 readable, not a border.
 
+**Layout > Node count** prints how many nodes each group holds, under its
+name. On by default, in both layouts. The group's name is always drawn; only
+the count is yours to hide.
+
 Rack mode draws each cabinet as a stack of sleds, bottom to top the way a
 rack is actually read. Nodes from one physical chassis stay adjacent, since
 a group's nodes are always sorted by the trailing number in their name, but
@@ -165,6 +169,13 @@ chassis, so a site running quads or duos draws one row per blade instead of
 one per node. **Slots per rack** says how tall the cabinet itself is, in
 chassis positions: a property of the hardware, not of what is currently
 plugged into it, and set separately.
+
+**Layout > Centre the cabinets** centres the row of cabinets in the panel
+instead of packing it against the left edge. Off by default, and offered only
+in the Rack layout — Wrap is one column, so there is nothing to centre. Left
+packing is the default because a floor plan read twice should have its
+cabinets in the same place both times, and a centred row moves every cabinet
+whenever the panel is resized or a group disappears from the query.
 
 ### Blades
 
