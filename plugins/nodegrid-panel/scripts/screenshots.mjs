@@ -56,9 +56,13 @@ for (const shot of SHOTS) {
   // 1280px default while this said 1500. A panel crop hides that - the crop
   // follows the content - so it went unnoticed until a dashboard shot was
   // measured against the width it claimed.
+  // 2560 because that is the width the dev dashboards are laid out for: a
+  // 27-inch 2K, which is what a cluster gets watched on. Render them at 1500
+  // and the panels that hold nine cabinets clip, so the catalogue's own
+  // images would show the panel failing at something it does not fail at.
   const page = await browser.newPage({
-    viewport: { width: 1500, height: 900 },
-    deviceScaleFactor: 2,
+    viewport: { width: 2560, height: 1400 },
+    deviceScaleFactor: 1,
   });
 
   // The same reload the e2e suite needs, for the same reason: a panel whose
@@ -87,12 +91,12 @@ for (const shot of SHOTS) {
     const needed = await page.evaluate(() => {
       const panels = [...document.querySelectorAll('[data-viz-panel-key]')];
       const bottom = Math.max(...panels.map((el) => el.getBoundingClientRect().bottom));
-      return Math.ceil(bottom + window.scrollY + 16);
+      return Math.ceil(bottom + window.scrollY + 90);
     });
-    await page.setViewportSize({ width: 1500, height: needed });
+    await page.setViewportSize({ width: 2560, height: needed });
     await page.waitForTimeout(1500);
     await page.screenshot({ path: `${OUT}/${shot.name}.png` });
-    console.log(`${shot.name}.png  dashboard 1500x${needed} css  ${cells} cells`);
+    console.log(`${shot.name}.png  dashboard 2560x${needed} css  ${cells} cells`);
     await page.close();
     continue;
   }

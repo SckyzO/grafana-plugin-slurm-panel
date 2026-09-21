@@ -64,6 +64,18 @@ hosting several repositories nor recognisable in `docker compose ls`.
 
 ## The dashboards
 
+They are laid out for a 2560px-wide screen — a 27-inch 2K, which is what a
+cluster gets watched on. That is a decision, not an accident, and it is
+worth knowing before anyone "fixes" a panel that looks clipped: measured
+across widths, nothing overflows at 2560, four panels do at 1920 and eleven
+at 1280. A cabinet is drawn in pixels while Grafana's grid is twenty-four
+proportional columns, so a floor of nine cabinets needs a real width and
+cannot shrink to fit — narrowing the cells barely helps, because most
+cabinets are floored by the width of their own group header rather than by
+their cells. Shrink the cells to suit a laptop and the dashboards stop
+showing what the panel does at the size it is meant for.
+
+
 Three, provisioned into the **Slurm** folder, one per axis of the panel:
 what it looks like in service, how a cell gets its colour, and how the grid
 is structured. **Production example** reads Prometheus outright; the other
