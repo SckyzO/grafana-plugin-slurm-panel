@@ -8,7 +8,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "refresh": "",
+  "refresh": "30s",
   "time": {
     "from": "now-5m",
     "to": "now"
@@ -24,10 +24,10 @@
         "uid": "slurm-views-testdata"
       },
       "gridPos": {
-        "h": 6,
-        "w": 6,
         "x": 0,
-        "y": 0
+        "y": 0,
+        "w": 8,
+        "h": 7
       },
       "targets": [
         {
@@ -76,10 +76,10 @@
         "uid": "slurm-views-testdata"
       },
       "gridPos": {
-        "h": 6,
+        "x": 8,
+        "y": 0,
         "w": 6,
-        "x": 6,
-        "y": 0
+        "h": 7
       },
       "targets": [
         {
@@ -128,10 +128,10 @@
         "uid": "slurm-views-testdata"
       },
       "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 12,
-        "y": 0
+        "x": 14,
+        "y": 0,
+        "w": 5,
+        "h": 7
       },
       "targets": [
         {
@@ -179,10 +179,10 @@
         "uid": "slurm-views-testdata"
       },
       "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 18,
-        "y": 0
+        "x": 19,
+        "y": 0,
+        "w": 5,
+        "h": 7
       },
       "targets": [
         {
@@ -231,10 +231,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 6,
-        "w": 8,
         "x": 0,
-        "y": 6
+        "y": 7,
+        "w": 8,
+        "h": 6
       },
       "targets": [
         {
@@ -283,10 +283,10 @@
         "uid": "-- Mixed --"
       },
       "gridPos": {
-        "h": 6,
-        "w": 8,
         "x": 8,
-        "y": 6
+        "y": 7,
+        "w": 8,
+        "h": 6
       },
       "targets": [
         {
@@ -354,10 +354,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 6,
-        "w": 8,
         "x": 16,
-        "y": 6
+        "y": 7,
+        "w": 8,
+        "h": 6
       },
       "targets": [
         {
@@ -406,10 +406,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 13,
-        "w": 12,
         "x": 0,
-        "y": 12
+        "y": 13,
+        "w": 12,
+        "h": 15
       },
       "targets": [
         {
@@ -683,10 +683,10 @@
         }
       },
       "gridPos": {
-        "h": 13,
-        "w": 12,
         "x": 12,
-        "y": 12
+        "y": 13,
+        "w": 12,
+        "h": 15
       },
       "id": 41,
       "options": {
@@ -732,10 +732,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 10,
-        "w": 8,
         "x": 0,
-        "y": 25
+        "y": 28,
+        "w": 12,
+        "h": 10
       },
       "targets": [
         {
@@ -785,10 +785,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 10,
-        "w": 8,
-        "x": 8,
-        "y": 25
+        "x": 12,
+        "y": 28,
+        "w": 12,
+        "h": 10
       },
       "targets": [
         {
@@ -837,10 +837,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 10,
-        "w": 8,
-        "x": 16,
-        "y": 25
+        "x": 0,
+        "y": 38,
+        "w": 12,
+        "h": 11
       },
       "targets": [
         {
@@ -890,10 +890,10 @@
         "uid": "slurm-views-prom"
       },
       "gridPos": {
-        "h": 9,
-        "w": 8,
-        "x": 0,
-        "y": 35
+        "x": 12,
+        "y": 38,
+        "w": 12,
+        "h": 9
       },
       "targets": [
         {
@@ -927,60 +927,6 @@
         "gap": 2,
         "colorMode": "state",
         "slotsPerRack": 20
-      },
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      }
-    },
-    {
-      "id": 12,
-      "type": "tomzone-slurm-panel",
-      "title": "Shape channel",
-      "description": "The one panel here with Display > Shape channel switched on, so the option is visible somewhere rather than only documented. Every other grid in this stack uses the default, which is off. A notch or a diagonal cut marks the states whose fill is not safe on its own: measured on this palette, \"not responding\" against \"allocated\" is Delta E 4.8 under protanopia, below any legal floor, and no arrangement of the six theme hues cleared it. Most readers do not need this and the notches cost legibility at fourteen pixels, which is why it is a switch and not a default - but a reader with a red-green deficiency, or one reading in greyscale or in print, should reach for it.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "slurm-views-prom"
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 8,
-        "x": 8,
-        "y": 35
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "slurm_node_status",
-          "instant": true,
-          "format": "table"
-        }
-      ],
-      "options": {
-        "labels": {
-          "node": "node",
-          "state": "status",
-          "partition": "partition",
-          "gresType": "gres_type",
-          "reason": "reason"
-        },
-        "queries": {
-          "state": "A"
-        },
-        "grouping": {
-          "kind": "label",
-          "label": "rack"
-        },
-        "multiValueLabel": false,
-        "layout": "rack",
-        "cellWidth": 14,
-        "nodesPerBlade": 1,
-        "bladeOverrides": "cpu[1-4]: 4\nbigmem[1-2]: 3\nvisu1: 1\ngpu[1-2]: 2",
-        "slotOverrides": "",
-        "gap": 2,
-        "colorMode": "state",
-        "slotsPerRack": 20,
-        "shapeChannel": true
       },
       "fieldConfig": {
         "defaults": {},

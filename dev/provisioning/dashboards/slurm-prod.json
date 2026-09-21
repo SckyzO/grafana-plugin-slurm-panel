@@ -1,6 +1,6 @@
 {
   "uid": "slurm-prod",
-  "title": "Production",
+  "title": "Production example",
   "tags": [
     "slurm",
     "production"

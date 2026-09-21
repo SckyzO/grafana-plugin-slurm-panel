@@ -10,7 +10,7 @@ make e2e     # browser tests against it
 make down    # stop, keeping the volumes
 ```
 
-Grafana on <http://localhost:3000>, dashboard **Slurm / Node grid**;
+Grafana on <http://localhost:3000>, dashboard **Slurm / Production example**;
 Prometheus on <http://localhost:9090>. `make up` prints the address it
 actually published, which is not always that one. See below.
 
@@ -32,7 +32,7 @@ from compose rather than assuming it.
 
 ## A dashboard's uid, its panel ids and its titles are a contract
 
-The browser suite navigates by `uid`, as in `/d/slurm-node-grid/...`, isolates
+The browser suite navigates by `uid`, as in `/d/slurm-prod/...`, isolates
 a panel with `viewPanel=<id>`, which is the panel's own `id` field rather than
 its position, and resolves a panel by its **title**. Position is the one thing
 it never depends on, which is what lets a dashboard be resized or gain a panel
@@ -64,29 +64,26 @@ hosting several repositories nor recognisable in `docker compose ls`.
 
 ## The dashboards
 
-Five, provisioned into the **Slurm** folder. Three read Prometheus outright,
-and two mix both: **scenarios** stages four panels on data it carries itself
-and reads live Prometheus in a fifth, and **grouping and layout** puts four
-hand-written CSV panels beside six that read this dev cluster.
+Three, provisioned into the **Slurm** folder, one per axis of the panel:
+what it looks like in service, how a cell gets its colour, and how the grid
+is structured. **Production example** reads Prometheus outright; the other
+two mix a hand-written CSV with live queries.
 
 | Dashboard | Source | What it is for |
 |---|---|---|
 | Production | Prometheus | The one to open first, in five bands: how much of the cluster still works and how much of it is working, where the nodes have been over the window, the floor itself, capacity per partition, and the reasons no stock panel can join. Every count goes through `count by (node)` before it is counted |
-| Node grid | Prometheus | The overview: one panel, every node, grouped by the `rack` label `make scrape` relabels in (falls back to a capture, a join or a range table on a Prometheus without that relabelling) |
-| Utilisation | Prometheus | State beside CPU, memory and GPU occupancy, driven by Thresholds |
-| Scenarios | CSV + Prometheus | Hand-written situations that render identically every time, plus one live panel showing what a real, unstaged distribution looks like |
+| Colour and state | CSV + Prometheus | How a cell gets its colour: the twenty-one states and the nine colours they resolve to, the same states drawn live, the three continuous modes that colour by occupancy instead, and the shape channel with and without |
 | Grouping and layout | CSV + Prometheus | The same nodes grouped four ways on a hand-written CSV, plus the three live routes to a real topology proven against this dev cluster, plus one panel that deliberately covers less, to prove the coverage warning |
 
-The **scenarios** dashboard uses Grafana's built-in TestData source for its
-first four panels, so there is no exporter, no Prometheus and no scrape
-timing between the dashboard and what those four show, which is what makes
-a scenario reproducible rather than merely seeded. Its fifth panel is the
-opposite by design: it reads this dev cluster's live Prometheus, grouped by
-rack, against the synthetic exporter's default `PROFILE=production` shape, so
-the reader can see what a real, unstaged distribution looks like next to the
-staged ones, and it is the one panel on that dashboard that carries no
-warnings, on purpose. The first four panels of
-**grouping and layout** use the same CSV and the same TestData source, for
+**Colour and state** puts the twenty-one states and the nine colours they
+resolve to side by side: a table of the mappings the panel ships, and the
+same states drawn live beside it, so a rule and its result are read
+together. Under them the three continuous modes, which colour by occupancy
+through Thresholds rather than by state at all, and then the shape channel
+with and without over one floor.
+
+The first four panels of
+**grouping and layout** use Grafana's built-in TestData source, for
 the same reason: a side-by-side comparison of Label, Capture, Chunk and
 None should render identically on every run, not drift with whatever the
 synthetic exporter happens to generate that session. That dashboard's other

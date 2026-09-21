@@ -30,21 +30,21 @@ const OUT = new URL('../src/img', import.meta.url).pathname;
  * only becomes visible there.
  */
 const SHOTS = [
-  { name: 'node-grid-by-rack', uid: 'slurm-node-grid', panel: 1 },
-  { name: 'node-grid-states', uid: 'slurm-node-scenarios', panel: 1 },
-  { name: 'node-grid-gpu', uid: 'slurm-node-utilisation', panel: 4 },
+  { name: 'node-grid-by-rack', uid: 'slurm-prod', panel: 10 },
+  { name: 'node-grid-states', uid: 'slurm-node-colour', panel: 2 },
+  { name: 'node-grid-gpu', uid: 'slurm-node-colour', panel: 5 },
   { name: 'node-grid-heights', uid: 'slurm-node-grouping', panel: 1 },
   { name: 'node-grid-blades', uid: 'slurm-node-grouping', panel: 9 },
   // A matched pair: panels 9 and 12 of the grouping dashboard are the same
   // floor over the same data, and the only option that differs between them
   // is the shape channel. Taking one from each of two dashboards, as this
   // did, compared two different racks and proved nothing.
-  { name: 'node-grid-noshapes', uid: 'slurm-node-grouping', panel: 9 },
-  { name: 'node-grid-shapes', uid: 'slurm-node-grouping', panel: 12 },
+  { name: 'node-grid-noshapes', uid: 'slurm-node-colour', panel: 6 },
+  { name: 'node-grid-shapes', uid: 'slurm-node-colour', panel: 7 },
   { name: 'node-grid-unplaced', uid: 'slurm-node-grouping', panel: 8 },
   { name: 'node-grid-filtered', uid: 'slurm-node-grouping', panel: 11 },
   { name: 'node-grid-join', uid: 'slurm-node-grouping', panel: 6 },
-  { name: 'node-grid-tooltip', uid: 'slurm-node-grid', panel: 1, hover: true },
+  { name: 'node-grid-tooltip', uid: 'slurm-prod', panel: 10, hover: true },
   { name: 'node-grid-dashboard', uid: 'slurm-prod' },
 ];
 

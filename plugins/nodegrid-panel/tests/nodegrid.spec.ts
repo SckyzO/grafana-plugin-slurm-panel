@@ -6,11 +6,13 @@ import type { Locator, Page } from '@playwright/test';
  *
  * `make up` already waits for Prometheus to return node data before handing
  * the stack over, so this should succeed on the first attempt. It reloads
- * anyway, because the failure it guards cannot be waited out: these dashboards
- * set no auto-refresh, so a panel whose first query runs against an
- * unscraped Prometheus renders empty and stays empty. Nothing re-queries, so a
- * longer assertion timeout buys nothing — only a reload does. That is what
- * made this suite flake roughly one run in ten.
+ * anyway, because a panel whose first query runs against an unscraped
+ * Prometheus renders empty, and the dashboards refresh every 30s — longer
+ * than any assertion here waits. Raising a timeout past the refresh interval
+ * would work and would slow every run down to pay for the rare one; a reload
+ * costs nothing when the data is already there. Before those dashboards had a
+ * refresh at all an empty render never healed, which is what made this suite
+ * flake roughly one run in ten.
  *
  * The anchor is a group that must exist once the data is there; it is the
  * cheapest proof that the panel drew something rather than nothing.
@@ -63,7 +65,7 @@ test.describe('the node grid renders against a real Grafana', () => {
     readProvisionedDashboard,
     page,
   }) => {
-    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-grid.json' });
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-prod.json' });
     await gotoDashboardPage(dashboard);
 
     await expect(page.getByTestId('slurm-node-grid')).toBeVisible({ timeout: 15_000 });
@@ -81,7 +83,7 @@ test.describe('the node grid renders against a real Grafana', () => {
     // module.ts, Grafana never applies the panel's value mappings and every
     // cell comes out the same colour — a defect no unit test can see because
     // the engine has no notion of a field config or a rendered colour.
-    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-grid.json' });
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-prod.json' });
     await gotoDashboardPage(dashboard);
 
     const mapped = page.locator('[data-testid^="node-cell-"][data-mapped="true"]');
@@ -99,7 +101,7 @@ test.describe('the node grid renders against a real Grafana', () => {
   });
 
   test('spells a state out in words in the tooltip', async ({ gotoDashboardPage, readProvisionedDashboard, page }) => {
-    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-grid.json' });
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-prod.json' });
     await gotoDashboardPage(dashboard);
 
     const cells = page.locator('[data-testid^="node-cell-"]');
@@ -122,7 +124,7 @@ test.describe('the node grid renders against a real Grafana', () => {
     // which states happen to be unmapped this week. The scenarios dashboard
     // carries one state that is not a Slurm state at all and never will be,
     // standing in for whatever a future Slurm introduces.
-    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-scenarios.json' });
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-colour.json' });
     await gotoDashboardPage(dashboard);
 
     const strip = page.getByTestId('panel-warnings').first();
@@ -148,7 +150,7 @@ test.describe('the node grid renders against a real Grafana', () => {
 
 test.describe('the panel supplies its own state colours', () => {
   test('colours a dashboard that configures no value mappings at all', async ({ page }) => {
-    // slurm-node-scenarios.json carries no fieldConfig.defaults.mappings: not
+    // slurm-node-colour.json carries no fieldConfig.defaults.mappings: not
     // an empty array, the key is absent. Anything coloured here came from the
     // plugin's own standardOptions default, which is the whole claim. Written
     // against a build without that default first, where it failed with 0
@@ -162,15 +164,17 @@ test.describe('the panel supplies its own state colours', () => {
     // nothing left to mount - and "the defaults reach more than one panel" is
     // what this test means anyway, which a sum never quite said.
     const panels: Array<[number, string]> = [
-      [1, 'All Slurm states, default mappings'],
-      [2, 'Rack layout'],
-      [4, 'Drain storm with reasons'],
-      [5, 'Production cluster snapshot'],
+      // Only the panels that colour by state: 3, 4 and 5 resolve their fill
+      // through Thresholds instead, so their cells carry no mapping at all
+      // and counting them here would measure the wrong thing.
+      [2, 'All Slurm states, default mappings'],
+      [6, 'Shape channel off, the default'],
+      [7, 'Shape channel on'],
     ];
 
     const coloursSeen = new Set<string>();
     for (const [id, title] of panels) {
-      await page.goto(`/d/slurm-node-scenarios/scenarios?viewPanel=${id}`);
+      await page.goto(`/d/slurm-node-colour/colour?viewPanel=${id}`);
       const cells = page.locator('[data-testid^="node-cell-"]');
       // One compound selector, not `.locator(cell).locator(mapped)` — the
       // second form searches for a mapped element *inside* each cell and
@@ -205,7 +209,7 @@ test.describe('the continuous colour modes', () => {
     gotoDashboardPage,
     readProvisionedDashboard,
   }) => {
-    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-utilisation.json' });
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-colour.json' });
     const dashboardPage = await gotoDashboardPage(dashboard);
 
     // Every synthetic node reports cpu_alloc and cpu_total, so every cell has
@@ -300,7 +304,7 @@ test.describe('the options editor', () => {
     // editor. A provisioned panel of that type opens the same options pane on
     // every version in the matrix, and the panel being installed at all is
     // already proven by the fifteen other tests that render it.
-    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-grid.json' });
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-prod.json' });
     const panelEditPage = await gotoPanelEditPage({ dashboard, id: '1' });
 
     // A bare `getByRole('button', { name: /Value mappings/i })` is ambiguous:
@@ -317,9 +321,10 @@ test.describe('the options editor', () => {
     readProvisionedDashboard,
     page,
   }) => {
-    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-grid.json' });
-    // "Nodes by rack" (id 1 in slurm-node-grid.json) is the dashboard's only panel.
-    await gotoPanelEditPage({ dashboard, id: '1' });
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-prod.json' });
+    // "Nodes by rack", id 10, is the floor plan and the only grid on this
+    // dashboard; ids 1 to 9 and 11 to 14 are stock Grafana panels.
+    await gotoPanelEditPage({ dashboard, id: '10' });
 
     await expect(page.getByTestId('grouping-preview')).toBeVisible({ timeout: 15_000 });
   });
@@ -336,7 +341,7 @@ test.describe('the primary overview dashboard groups by the rack it now has', ()
     // names are flat (c1..c160, g1..g80): every node on this dashboard's one
     // panel rendered as ungrouped until the grouping was switched to the
     // relabelled `rack` label.
-    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-grid.json' });
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-prod.json' });
     await gotoDashboardPage(dashboard);
 
     await expect(page.getByTestId('node-group-cpu1')).toBeVisible({ timeout: 15_000 });
@@ -344,22 +349,23 @@ test.describe('the primary overview dashboard groups by the rack it now has', ()
   });
 });
 
-test.describe('the utilisation dashboard groups the same nine racks on every panel', () => {
+test.describe('the occupancy panels group the same nine racks', () => {
   test('shows all nine named racks and drops nothing into ungrouped, on every panel', async ({
     gotoDashboardPage,
     readProvisionedDashboard,
   }) => {
-    // Regression coverage for these four panels' grouping: this branch
-    // switched State, CPU, Memory and GPU occupancy from a capture pattern
-    // ('^(r\\d+)') to the relabelled `rack` label. The colour test above only
-    // checks fill behaviour on panels 2 and 4 and would keep passing even if
-    // the grouping key were wrong — every panel would just render one
-    // "ungrouped" block instead of nine named racks, with nothing failing.
-    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-utilisation.json' });
+    // Regression coverage for the occupancy panels' grouping: this once
+    // switched from a capture pattern ('^(r\\d+)') to the relabelled `rack`
+    // label. The colour test above checks fill behaviour and would keep
+    // passing even if the grouping key were wrong — every panel would just
+    // render one "ungrouped" block instead of nine named racks, with nothing
+    // failing. Only the three occupancy panels are listed: the fourth grid on
+    // this dashboard groups by state, so it has no racks to count.
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-colour.json' });
     const dashboardPage = await gotoDashboardPage(dashboard);
 
     const racks = ['cpu1', 'cpu2', 'cpu3', 'cpu4', 'bigmem1', 'bigmem2', 'visu1', 'gpu1', 'gpu2'];
-    for (const title of ['Node state', 'CPU utilisation by node', 'Memory utilisation by node', 'GPU utilisation by node']) {
+    for (const title of ['CPU utilisation by node', 'Memory utilisation by node', 'GPU utilisation by node']) {
       const grid = await gridIn(dashboardPage, title);
       for (const key of racks) {
         await expect(grid.getByTestId(`node-group-${key}`)).toBeVisible({ timeout: 15_000 });
@@ -474,7 +480,7 @@ test.describe('a cabinet holds every sled it draws', () => {
     // border and padding to compute its own expectation would only prove the
     // formula agrees with itself. This reads both back from the frame's own
     // computed style instead, against a real Chromium layout.
-    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-node-grid.json' });
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-prod.json' });
     await gotoDashboardPage(dashboard);
 
     const frame = page.getByTestId('node-group-cpu1').getByTestId('rack-frame');

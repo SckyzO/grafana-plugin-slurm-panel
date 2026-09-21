@@ -35,11 +35,11 @@ label and the state query's `refId`, the required query. The optional facets
 above, and the `partition` / `gresType` / `reason` label names, have no
 field of their own in that editor; bind them by editing the panel's JSON
 model instead (panel menu ▸ **Edit panel JSON**) or in a dashboard's
-provisioning file. `dev/provisioning/dashboards/slurm-node-grid.json` in this
+provisioning file. `dev/provisioning/dashboards/slurm-prod.json` in this
 plugin's repository is a worked example: its panel's `options.queries` and
 `options.labels` bind every role except the two memory facets, which the
 **Memory occupancy** panel of
-`dev/provisioning/dashboards/slurm-node-utilisation.json` shows instead.
+`dev/provisioning/dashboards/slurm-node-colour.json` shows instead.
 
 Hovering a cell reads everything the panel joined for that node, whichever
 facets the queries bound:

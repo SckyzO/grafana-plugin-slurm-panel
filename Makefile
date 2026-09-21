@@ -122,9 +122,8 @@ up: scrape ## Start Grafana, Prometheus and the synthetic exporter
 	@#
 	@# Waiting on the query rather than on the three parts is what keeps this
 	@# honest: any fourth thing that has to be true is covered too. These
-	@# dashboards refresh every 30s, so an empty first render eventually heals
-	@# on a screen — but a test asserting inside 15s has already failed, and
-	@# the grouping dashboard, which sets no refresh at all, never heals.
+	@# dashboards all refresh every 30s, so an empty first render eventually
+	@# heals on a screen — but a test asserting inside 15s has already failed.
 	@$(RUN) sh -c 'for _ in $$(seq 1 90); do \
 	    curl -sf -u admin:admin -H "Content-Type: application/json" -X POST \
 	      http://grafana:3000/api/ds/query \
