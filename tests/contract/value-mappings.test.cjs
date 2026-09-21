@@ -40,7 +40,7 @@ const rule = (pattern, text, color) => ({
 // that first-match-wins holds. The rules are the input; Grafana is the
 // subject. The three trap tests further down supply their own fixtures
 // precisely because they must not depend on what we happen to ship.
-const SHIPPED_RULES = require('../../plugins/nodegrid-panel/src/defaults/mappings.json');
+const SHIPPED_RULES = require('../../plugins/nodegrid-panel/data/mappings.json');
 const SHIPPED = SHIPPED_RULES.map((r) => rule(r.pattern, r.text, r.color));
 
 // The colour the source declares for a value, resolved by the same

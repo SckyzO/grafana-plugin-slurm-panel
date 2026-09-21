@@ -1,6 +1,6 @@
 import { MappingType } from '@grafana/data';
 import type { ValueMapping } from '@grafana/data';
-import RULES from './mappings.json';
+import RULES from '../../data/mappings.json';
 
 const rule = (pattern: string, text: string, color: string): ValueMapping => ({
   type: MappingType.RegexToText,
@@ -56,12 +56,18 @@ const rule = (pattern: string, text: string, color: string): ValueMapping => ({
  *
  * Colours are theme names, resolved by the theme. No hex.
  *
- * The rules themselves live in `mappings.json`, beside this file, because the
+ * The rules themselves live in `data/mappings.json`, outside `src/`, because the
  * contract suite has to assert against the list that actually ships. It used
  * to keep a transcribed copy, and the copy drifted: same patterns, a wholly
  * different palette, and a discrimination threshold calibrated on colours no
  * build had produced in months. Data in one file both readers load cannot
  * drift; a transcription always can.
+ *
+ * Outside `src/` on purpose. The scaffolded bundler copies every `.json`
+ * under `src/` into the archive verbatim, so keeping it there shipped a copy
+ * of these rules as a loose file the built `module.js` never reads — an
+ * operator editing it in an installed plugin would change nothing. Webpack
+ * inlines it from here just the same.
  *
  * **The order is behaviour, not presentation.** Grafana applies mappings in
  * order and the first match wins, so `/^idle.*-$/` has to precede
