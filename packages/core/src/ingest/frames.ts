@@ -9,6 +9,10 @@ const SCALAR_FACETS: ScalarFacet[] = ['cpuAlloc', 'cpuTotal', 'memAlloc', 'memTo
 const framesFor = (frames: MinimalFrame[], refId: string | undefined): MinimalFrame[] =>
   refId === undefined ? [] : frames.filter((f) => f.refId === refId);
 
+/** The refIds the dashboard actually returned, for naming in a warning. */
+const refIdsPresent = (frames: MinimalFrame[]): string[] =>
+  [...new Set(frames.map((f) => f.refId).filter((r): r is string => r !== undefined))].sort();
+
 const toNumber = (value: unknown): number | undefined =>
   typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 
@@ -28,6 +32,22 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
   // Per-node set of label keys seen with more than one differing value;
   // see the comment where this is populated, below.
   const ambiguousLabelKeys = new Map<string, Set<string>>();
+
+  // A bound refId that matches no returned frame is invisible otherwise: the
+  // filter yields nothing, every loop body is skipped, and even the
+  // no-identity push below never runs because it lives inside the loop. On
+  // the state query that surfaced as "No nodes. Check that the state query
+  // returns a node label" — advice about a query that was returning one
+  // perfectly well under a different letter. On a facet it surfaced as
+  // nothing at all, and the facet refIds have no editor field, so they are
+  // typed as raw JSON where a stale letter survives longest.
+  const present = refIdsPresent(frames);
+  const returned = present.length === 0 ? 'nothing' : present.join(', ');
+  for (const [role, refId] of Object.entries(queries) as Array<[string, string | undefined]>) {
+    if (refId !== undefined && framesFor(frames, refId).length === 0) {
+      warnings.push(warn('no-such-query', refId, `no query "${refId}" for ${role}; the dashboard returned ${returned}`));
+    }
+  }
 
   // --- identity and state -------------------------------------------------
   for (const frame of framesFor(frames, queries.state)) {
@@ -102,10 +122,28 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
     const seen = new Map<string, Set<number>>();
 
     for (const frame of framesFor(frames, refId)) {
-      for (const sample of toSamples(frame)) {
+      // The same check the state query has had all along. A facet query
+      // written `sum by (instance)` rather than `by (node)`, or behind a
+      // relabel that renames the node label, drops every sample here — and
+      // the README promises this line without qualifying it to one query.
+      const samples = toSamples(frame);
+      if (samples.length > 0 && samples.every((s) => s.labels[labels.node] === undefined)) {
+        warnings.push(warn('no-identity', frame.refId, 'no node label or column'));
+        continue;
+      }
+      for (const sample of samples) {
         const name = sample.labels[labels.node];
+        if (name === undefined) {
+          continue;
+        }
+        // Split from the name check rather than sharing one guard with it:
+        // a Prometheus NaN — a stale marker, a topk that returned fewer
+        // series, a division by zero in the query — is a different fact from
+        // a missing label, and one `continue` for both could never name
+        // either.
         const value = toNumber(sample.value);
-        if (name === undefined || value === undefined) {
+        if (value === undefined) {
+          warnings.push(warn('ambiguous-scalar', refId, `${name} returned a value that is not a finite number for ${facet}`));
           continue;
         }
         const bucket = seen.get(name) ?? new Set<number>();

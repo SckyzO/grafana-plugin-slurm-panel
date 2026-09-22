@@ -200,3 +200,94 @@ describe('labels inherited from Object.prototype', () => {
     expect(node?.labels['rack']).toBeUndefined();
   });
 });
+
+describe('a query binding that matches nothing the dashboard returned', () => {
+  // Invisible before: the filter yields no frames, so every loop body is
+  // skipped — including the no-identity push, which lives inside the loop.
+  // The panel then said "No nodes. Check that the state query returns a node
+  // label" about a query that was returning one, under a different letter.
+  const frameB = (): MinimalFrame[] => [
+    {
+      refId: 'B',
+      fields: [{ name: 'Value', type: 'number', labels: { node: 'c1', status: 'idle' }, values: [1] }],
+    },
+  ];
+
+  it('names the refId that is missing, and the ones that are there', () => {
+    const { warnings } = ingest({ frames: frameB(), queries: { state: 'A' }, labels: LABELS });
+    const kinds = warnings.filter((w) => w.kind === 'no-such-query');
+    expect(kinds).toHaveLength(1);
+    expect(kinds[0]?.detail).toContain('no query "A" for state');
+    expect(kinds[0]?.detail).toContain('the dashboard returned B');
+  });
+
+  it('names a facet binding too, which has no editor field to check it against', () => {
+    const { warnings } = ingest({
+      frames: frameB(),
+      queries: { state: 'B', cpuAlloc: 'C' },
+      labels: LABELS,
+    });
+    const missing = warnings.filter((w) => w.kind === 'no-such-query');
+    expect(missing).toHaveLength(1);
+    expect(missing[0]?.detail).toContain('no query "C" for cpuAlloc');
+  });
+
+  it('says nothing when every binding resolves', () => {
+    const { warnings } = ingest({ frames: frameB(), queries: { state: 'B' }, labels: LABELS });
+    expect(warnings.filter((w) => w.kind === 'no-such-query')).toEqual([]);
+  });
+});
+
+describe('a facet query that carries no node identity', () => {
+  // The state query has been reporting this since the beginning; the six
+  // facet queries dropped every sample in silence, while the shipped README
+  // promises the line without qualifying it to one query.
+  const frames = (): MinimalFrame[] => [
+    {
+      refId: 'A',
+      fields: [{ name: 'Value', type: 'number', labels: { node: 'c1', status: 'idle' }, values: [1] }],
+    },
+    {
+      // `sum by (instance)` rather than `by (node)`: a real and common shape.
+      refId: 'B',
+      fields: [{ name: 'Value', type: 'number', labels: { instance: 'c1:9341' }, values: [8] }],
+    },
+  ];
+
+  it('reports the facet query rather than dropping it', () => {
+    const { warnings } = ingest({
+      frames: frames(),
+      queries: { state: 'A', cpuAlloc: 'B' },
+      labels: LABELS,
+    });
+    const skipped = warnings.filter((w) => w.kind === 'no-identity');
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0]?.refId).toBe('B');
+  });
+
+  it('still says nothing about a facet query that does carry identity', () => {
+    const ok: MinimalFrame[] = [
+      { refId: 'A', fields: [{ name: 'Value', type: 'number', labels: { node: 'c1', status: 'idle' }, values: [1] }] },
+      { refId: 'B', fields: [{ name: 'Value', type: 'number', labels: { node: 'c1' }, values: [8] }] },
+    ];
+    const { nodes, warnings } = ingest({ frames: ok, queries: { state: 'A', cpuAlloc: 'B' }, labels: LABELS });
+    expect(warnings.filter((w) => w.kind === 'no-identity')).toEqual([]);
+    expect(nodes[0]?.facets.cpuAlloc).toBe(8);
+  });
+});
+
+describe('a facet value that is not a finite number', () => {
+  it('is reported rather than sharing one silent continue with a missing label', () => {
+    // A Prometheus NaN: a stale marker, a topk that returned fewer series, a
+    // division by zero in the query. Indistinguishable from a missing node
+    // label before, because one guard covered both.
+    const frames: MinimalFrame[] = [
+      { refId: 'A', fields: [{ name: 'Value', type: 'number', labels: { node: 'c1', status: 'idle' }, values: [1] }] },
+      { refId: 'B', fields: [{ name: 'Value', type: 'number', labels: { node: 'c1' }, values: [Number.NaN] }] },
+    ];
+    const { nodes, warnings } = ingest({ frames, queries: { state: 'A', cpuAlloc: 'B' }, labels: LABELS });
+    expect(warnings.some((w) => w.detail.includes('not a finite number'))).toBe(true);
+    // And the facet stays unset rather than taking a made-up number.
+    expect(nodes[0]?.facets.cpuAlloc).toBeUndefined();
+  });
+});

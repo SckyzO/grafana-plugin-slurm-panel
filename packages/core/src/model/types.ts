@@ -71,7 +71,7 @@ export interface SlurmNode {
   facets: NodeFacets;
 }
 
-export type IngestWarningKind = 'no-identity' | 'ambiguous-scalar';
+export type IngestWarningKind = 'no-identity' | 'ambiguous-scalar' | 'no-such-query';
 
 export interface IngestWarning {
   kind: IngestWarningKind;
