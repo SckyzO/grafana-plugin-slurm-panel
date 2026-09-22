@@ -97,27 +97,37 @@ const DASHBOARD_WIDTH = 2560;
  * what the dashboard shot uses anyway.
  */
 async function panelBox(uid, id, hover) {
-  const full = { width: DASHBOARD_WIDTH, height: 1400 };
   if (id === undefined) {
-    return full;
+    return { width: DASHBOARD_WIDTH, height: 1400 };
   }
+  // Thrown, not defaulted. The fallback here used to be the full viewport,
+  // which is silently the exact defect the rest of this function exists to
+  // prevent: a renumbered panel or an unreachable API produced a normal
+  // success line and an image framed at 2560, with the floor plan adrift in
+  // a panel twice the width it is laid out for. These images ship to the
+  // Grafana catalogue, and the cells-drawn check below already chooses to
+  // fail rather than write a wrong file; this one now agrees with it.
+  let pos;
   try {
     const r = await (await fetch(`${url}/api/dashboards/uid/${uid}`)).json();
-    const pos = r?.dashboard?.panels?.find((x) => x.id === id)?.gridPos;
-    if (!(pos?.w > 0 && pos?.h > 0)) {
-      return full;
-    }
-    return {
-      width: Math.round((DASHBOARD_WIDTH * pos.w) / 24),
-      // Grafana's grid row is 30px with an 8px gutter, so h rows measure
-      // 38h - 8. Plus the kiosk chrome above the panel, and more again for a
-      // hover shot, whose tooltip is drawn outside the panel and would be
-      // clipped by a viewport cut to it exactly.
-      height: 38 * pos.h - 8 + 64 + (hover ? 320 : 0),
-    };
-  } catch {
-    return full;
+    pos = r?.dashboard?.panels?.find((x) => x.id === id)?.gridPos;
+  } catch (e) {
+    throw new Error(`could not read dashboard ${uid} to size panel ${id}: ${e.message}`);
   }
+  if (pos === undefined) {
+    throw new Error(`dashboard ${uid} has no panel ${id} — was it renumbered?`);
+  }
+  if (!(pos.w > 0 && pos.h > 0)) {
+    throw new Error(`panel ${id} of ${uid} has no usable gridPos: ${JSON.stringify(pos)}`);
+  }
+  return {
+    width: Math.round((DASHBOARD_WIDTH * pos.w) / 24),
+    // Grafana's grid row is 30px with an 8px gutter, so h rows measure
+    // 38h - 8. Plus the kiosk chrome above the panel, and more again for a
+    // hover shot, whose tooltip is drawn outside the panel and would be
+    // clipped by a viewport cut to it exactly.
+    height: 38 * pos.h - 8 + 64 + (hover ? 320 : 0),
+  };
 }
 
 const browser = await chromium.launch();
