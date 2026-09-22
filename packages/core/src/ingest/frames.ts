@@ -47,7 +47,20 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
     for (const { sample, name } of identified) {
       let node = nodes.get(name);
       if (!node) {
-        node = { name, state: sample.labels[labels.state] ?? '', partitions: [], labels: {}, facets: emptyFacets() };
+        node = {
+          name,
+          state: sample.labels[labels.state] ?? '',
+          partitions: [],
+          // No prototype: the loop below asks `node.labels[key] === undefined`
+          // to mean "not seen yet", and on a plain object literal a label
+          // legally named `constructor` or `toString` answers with an
+          // inherited member instead. The key was then treated as a
+          // disagreement and dropped for good — four legal Prometheus label
+          // names lost in silence, and a grouping keyed on one of them drew a
+          // function where the group name goes.
+          labels: Object.create(null) as Record<string, string>,
+          facets: emptyFacets(),
+        };
         nodes.set(name, node);
       }
       // Several series per node is the normal case, not an error: one per

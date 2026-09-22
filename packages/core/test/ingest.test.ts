@@ -139,3 +139,64 @@ describe('ingest joins the facets that carry no partition label', () => {
     });
   });
 });
+
+describe('labels inherited from Object.prototype', () => {
+  // Prometheus label names are [a-zA-Z_][a-zA-Z0-9_]*, which admits
+  // `constructor`, `toString`, `valueOf` and `hasOwnProperty`. Read off a
+  // plain object literal those are not `undefined` — they are the inherited
+  // members — so the "two samples disagree" branch fires on the first sample
+  // and drops the key for good. Four legal labels vanish, silently, and a
+  // grouping keyed on one of them puts a function where a group name goes:
+  // `data-testid="node-group-function Object() { [native code] }"`.
+  //
+  // Verified in the audit that this is NOT prototype pollution: assigning a
+  // string to `__proto__` is inert, and Object.prototype was untouched. It is
+  // a typing unsoundness — TypeScript promises `string | undefined` under
+  // noUncheckedIndexedAccess and the runtime can hand back a Function.
+  const INHERITED = ['constructor', 'toString', 'valueOf', 'hasOwnProperty'];
+
+  const frames = (): MinimalFrame[] => [
+    {
+      refId: 'A',
+      fields: [
+        {
+          name: 'Value',
+          type: 'number',
+          labels: {
+            node: 'c1',
+            status: 'idle',
+            rack: 'r1',
+            ...Object.fromEntries(INHERITED.map((k) => [k, `v-${k}`])),
+          },
+          values: [1],
+        },
+      ],
+    },
+  ];
+
+  it('keeps a label whose name collides with an inherited member', () => {
+    const node = ingest({ frames: frames(), queries: QUERIES, labels: LABELS }).nodes[0];
+    expect(node).toBeDefined();
+    for (const key of INHERITED) {
+      expect(node?.labels[key]).toBe(`v-${key}`);
+    }
+  });
+
+  it('hands back strings, not functions, for those names', () => {
+    const node = ingest({ frames: frames(), queries: QUERIES, labels: LABELS }).nodes[0];
+    for (const key of INHERITED) {
+      expect(typeof node?.labels[key]).toBe('string');
+    }
+  });
+
+  it('still drops a label two samples disagree on', () => {
+    // The guard must not cost the behaviour it sits next to: `rack` differing
+    // between two series of one node is genuinely ambiguous and still goes.
+    const two: MinimalFrame[] = [
+      { refId: 'A', fields: [{ name: 'Value', type: 'number', labels: { node: 'c1', status: 'idle', rack: 'r1' }, values: [1] }] },
+      { refId: 'A', fields: [{ name: 'Value', type: 'number', labels: { node: 'c1', status: 'idle', rack: 'r2' }, values: [1] }] },
+    ];
+    const node = ingest({ frames: two, queries: QUERIES, labels: LABELS }).nodes[0];
+    expect(node?.labels['rack']).toBeUndefined();
+  });
+});
