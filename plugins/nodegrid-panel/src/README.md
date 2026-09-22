@@ -466,6 +466,17 @@ A strip above the grid names, rather than hides, anything the panel could
 not fully resolve:
 
 - a query skipped for carrying no node identity;
+- no node carrying the configured state label at all, which draws the whole
+  grid as hollow rings and otherwise looks exactly like a cluster of unmapped
+  states, e.g.
+  `No node carries a "state" label: every cell is drawn hollow. Data > State label.`;
+- a continuous **Colour by** mode whose facet no node carries — the three
+  non-state modes are bound in the panel JSON, so choosing one without binding
+  it draws every cell empty. Only when _no_ node has it: partial coverage is
+  normal and stays silent;
+- a grouping source that cannot work at all, named as itself rather than
+  blamed on the node names: a capture pattern that does not compile, or an
+  **Ordinals per group** of zero;
 - states that matched no value mapping (capped at eight named, then
   `and N more`), together with the exact rule to paste under Value mappings
   to fix it;

@@ -14,8 +14,9 @@ cabinet slot.
 Everything the panel cannot resolve, it names: a query with no node identity, a
 state matching no value mapping (with the rule to paste), nodes no grouping
 source could place, a declared group that matched nothing, a continuous colour
-mode whose facet no node carries, and a label that would group the data more
-completely than the source in use.
+mode whose facet no node carries, a state label nothing arrives under, a
+capture pattern that does not compile, a chunk size of zero, and a label that
+would group the data more completely than the source in use.
 
 A cell's tooltip leads with the hostname and, on a node carrying one, ends with
 the drain reason under its own heading.
