@@ -92,6 +92,39 @@ test.describe('the node grid renders against a real Grafana', () => {
     await expect(tooltip.getByText('State', { exact: true })).toBeVisible();
   });
 
+  test('draws the hostname larger than the facts under it', async ({
+    gotoDashboardPage,
+    readProvisionedDashboard,
+    page,
+  }) => {
+    // Measured in a real browser on purpose: jsdom does not resolve the
+    // emotion class, so a unit test here could only assert that a rule was
+    // written, not that a reader sees a difference.
+    //
+    // The step comes from the type scale, not the weight: this theme's
+    // fontWeightBold is 500, the same number as fontWeightMedium, so a
+    // bolder hostname is not something the tokens can express.
+    const dashboard = await readProvisionedDashboard({ fileName: 'slurm-prod.json' });
+    await gotoDashboardPage(dashboard);
+
+    const cells = page.locator('[data-testid^="node-cell-"]');
+    await expect.poll(() => cells.count(), { timeout: 15_000 }).toBeGreaterThan(0);
+
+    await cells.first().hover();
+    const tooltip = page.getByRole('tooltip');
+    await expect(tooltip).toBeVisible({ timeout: 15_000 });
+
+    const name = tooltip.getByTestId('tooltip-node-name');
+    await expect(name).toBeVisible();
+
+    const px = (locator: typeof name) => locator.evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize));
+
+    const nameSize = await px(name);
+    const factSize = await px(tooltip.getByText('State', { exact: true }));
+
+    expect(nameSize).toBeGreaterThan(factSize);
+  });
+
   test('colours a dashboard that configures no value mappings at all', async ({ page }) => {
     // slurm-node-colour.json carries no fieldConfig.defaults.mappings: not
     // an empty array, the key is absent. Anything coloured here came from the
