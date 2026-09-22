@@ -158,9 +158,9 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
               overflowing: slots.layout.overflowing,
             }
           : undefined,
-        options.colorMode
+        { colorMode: options.colorMode, stateLabel: options.labels.state }
       ),
-    [model, warnings, unmapped, grouping, options.layout, options.colorMode, blades, slots]
+    [model, warnings, unmapped, grouping, options.layout, options.colorMode, options.labels.state, blades, slots]
   );
 
   if (model.groups.length === 0) {

@@ -1,7 +1,7 @@
 import { collectUnmapped, summarise, ruleFor, groupingNotes } from './warnings';
 import type { DisplayProcessor } from '@grafana/data';
 import { buildGroups, parseRangeTable, UNGROUPED } from '@slurm-views/core';
-import type { GroupedModel, SlurmNode } from '@slurm-views/core';
+import type { GroupedModel, KeySource, SlurmNode } from '@slurm-views/core';
 import type { GroupingNotes, SlotNotes } from './warnings';
 
 const node = (name: string, state: string): SlurmNode => ({
@@ -593,6 +593,47 @@ describe('groupingNotes', () => {
   });
 });
 
+describe('summarise, a grouping source that cannot work at all', () => {
+  // Both of these used to print a confident, wrong cause. Worse than
+  // silence: the sentence named the node names, which were fine, and the
+  // reader went off to debug them.
+  const orphaned = (source: KeySource, count: number) =>
+    summarise({ groups: [], nodeCount: count, cellCount: count }, [], [], {
+      source,
+      orphans: Array.from({ length: count }, (_, i) => `c${i + 1}`),
+      emptyGroups: [],
+      problems: [],
+    });
+
+  it('says a capture pattern does not compile, rather than that the nodes did not match it', () => {
+    const line = orphaned({ kind: 'capture', pattern: '^(unclosed' }, 3).join(' ');
+    expect(line).toContain('is not a valid regular expression');
+    expect(line).toContain('^(unclosed');
+    // The old sentence, which was false: nothing was ever run against them.
+    expect(line).not.toContain('did not match the capture pattern');
+  });
+
+  it('still blames the names when the pattern compiles and genuinely matches nothing', () => {
+    const line = orphaned({ kind: 'capture', pattern: '^(zzz)' }, 3).join(' ');
+    expect(line).toContain('did not match the capture pattern');
+    expect(line).not.toContain('not a valid regular expression');
+  });
+
+  it('says the chunk size is zero, rather than that the names carry no number', () => {
+    // Number.parseInt('') is NaN and the editor coerced that to 0, which is
+    // what clearing the field to retype it persisted into the panel JSON.
+    const line = orphaned({ kind: 'chunk', size: 0 }, 3).join(' ');
+    expect(line).toContain('Ordinals per group is 0');
+    expect(line).not.toContain('no number in their names');
+  });
+
+  it('still blames the names when the size is usable and a name carries no ordinal', () => {
+    const line = orphaned({ kind: 'chunk', size: 8 }, 3).join(' ');
+    expect(line).toContain('no number in their names');
+    expect(line).not.toContain('Ordinals per group is');
+  });
+});
+
 describe('summarise, the continuous colour modes', () => {
   // The panel's stated principle is that it names what it cannot resolve. It
   // held everywhere except here: three of the four Colour by modes are driven
@@ -603,6 +644,8 @@ describe('summarise, the continuous colour modes', () => {
     buildGroups(nodes, { kind: 'none' }, { multiValueLabel: false });
 
   const bare = (name: string): SlurmNode => node(name, 'idle');
+
+  const display = (colorMode: 'state' | 'cpu' | 'mem' | 'gres') => ({ colorMode, stateLabel: 'status' });
 
   const withCpu = (name: string): SlurmNode => ({
     ...node(name, 'idle'),
@@ -615,24 +658,25 @@ describe('summarise, the continuous colour modes', () => {
   });
 
   it('says so when a continuous mode is chosen and no node carries the facet', () => {
-    const lines = summarise(grouped([bare('c1'), bare('c2')]), [], [], notes(), undefined, undefined, 'cpu');
+    const lines = summarise(grouped([bare('c1'), bare('c2')]), [], [], notes(), undefined, undefined, display('cpu'));
     expect(lines.join(' ')).toContain('Colour by CPU, but no node carries that data');
   });
 
   it('names the mode that was actually chosen', () => {
     const nodes = [bare('c1')];
-    expect(summarise(grouped(nodes), [], [], notes(), undefined, undefined, 'mem').join(' ')).toContain(
+    expect(summarise(grouped(nodes), [], [], notes(), undefined, undefined, display('mem')).join(' ')).toContain(
       'Colour by Memory'
     );
-    expect(summarise(grouped(nodes), [], [], notes(), undefined, undefined, 'gres').join(' ')).toContain(
+    expect(summarise(grouped(nodes), [], [], notes(), undefined, undefined, display('gres')).join(' ')).toContain(
       'Colour by GPU'
     );
   });
 
   it('stays silent on partial coverage, which is normal and documented', () => {
-    // "a node with no GPU is drawn empty, not coloured" is a shipped
-    // screenshot caption. A line that fired here would be permanent noise on
-    // every mixed floor, which is worse than the silence it replaced.
+    // A node in a continuous mode with no data for that facet is drawn as a
+    // hollow ring rather than filled, deliberately and documented
+    // in docs/design/DESIGN.md. A line that fired here would be permanent
+    // noise on every mixed floor, which is worse than the silence it replaced.
     const lines = summarise(
       grouped([withGpu('g1'), bare('c1'), bare('c2')]),
       [],
@@ -640,23 +684,60 @@ describe('summarise, the continuous colour modes', () => {
       notes(),
       undefined,
       undefined,
-      'gres'
+      display('gres')
     );
     expect(lines.join(' ')).not.toContain('no node carries');
   });
 
+  it('says so when no node carries the configured state label', () => {
+    // The exact twin of the colour-mode case, and the one the panel was
+    // silent on longest. Mistype Data > State label — `state` where the
+    // exporter emits `status` — and identity still resolves, because that
+    // comes from a different label, so every node ingests with a blank
+    // state. collectUnmapped skips a blank state on purpose, the
+    // no-identity warning never fires, and the colour-mode line is guarded
+    // on a continuous mode while State is the default. A whole cluster of
+    // hollow rings, from one wrong character, with nothing said.
+    const blank = [node('c1', ''), node('c2', '')];
+    const lines = summarise(grouped(blank), [], [], notes(), undefined, undefined, {
+      colorMode: 'state',
+      stateLabel: 'state',
+    });
+    expect(lines.join(' ')).toContain('No node carries a "state" label');
+  });
+
+  it('names the label that was configured, not the one the exporter uses', () => {
+    const blank = [node('c1', '')];
+    const lines = summarise(grouped(blank), [], [], notes(), undefined, undefined, {
+      colorMode: 'state',
+      stateLabel: 'node_state',
+    });
+    expect(lines.join(' ')).toContain('"node_state"');
+  });
+
+  it('stays silent when some nodes have a state, which is a data question not a config one', () => {
+    const mixed = [node('c1', ''), node('c2', 'idle')];
+    const lines = summarise(grouped(mixed), [], [], notes(), undefined, undefined, display('state'));
+    expect(lines.join(' ')).not.toContain('is drawn hollow');
+  });
+
+  it('stays silent when every node has a state', () => {
+    const lines = summarise(grouped([bare('c1')]), [], [], notes(), undefined, undefined, display('state'));
+    expect(lines.join(' ')).not.toContain('is drawn hollow');
+  });
+
   it('stays silent in State mode, where the facets are irrelevant', () => {
-    const lines = summarise(grouped([bare('c1')]), [], [], notes(), undefined, undefined, 'state');
+    const lines = summarise(grouped([bare('c1')]), [], [], notes(), undefined, undefined, display('state'));
     expect(lines.join(' ')).not.toContain('no node carries');
   });
 
   it('stays silent when the facet is bound', () => {
-    const lines = summarise(grouped([withCpu('c1')]), [], [], notes(), undefined, undefined, 'cpu');
+    const lines = summarise(grouped([withCpu('c1')]), [], [], notes(), undefined, undefined, display('cpu'));
     expect(lines.join(' ')).not.toContain('no node carries');
   });
 
   it('stays silent when the panel has no nodes at all, which the empty state already covers', () => {
-    const lines = summarise(grouped([]), [], [], notes(), undefined, undefined, 'cpu');
+    const lines = summarise(grouped([]), [], [], notes(), undefined, undefined, display('cpu'));
     expect(lines.join(' ')).not.toContain('no node carries');
   });
 });

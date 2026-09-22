@@ -194,6 +194,32 @@ const listOf = (names: string[]): string => {
  * in that the panel could not place them, but the cause is not, and the cause is the
  * only part that tells the operator what to go and fix.
  */
+/**
+ * The grouping source is not merely unproductive but unusable, and why.
+ *
+ * Re-tested here rather than reported from the core: `makeKeyFn` deliberately
+ * swallows a `RegExp` constructor error, because the pattern is typed by hand
+ * into a panel option and is invalid most of the time it is being typed, and
+ * blanking the grid mid-keystroke would be worse. That is the right call for
+ * the drawing and the wrong one for the strip, so the strip asks the same
+ * question again once, off the render path.
+ */
+const configurationFault = (source: KeySource): string | undefined => {
+  if (source.kind === 'capture') {
+    try {
+      new RegExp(source.pattern);
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e);
+      return `Capture pattern "${source.pattern}" is not a valid regular expression, so no node could be grouped: ${detail}`;
+    }
+    return undefined;
+  }
+  if (source.kind === 'chunk' && !(Number.isInteger(source.size) && source.size > 0)) {
+    return `Ordinals per group is ${source.size}; it must be a whole number above zero. No node could be grouped.`;
+  }
+  return undefined;
+};
+
 const causeOf = (source: KeySource, plural: boolean): string => {
   switch (source.kind) {
     case 'ranges':
@@ -216,9 +242,20 @@ const COLOUR_MODE_LABEL: Record<Exclude<ColorMode, 'state'>, string> = {
   gres: 'GPU',
 };
 
-// Seven parameters, three optional, is past the point where an options object
-// would read better. Left positional because reshaping it touches thirty call
-// sites; the reshape is worth its own change, not a rider on this one.
+/**
+ * The two display-time facts the warning pass needs that the model does not
+ * carry: what the reader asked to be coloured by, and what label the state
+ * was supposed to arrive under. Grouped rather than passed as two more
+ * positional arguments — seven parameters is already past the point where an
+ * options object would read better, and reshaping the rest touches
+ * forty-three call sites, which is its own change rather than a rider.
+ */
+export interface DisplayNotes {
+  colorMode: ColorMode;
+  /** The configured Data > State label, named back when nothing arrives under it. */
+  stateLabel: string;
+}
+
 export function summarise(
   model: GroupedModel,
   warnings: IngestWarning[],
@@ -226,9 +263,25 @@ export function summarise(
   grouping: GroupingNotes,
   blades?: BladeNotes,
   slots?: SlotNotes,
-  colorMode?: ColorMode
+  display?: DisplayNotes
 ): string[] {
   const lines: string[] = [];
+  const allNodes = model.groups.flatMap((g) => g.nodes);
+
+  // A node whose state label resolved to nothing gets an empty string, and an
+  // empty string is skipped by collectUnmapped — deliberately, since it is
+  // not an unmapped state. Nothing else spoke for it either: identity
+  // resolves from a different label, so the no-identity warning stays quiet,
+  // and the colour-mode line below is guarded on a continuous mode while
+  // State is the default. The result was a whole cluster drawn as hollow
+  // rings, in silence, from one mistyped option.
+  //
+  // Only when *no* node has a state, for the same reason as the colour-mode
+  // line: a few blank states among many is a data question, not a
+  // configuration one.
+  if (display !== undefined && allNodes.length > 0 && allNodes.every((n) => n.state === '')) {
+    lines.push(`No node carries a "${display.stateLabel}" label: every cell is drawn hollow. ` + 'Data > State label.');
+  }
 
   // Three of the four Colour by modes are driven by facets that have no field
   // in the options editor — they are bound by editing the panel JSON. Pick one
@@ -240,11 +293,11 @@ export function summarise(
   // Only when *no* node carries the facet. Partial coverage is normal and
   // documented — a node with no GPU is drawn empty on purpose — so a line that
   // fired on partial coverage would be permanent noise on any mixed floor.
-  if (colorMode !== undefined && colorMode !== 'state') {
-    const nodes = model.groups.flatMap((g) => g.nodes);
-    if (nodes.length > 0 && nodes.every((n) => fractionFor(n, colorMode) === undefined)) {
+  if (display !== undefined && display.colorMode !== 'state') {
+    const mode = display.colorMode;
+    if (allNodes.length > 0 && allNodes.every((n) => fractionFor(n, mode) === undefined)) {
       lines.push(
-        `Colour by ${COLOUR_MODE_LABEL[colorMode]}, but no node carries that data: every cell is drawn empty. ` +
+        `Colour by ${COLOUR_MODE_LABEL[mode]}, but no node carries that data: every cell is drawn empty. ` +
           'Bind the facet in the panel JSON (panel menu > Edit panel JSON, options.queries).'
       );
     }
@@ -296,10 +349,22 @@ export function summarise(
   // `none` puts every node in `ungrouped` deliberately. Warning about it would
   // be warning about the configuration the operator chose.
   if (grouping.source.kind !== 'none' && grouping.orphans.length > 0) {
-    const n = grouping.orphans.length;
-    lines.push(
-      `${n} ${n === 1 ? 'node' : 'nodes'} ${causeOf(grouping.source, n !== 1)}: ${listOf(grouping.orphans)}. Drawn under "${UNGROUPED}".`
-    );
+    // Two settings put every node under `ungrouped` for a reason that has
+    // nothing to do with the nodes, and `causeOf` would blame the names: a
+    // capture pattern that does not compile ("did not match the capture
+    // pattern" — nothing was ever run against them), and a chunk size of
+    // zero ("have no number in their names to chunk by" — they all do). A
+    // confident wrong cause sends the reader off to debug their naming, so
+    // these two are named before the generic line rather than through it.
+    const misconfigured = configurationFault(grouping.source);
+    if (misconfigured !== undefined) {
+      lines.push(misconfigured);
+    } else {
+      const n = grouping.orphans.length;
+      lines.push(
+        `${n} ${n === 1 ? 'node' : 'nodes'} ${causeOf(grouping.source, n !== 1)}: ${listOf(grouping.orphans)}. Drawn under "${UNGROUPED}".`
+      );
+    }
   }
 
   // The opposite problem: a box with no nodes rather than nodes with no box.
