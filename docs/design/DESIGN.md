@@ -101,7 +101,7 @@ green light for "the engine is fine".
 The panel does **not** impose this. Colour follows Grafana, and a site that wants
 green sets green. What the measurements justify is the option below.
 
-## The shape channel, an option that ships on
+## The shape channel, an option that ships off
 
 A cell can carry its state as a shape as well as a fill. With it on, the grid
 stays readable in greyscale, in print, under `forced-colors`, and with a
@@ -116,10 +116,13 @@ down, powered down                     bottom-right corner cut
 everything else                        plain square
 ```
 
-On by default, because no fill-only arrangement of this palette separated `not
-responding` from `allocated`: the two sit at ΔE 4.8 under protanopia. A site
-that would rather the panel looked like every other one in the dashboard turns
-it off.
+It exists because no fill-only arrangement of this palette separated `not
+responding` from `allocated`: the two sit at ΔE 4.8 under protanopia. It
+nonetheless ships **off**, which is the trade recorded beside the default in
+`types.ts` — the notches cost a little legibility at fourteen pixels for every
+reader, most readers do not need them, and the rest of the palette is measured
+safe. A reader who reads in greyscale, on paper, or with a red-green
+deficiency turns it on, and nobody else's grid changes.
 
 A cell with nothing to show, a state no mapping covers or a node with no data in
 a continuous mode, is drawn as a hollow ring rather than filled. That one does
