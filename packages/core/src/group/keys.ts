@@ -36,6 +36,26 @@ export function makeKeyFn(source: KeySource): (node: SlurmNode) => KeyResult {
         return value === undefined ? NO_KEY : { key: value, assumed: false };
       };
 
+    // Not capped, unlike expandHostlist, and the asymmetry is a decision
+    // rather than an oversight — written here so the next reader need not
+    // rediscover it.
+    //
+    // EXPANSION_CAP can refuse `node[1-100000]` by counting, before doing any
+    // work. A regular expression offers no equivalent count: catastrophic
+    // backtracking is not predictable from a pattern's length (`^(a+)+$` is
+    // seven characters and takes 3.7 seconds against a thirty-one character
+    // name, measured), so the only real guard is a time budget — and
+    // JavaScript cannot interrupt an exec already running. A budget would
+    // bound the total and not the overshoot, and the nodes it skipped would
+    // fall to `ungrouped`, where the strip would report that they "did not
+    // match the capture pattern". That sentence would be false, which is
+    // exactly the class of defect the strip was just corrected for.
+    //
+    // It is self-inflicted rather than an attack surface: the pattern is
+    // typed into a panel option by whoever can edit the dashboard, and it
+    // costs them their own tab. Named in the option's description, where it
+    // is typed, until the guard can be built without a false diagnosis
+    // attached to it.
     case 'capture': {
       // Compiled once, not per node, and never allowed to throw: this pattern
       // is typed into a panel option by hand and is invalid most of the time

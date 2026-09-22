@@ -98,7 +98,10 @@ export function GroupingEditor({ value, onChange, context }: Props) {
       )}
 
       {source.kind === 'capture' && (
-        <Field label="Pattern" description="The first capture group becomes the key. Example: ^(r\d+)c\d+n\d+$">
+        <Field
+          label="Pattern"
+          description="The first capture group becomes the key. Example: ^(r\\d+)c\\d+n\\d+$ — run once per node on every render, so a pattern with nested quantifiers such as ^(a+)+$ can cost seconds on a single name."
+        >
           <Input
             value={source.pattern}
             onChange={(e) => onChange({ kind: 'capture', pattern: e.currentTarget.value })}

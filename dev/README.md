@@ -107,6 +107,38 @@ None of the five configures value mappings. The Slurm state colours
 are the panel's own default, so a panel added to a new dashboard is coloured
 before anything is configured.
 
+## This stack is open on purpose, and is not a deployment
+
+Three trades, all deliberate, none of them safe to copy into anything real.
+Written down here because nothing else said them, and an undocumented trade
+is indistinguishable from an oversight.
+
+**Grafana grants Admin to the anonymous user.** `GF_AUTH_ANONYMOUS_ENABLED`
+and `GF_AUTH_ANONYMOUS_ORG_ROLE: Admin` in `docker-compose.yml`. Measured,
+with no credentials at all: `/api/user` answers 401, but `/api/org` and
+`/api/datasources` both answer 200 — the latter returning the data source's
+url. It is what lets `make e2e` and `make screenshots` drive the stack
+without managing a session, and it means anyone who can reach the port is an
+administrator.
+
+**Both services publish on every interface**, IPv4 and IPv6:
+`0.0.0.0:3001 -> 3000` and `0.0.0.0:9091 -> 9090`. Under WSL2 a container
+bound to loopback is not reachable from the host browser, which is the whole
+point of running this stack; the cost is that it is reachable from the
+network the host sits on.
+
+**Prometheus serves its admin endpoints.** `POST /-/reload` returns 200.
+
+Together these mean **any host on your LAN can administer this Grafana while
+it is up**. It only runs while you run it, and `make down` ends it. If that
+is not acceptable on the network you are on, set `GRAFANA_PORT` and
+`PROM_PORT` in `dev/.env` to ports you have firewalled, or bind them to
+loopback and reach Grafana some other way.
+
+None of this touches the plugin, which is frontend-only and ships no server
+code. See [`SECURITY.md`](../SECURITY.md) for what is in scope and how to
+report something that is.
+
 ## Two data sources
 
 **Synthetic** (default) produces any cluster shape on demand. `SYNTH_PROFILE`
