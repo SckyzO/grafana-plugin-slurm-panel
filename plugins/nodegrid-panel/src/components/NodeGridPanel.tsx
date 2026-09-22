@@ -71,8 +71,9 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
   // link, so this goes through getTemplateSrv() rather than naive string
   // substitution.
   //
-  // Sanitised here rather than at the click, because this is the boundary
-  // where an untrusted string becomes a URL: the template can name a
+  // Sanitised here because this is the boundary where an untrusted string
+  // becomes a URL, and again at the click in NodeCell, which is exported and
+  // whose href prop the type does not constrain. Here first: the template can name a
   // dashboard variable, and a dashboard variable is settable from the query
   // string by anyone who can view the dashboard — `?var-target=javascript:…`
   // needs no edit rights at all. Grafana sanitises the links it renders

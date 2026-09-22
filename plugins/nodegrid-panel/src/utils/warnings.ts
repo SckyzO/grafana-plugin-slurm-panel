@@ -51,9 +51,9 @@ const STATE_FLAGS = '*~#!%$@^-';
 
 /**
  * The state without its flag, when it carries one. One unknown state reaches
- * the panel as up to eight distinct strings (`blocked`, `blocked#`,
+ * the panel as up to ten distinct strings (`blocked`, `blocked#`,
  * `blocked!`, `blocked%` and so on) and naming each of them turns a single
- * actionable fact into a wall of text that says the same thing eight times.
+ * actionable fact into a wall of text that says the same thing ten times.
  * The operator has one thing to do either way: write a rule for the state.
  */
 const baseStateOf = (state: string): string => {
@@ -181,7 +181,7 @@ export function groupingNotes({
   };
 }
 
-/** Node names as hostlist items, capped: 240 orphans must still fit on a line. */
+/** Node names as hostlist items, capped: 540 orphans must still fit on a line. */
 const listOf = (names: string[]): string => {
   const items = collapseHostlist(names);
   const shown = items.slice(0, HOSTLIST_ITEM_LIMIT);
@@ -247,8 +247,9 @@ const COLOUR_MODE_LABEL: Record<Exclude<ColorMode, 'state'>, string> = {
  * carry: what the reader asked to be coloured by, and what label the state
  * was supposed to arrive under. Grouped rather than passed as two more
  * positional arguments — seven parameters is already past the point where an
- * options object would read better, and reshaping the rest touches
- * forty-three call sites, which is its own change rather than a rider.
+ * options object would read better, and reshaping the rest touches the
+ * forty-three call sites of summarise, which is its own change rather than a
+ * rider on this one.
  */
 export interface DisplayNotes {
   colorMode: ColorMode;

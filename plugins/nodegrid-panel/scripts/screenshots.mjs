@@ -35,7 +35,7 @@ const SHOTS = [
   { name: 'node-grid-gpu', uid: 'slurm-node-colour', panel: 5 },
   { name: 'node-grid-heights', uid: 'slurm-node-grouping', panel: 1 },
   { name: 'node-grid-blades', uid: 'slurm-node-grouping', panel: 9 },
-  // A matched pair: panels 9 and 12 of the grouping dashboard are the same
+  // A matched pair: panels 6 and 7 of the colour dashboard are the same
   // floor over the same data, and the only option that differs between them
   // is the shape channel. Taking one from each of two dashboards, as this
   // did, compared two different racks and proved nothing.
@@ -49,6 +49,8 @@ const SHOTS = [
 ];
 
 // The dashboard shot carries two time series over a fifteen-minute window.
+// The guard below asks for twenty rather than fifteen: five minutes of margin,
+// so a series that is merely full does not read as one that just started.
 // On a stack that has just come up they draw two minutes of data against an
 // empty field, which looks like the panel failing rather than the stack being
 // young. Prometheus knows how long it has been scraping, so ask it.
@@ -138,10 +140,11 @@ for (const shot of SHOTS) {
   // 1280px default while this said 1500. A panel crop hides that - the crop
   // follows the content - so it went unnoticed until a dashboard shot was
   // measured against the width it claimed.
-  // 2560 because that is the width the dev dashboards are laid out for: a
-  // 27-inch 2K, which is what a cluster gets watched on. Render them at 1500
-  // and the panels that hold nine cabinets clip, so the catalogue's own
-  // images would show the panel failing at something it does not fail at.
+  // The size comes from panelBox above, not from a constant: a panel shot is
+  // taken at the width and height its dashboard gives it, and only the
+  // dashboard-wide shot uses the full 2560. That width is what the dev
+  // dashboards are laid out for — a 27-inch 2K, which is what a cluster gets
+  // watched on.
   const page = await browser.newPage({
     viewport: await panelBox(shot.uid, shot.panel, shot.hover === true),
     deviceScaleFactor: 1,

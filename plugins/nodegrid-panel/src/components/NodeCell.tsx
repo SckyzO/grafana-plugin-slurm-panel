@@ -44,7 +44,7 @@ export interface NodeCellProps {
 }
 
 /**
- * The second encoding, on by default. Not one shape per state: it separates the
+ * The second encoding, off by default. Not one shape per state: it separates the
  * two families the fill could not be trusted to separate and returns undefined
  * for everything else, so the grid survives greyscale, print, forced-colors and
  * a red-green deficiency whatever palette the site chose.

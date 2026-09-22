@@ -31,7 +31,8 @@ The panel ships **default value mappings**, not a palette. Defaults use theme
 colour names, never hex.
 
 The shipped defaults, in order, are delimited whole-value regexes. They are
-transcribed from `defaults/mappings.ts`; if the two disagree, the source is
+transcribed from `plugins/nodegrid-panel/data/mappings.json`, the one file
+both the panel and the contract suite load; if the two disagree, that file is
 right:
 
 ```

@@ -38,8 +38,11 @@ const rule = (pattern, text, color) => ({
 // about what *Grafana* does with these rules — that a RegexToText mapping
 // resolves on a string field, that the colour survives the display processor,
 // that first-match-wins holds. The rules are the input; Grafana is the
-// subject. The three trap tests further down supply their own fixtures
-// precisely because they must not depend on what we happen to ship.
+// subject. The trap tests further down that pin Grafana's regex handling
+// supply their own fixtures, precisely because they must not depend on what
+// we happen to ship; the two percent traps at the end read SHIPPED on
+// purpose, since what they pin is how a *matched* mapping interacts with a
+// threshold, and that needs a rule known to match.
 const SHIPPED_RULES = require('../../plugins/nodegrid-panel/data/mappings.json');
 const SHIPPED = SHIPPED_RULES.map((r) => rule(r.pattern, r.text, r.color));
 
@@ -130,6 +133,9 @@ const THEME = createTheme();
 // say. This was measured, not assumed: an earlier version of this test
 // compared a resolved colour count against a count derived from the same
 // JSON, and permuting the idle and blocked colours passed it 9 out of 9.
+// (Eighteen is the count of distinct colour names in the transcribed input,
+// not of anything the old assertions pinned — those pinned a count of ten
+// over fifteen states, with no per-state expectation at all.)
 // Grafana's own RegexToText branch is stringToJsRegex + String.match, first
 // match wins — the same walk — so the two sides could never have diverged.
 const EXPECTED_COLOURS = {
@@ -187,7 +193,8 @@ test('a state matching no mapping keeps its raw text', () => {
   }
 });
 
-// Trap 3: a state name is not always a safe regex. Slurm prints `allocated+`
+// A fourth trap, beyond the three mappings.ts enumerates: a state name is
+// not always a safe regex. Slurm prints `allocated+`
 // for a node allocated with jobs still completing. The panel prints a rule for
 // an operator to paste, so what Grafana does with an escaped and an unescaped
 // name is a contract rather than an implementation detail.
@@ -225,7 +232,8 @@ test('RegexToText replaces only the matched portion', () => {
   assert.equal(displayFor(['drained'], short)('drained').text, 'draineded');
 });
 
-// Trap 3: with thresholds configured (always true here, since module.ts calls
+// A fifth trap, beyond the three mappings.ts enumerates: with thresholds
+// configured (always true here, since module.ts calls
 // useFieldConfig()), a mapping match and a threshold fallback are only
 // distinguishable through `percent`, not through `text` or `color` alone —
 // an unmapped value still gets a colour, from the threshold base colour.

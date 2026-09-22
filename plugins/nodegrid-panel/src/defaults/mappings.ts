@@ -50,7 +50,8 @@ const rule = (pattern: string, text: string, color: string): ValueMapping => ({
  *
  * Six hues still cannot carry every distinction: `not responding` against
  * `allocated` measures 4.8 under protanopia and no reshuffle of this palette
- * fixed it. That is why Shape channel is on by default. The shape does not
+ * fixed it. That is why Shape channel exists, though it ships off — see the
+ * note on the option in types.ts for that trade. The shape does not
  * encode twenty-one states either. It separates the two families the fill could
  * not (see `shapeFor` in NodeCell), which is what makes that pair safe.
  *

@@ -88,8 +88,12 @@ stops at the first match.
 ## The shipped set
 
 Transcribed from
-[`plugins/nodegrid-panel/src/defaults/mappings.ts`](../plugins/nodegrid-panel/src/defaults/mappings.ts).
-If the two ever disagree, the source file is right and this table is stale.
+[`plugins/nodegrid-panel/data/mappings.json`](../plugins/nodegrid-panel/data/mappings.json),
+the one file both the panel and the contract suite load. If the two ever
+disagree, that file is right and this table is stale. `src/defaults/mappings.ts`
+held these rules until they moved out of `src/`, where the bundler was copying
+them into the plugin archive as a second, unread copy; it now carries the
+reasoning and the transform, not the data.
 
 | # | Pattern | Text | Colour |
 |---|---|---|---|
