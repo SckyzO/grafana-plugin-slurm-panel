@@ -13,21 +13,57 @@
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
-    "links": [{ "name": "sponsorship", "url": "https://github.com/sponsors/SckyzO" }],
+    "links": [
+      {
+        "name": "Source",
+        "url": "https://github.com/SckyzO/grafana-plugin-slurm-panel"
+      },
+      {
+        "name": "Documentation",
+        "url": "https://github.com/SckyzO/grafana-plugin-slurm-panel/blob/main/plugins/nodegrid-panel/src/README.md"
+      },
+      {
+        "name": "Report an issue",
+        "url": "https://github.com/SckyzO/grafana-plugin-slurm-panel/issues"
+      },
+      {
+        "name": "License",
+        "url": "https://github.com/SckyzO/grafana-plugin-slurm-panel/blob/main/LICENSE"
+      },
+      {
+        "name": "Sponsorship",
+        "url": "https://github.com/sponsors/SckyzO"
+      }
+    ],
     "screenshots": [
-      { "name": "Nine cabinets on one floor, coloured by node state", "path": "img/node-grid-by-rack.png" },
-      { "name": "Every Slurm state, coloured before anything is configured", "path": "img/node-grid-states.png" },
-      { "name": "GPU occupancy, on the three cabinets that have GPUs", "path": "img/node-grid-gpu.png" },
+      {
+        "name": "Nine cabinets on one floor, coloured by node state",
+        "path": "img/node-grid-by-rack.png"
+      },
+      {
+        "name": "Every Slurm state, coloured before anything is configured",
+        "path": "img/node-grid-states.png"
+      },
+      {
+        "name": "GPU occupancy, on the three cabinets that have GPUs",
+        "path": "img/node-grid-gpu.png"
+      },
       {
         "name": "A half-filled rack stands on the floor, with its empty slots above it",
         "path": "img/node-grid-heights.png"
       },
-      { "name": "A floor mixing one, two, three and four nodes to a blade", "path": "img/node-grid-blades.png" },
+      {
+        "name": "A floor mixing one, two, three and four nodes to a blade",
+        "path": "img/node-grid-blades.png"
+      },
       {
         "name": "460 nodes the grouping could not place, named rather than hidden",
         "path": "img/node-grid-unplaced.png"
       },
-      { "name": "In a dashboard: the floor plan below the counters it explains", "path": "img/node-grid-dashboard.png" }
+      {
+        "name": "In a dashboard: the floor plan below the counters it explains",
+        "path": "img/node-grid-dashboard.png"
+      }
     ],
     "version": "%VERSION%",
     "updated": "%TODAY%"

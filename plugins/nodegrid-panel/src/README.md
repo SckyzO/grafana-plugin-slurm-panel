@@ -1,5 +1,9 @@
 # Slurm Node Grid
 
+[![Release](https://img.shields.io/github/v/release/SckyzO/grafana-plugin-slurm-panel?logo=github&label=release)](https://github.com/SckyzO/grafana-plugin-slurm-panel/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/SckyzO/grafana-plugin-slurm-panel/ci.yml?branch=main&logo=githubactions&logoColor=white&label=CI)](https://github.com/SckyzO/grafana-plugin-slurm-panel/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/SckyzO/grafana-plugin-slurm-panel)](https://github.com/SckyzO/grafana-plugin-slurm-panel/blob/main/LICENSE)
+
 One cell per Slurm node, coloured by state (or by CPU, memory or GPU
 utilisation), grouped and laid out to match how the cluster is actually
 organised, rather than by counting Prometheus series.
@@ -11,6 +15,43 @@ nodes and how many drawn cells that produced whenever the two numbers
 disagree.
 
 ![Nine cabinets, one sled per node, coloured by Slurm state](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-by-rack.png)
+
+## Requirements
+
+- **Grafana 12.3 or later.** The panel is built against that API and the
+  release is tested against every minor from 12.3 to the current nightly.
+- **A data source that returns one series per node**, with the node name and
+  the Slurm state as labels. Prometheus scraping
+  [`slurm_exporter`](https://github.com/SckyzO/slurm_exporter) is the case
+  every default is set for; anything shaped the same works, and the label
+  names are options.
+- **No backend, no configuration file, no extra permissions.** The panel is
+  frontend only and reads nothing but the queries you give it.
+
+## Getting started
+
+Add the panel to a dashboard, point it at your Prometheus data source, and
+give it one query:
+
+```promql
+slurm_node_status
+```
+
+That is enough to see the cluster. The twenty-one state rules ship with the
+panel as Value mappings, so the grid is coloured before you configure
+anything, and every cell names its node and state in the tooltip.
+
+Two options are worth setting next, in this order:
+
+1. **Grouping > Group by**, so the cells are arranged the way the cluster is.
+   A `rack` label is the best case; if the exporter does not publish one,
+   [`docs/grouping.md`](https://github.com/SckyzO/grafana-plugin-slurm-panel/blob/main/docs/grouping.md) covers the three
+   routes to a topology and what each one costs.
+2. **Layout > Rack**, which draws each group as a cabinet instead of a
+   wrapping row.
+
+Everything the panel cannot resolve, it says so in a strip above the grid
+rather than hiding — see [Warnings](#warnings).
 
 ## Data
 
@@ -466,3 +507,27 @@ than replacing them, and answers the question they raise — _which_ nodes, and
 _where_.
 
 ![A production dashboard: gauges and counters above, the floor plan and a table of drain reasons below](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-dashboard.png)
+
+## Documentation
+
+- [`docs/grouping.md`](https://github.com/SckyzO/grafana-plugin-slurm-panel/blob/main/docs/grouping.md) — the three routes to
+  a topology, ordered by the privilege each needs. Read this before deciding
+  how to group; the panel is never the source of the topology.
+- [`docs/value-mappings.md`](https://github.com/SckyzO/grafana-plugin-slurm-panel/blob/main/docs/value-mappings.md) — read
+  before editing a Value mapping by hand. The obvious way to write one fails
+  silently.
+- [`dev/README.md`](https://github.com/SckyzO/grafana-plugin-slurm-panel/blob/main/dev/README.md) — the dev stack, its
+  synthetic cluster and the provisioned dashboards this documentation's
+  screenshots come from.
+
+## Contributing and feedback
+
+Bug reports and questions go to
+[GitHub issues](https://github.com/SckyzO/grafana-plugin-slurm-panel/issues) — a dashboard JSON
+that reproduces the problem is the single most useful thing you can attach,
+since almost everything this panel does is decided by its options.
+
+If you want to send code, [`CONTRIBUTING.md`](https://github.com/SckyzO/grafana-plugin-slurm-panel/blob/main/CONTRIBUTING.md)
+has the toolchain contract: everything runs in containers through `make`, so
+there is nothing to install but Docker, and `make check` on a fresh clone is
+the whole build.
