@@ -17,12 +17,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      # Read once here so the signing step can test for it: the `secrets`
-      # context is not available in a step's `if`, but `env` is. Absent, the
-      # release is published unsigned — which is exactly what a first
-      # submission to the Grafana catalogue has to be, since a signature level
-      # is only granted after that first review.
-      GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+      # A boolean, not the secret. The signing step has to test whether the
+      # token exists, and the `secrets` context is not available in a step's
+      # `if` while `env` is — but only the answer needs to be here, not the
+      # token. The token itself is passed in the `env:` of the one step that
+      # signs, so it is out of the environment of `make check`, which runs
+      # eslint, jest and webpack: dependency code, in process. Installation
+      # scripts cannot run (ignore-scripts, strictDepBuilds, every allowBuilds
+      # entry false, minimumReleaseAge 4320), but plugins, transformers and
+      # loaders do.
+      #
+      # Absent, the release is published unsigned — which is exactly what a
+      # first submission to the Grafana catalogue has to be, since a signature
+      # level is only granted after that first review.
+      HAS_SIGNING_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -66,10 +74,12 @@ jobs:
       - run: make check
 
       - name: Sign the plugin
-        if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' }}
+        if: ${{ env.HAS_SIGNING_TOKEN == 'true' }}
         # Before `make package`, deliberately: signing writes MANIFEST.txt into
         # dist/, and a manifest added after the archive is built is a manifest
         # nobody ships.
+        env:
+          GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
         run: make sign
 
       # Packages the archive and its SHA1, then runs Grafana's own validator
