@@ -42,10 +42,19 @@ const toMinimalFrame = (frame: Props['context']['data'][number]): MinimalFrame =
  */
 const SAMPLE_TABLE = '# name: hostlist - one line per group, in display order\nrack1: c[1-40]';
 
+/**
+ * Hoisted, and it has to be. Written inline as `value ?? { kind: 'none' }`
+ * this allocated a fresh object on every render, and `source` is a dependency
+ * of the preview's useMemo — so the memo missed on every keystroke in exactly
+ * the case it exists for, an editor opened before any grouping is configured,
+ * re-running a full ingest each time.
+ */
+const NO_SOURCE: KeySource = { kind: 'none' };
+
 export function GroupingEditor({ value, onChange, context }: Props) {
   const theme = useTheme2();
   const styles = getStyles(theme);
-  const source: KeySource = value ?? { kind: 'none' };
+  const source: KeySource = value ?? NO_SOURCE;
   const options = context.options;
 
   // The preview runs the real key function over the node names actually

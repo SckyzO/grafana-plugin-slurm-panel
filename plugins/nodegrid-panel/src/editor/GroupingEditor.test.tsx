@@ -10,6 +10,22 @@ import { DEFAULT_OPTIONS } from '../types';
 import type { PanelOptions } from '../types';
 import { fakeTemplateSrv } from '../testing/templateSrv';
 
+// Counts the real ingest rather than replacing it: an ESM namespace is not
+// writable, so jest.spyOn cannot reach it, and every other test in this file
+// needs the genuine behaviour. The name has to start with `mock` — jest hoists
+// the factory above the imports and rejects any other out-of-scope reference.
+const mockIngestCalls = { n: 0 };
+jest.mock('@slurm-views/core', () => {
+  const actual = jest.requireActual('@slurm-views/core');
+  return {
+    ...actual,
+    ingest: (...args: Parameters<typeof actual.ingest>) => {
+      mockIngestCalls.n += 1;
+      return actual.ingest(...args);
+    },
+  };
+});
+
 // Table-format frame: one string column per label, one row per node — the
 // same shape `toSamples` reads when a query returns node/status/partition as
 // columns rather than as per-series labels. See packages/core's ingest/labels.ts.
@@ -143,5 +159,34 @@ describe('the Ranges source', () => {
     // tables.
     renderEditor({ kind: 'ranges', table: '$racks' }, jest.fn());
     expect(screen.getByTestId('grouping-preview')).toHaveTextContent('rack1');
+  });
+});
+
+describe('the preview memo', () => {
+  // It exists so that typing in another field does not re-ingest every frame.
+  // Written as `value ?? { kind: 'none' }` it allocated a fresh object each
+  // render, and `source` is one of the memo's dependencies — so the memo
+  // missed on every render in exactly the case it was written for: an editor
+  // opened before any grouping is configured. Nothing would have caught that
+  // but a measurement, so here is the measurement.
+  it('does not re-ingest when nothing about the grouping changed', () => {
+    // One context object, reused: the data has not changed. A fresh element
+    // and a fresh onChange each time, because the scenario is a real
+    // re-render — the operator typing in another field — and React skips a
+    // rerender handed the identical element, which would make this test pass
+    // whatever the component does.
+    const context = contextWith([tableFrame(rows)], DEFAULT_OPTIONS);
+    const editor = () => (
+      <GroupingEditor value={undefined as unknown as KeySource} onChange={() => {}} context={context} item={item} />
+    );
+
+    mockIngestCalls.n = 0;
+    const { rerender } = render(editor());
+    const afterFirst = mockIngestCalls.n;
+    expect(afterFirst).toBeGreaterThan(0);
+
+    rerender(editor());
+    rerender(editor());
+    expect(mockIngestCalls.n).toBe(afterFirst);
   });
 });
