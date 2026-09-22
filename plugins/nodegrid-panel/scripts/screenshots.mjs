@@ -71,6 +71,55 @@ try {
   console.warn('  ! could not ask Prometheus how long it has been scraping');
 }
 
+/**
+ * The width the dev dashboards are laid out for: a 27-inch 2K, which is what
+ * a cluster gets watched on.
+ */
+const DASHBOARD_WIDTH = 2560;
+
+/**
+ * How wide the panel is on its own dashboard, in those pixels.
+ *
+ * `?viewPanel` hands a panel the whole viewport, which is not the width it
+ * was laid out for. "Nodes by rack" is twelve columns of twenty-four and its
+ * nine cabinets fill them; rendered at 2560 the same cabinets sat centred in
+ * twice the room they need, and the catalogue's flagship image came out
+ * mostly empty panel with the floor plan adrift in it.
+ *
+ * Height matters as much as width, and for a subtler reason: the wrapping
+ * container stretches its rows to whatever height it is given, so a panel
+ * rendered in a 1400px viewport spreads three rows of swatches over four
+ * hundred pixels each. Taken at the panel's own height they sit where the
+ * dashboard puts them.
+ *
+ * Read from the dashboard rather than written down here, so neither can
+ * drift when a panel is resized. Falls back to the full viewport, which is
+ * what the dashboard shot uses anyway.
+ */
+async function panelBox(uid, id, hover) {
+  const full = { width: DASHBOARD_WIDTH, height: 1400 };
+  if (id === undefined) {
+    return full;
+  }
+  try {
+    const r = await (await fetch(`${url}/api/dashboards/uid/${uid}`)).json();
+    const pos = r?.dashboard?.panels?.find((x) => x.id === id)?.gridPos;
+    if (!(pos?.w > 0 && pos?.h > 0)) {
+      return full;
+    }
+    return {
+      width: Math.round((DASHBOARD_WIDTH * pos.w) / 24),
+      // Grafana's grid row is 30px with an 8px gutter, so h rows measure
+      // 38h - 8. Plus the kiosk chrome above the panel, and more again for a
+      // hover shot, whose tooltip is drawn outside the panel and would be
+      // clipped by a viewport cut to it exactly.
+      height: 38 * pos.h - 8 + 64 + (hover ? 320 : 0),
+    };
+  } catch {
+    return full;
+  }
+}
+
 const browser = await chromium.launch();
 
 for (const shot of SHOTS) {
@@ -84,7 +133,7 @@ for (const shot of SHOTS) {
   // and the panels that hold nine cabinets clip, so the catalogue's own
   // images would show the panel failing at something it does not fail at.
   const page = await browser.newPage({
-    viewport: { width: 2560, height: 1400 },
+    viewport: await panelBox(shot.uid, shot.panel, shot.hover === true),
     deviceScaleFactor: 1,
   });
 
@@ -116,7 +165,7 @@ for (const shot of SHOTS) {
       const bottom = Math.max(...panels.map((el) => el.getBoundingClientRect().bottom));
       return Math.ceil(bottom + window.scrollY + 90);
     });
-    await page.setViewportSize({ width: 2560, height: needed });
+    await page.setViewportSize({ width: DASHBOARD_WIDTH, height: needed });
     await page.waitForTimeout(1500);
     await page.screenshot({ path: `${OUT}/${shot.name}.png` });
     console.log(`${shot.name}.png  dashboard 2560x${needed} css  ${cells} cells`);
@@ -147,6 +196,9 @@ for (const shot of SHOTS) {
     const box = panel.getBoundingClientRect();
     let right = 0;
     let bottom = 0;
+    // Tracked as well as `right`, because a panel whose cabinets are centred
+    // has content that starts well inside its own left edge.
+    let contentLeft = Infinity;
     for (const el of grid.querySelectorAll('[data-testid^="node-cell-"], [data-testid^="node-group-"]')) {
       const r = el.getBoundingClientRect();
       if (r.width === 0) {
@@ -154,6 +206,7 @@ for (const shot of SHOTS) {
       }
       right = Math.max(right, r.right);
       bottom = Math.max(bottom, r.bottom);
+      contentLeft = Math.min(contentLeft, r.left);
     }
     const heading = panel.querySelector('h1, h2, h3, h4, h5, h6');
     if (heading) {
@@ -182,6 +235,21 @@ for (const shot of SHOTS) {
         top = Math.max(0, Math.min(top, r.top));
       }
     }
+    // Give the content as much room on its right as it has on its left.
+    // Cropping to the panel's edge on one side and to the content's on the
+    // other turns a centred row of cabinets into one shoved against the right
+    // margin: measured on "Nodes by rack", 534px clear on both sides in the
+    // browser, and an image that showed 744px of empty panel on the left and
+    // none on the right. The catalogue's flagship picture was of a layout
+    // defect the panel does not have.
+    //
+    // A left-packed panel is unaffected: its content starts at the panel's
+    // own padding, so the mirrored margin is that same padding and the crop
+    // stays tight. The width is clamped to the viewport below either way.
+    if (Number.isFinite(contentLeft)) {
+      right = Math.max(right, right + (contentLeft - left));
+    }
+
     const pad = 16;
     return {
       x: left,
