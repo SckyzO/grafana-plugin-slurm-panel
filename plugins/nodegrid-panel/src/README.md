@@ -94,7 +94,16 @@ join needs, is in this repository's `docs/grouping.md`.
   table, so several panels can share one layout and it can be edited in one
   place. See `docs/grouping.md` for the full syntax.
 
-- **Chunk**: slices nodes by ordinal into fixed-size groups.
+- **Chunk**: bands the node ordinal — the trailing number in the name — into
+  fixed-width slices. At 8, ordinals 1-8 make the first group, 9-16 the
+  second, and so on.
+
+  Fixed in _width_, not in population. Two nodes whose ordinals match are in
+  the same band whatever their names, so `c001` and `g001` land together and
+  a cluster numbered per family rather than end to end comes out uneven — a
+  floor of `c001-c024` and `g001-g008` at size 8 gives groups of 16, 8 and 8,
+  not four of 8. Where the numbering runs across the whole floor, which is
+  the case chunking is for, the groups are even.
 
 Chunking is the one source that invents structure the data never stated: HPC
 node numbering usually follows the physical layout, but usually is not

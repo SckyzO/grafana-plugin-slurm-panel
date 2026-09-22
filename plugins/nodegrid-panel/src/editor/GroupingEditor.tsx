@@ -108,8 +108,8 @@ export function GroupingEditor({ value, onChange, context }: Props) {
 
       {source.kind === 'chunk' && (
         <Field
-          label="Nodes per group"
-          description="Slices the node ordinal. This invents structure, and every group it makes says so."
+          label="Ordinals per group"
+          description="Bands of this many ordinals, an ordinal being the trailing number in a name. c001 and g001 share a band, so a cluster with several name families gives uneven groups. This invents structure, and every group it makes says so."
         >
           <Input
             type="number"
