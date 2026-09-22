@@ -15,16 +15,16 @@
     },
     "links": [{ "name": "sponsorship", "url": "https://github.com/sponsors/SckyzO" }],
     "screenshots": [
-      { "name": "A cluster of six racks, coloured by node state", "path": "img/node-grid-by-rack.png" },
+      { "name": "Nine cabinets on one floor, coloured by node state", "path": "img/node-grid-by-rack.png" },
       { "name": "Every Slurm state, coloured before anything is configured", "path": "img/node-grid-states.png" },
-      { "name": "GPU occupancy: a node with no GPU is drawn empty, not coloured", "path": "img/node-grid-gpu.png" },
+      { "name": "GPU occupancy, on the three cabinets that have GPUs", "path": "img/node-grid-gpu.png" },
       {
         "name": "A half-filled rack stands on the floor, with its empty slots above it",
         "path": "img/node-grid-heights.png"
       },
-      { "name": "A floor mixing two-wide and four-wide cabinets, on one line", "path": "img/node-grid-blades.png" },
+      { "name": "A floor mixing one, two, three and four nodes to a blade", "path": "img/node-grid-blades.png" },
       {
-        "name": "200 nodes the grouping could not place, named rather than hidden",
+        "name": "460 nodes the grouping could not place, named rather than hidden",
         "path": "img/node-grid-unplaced.png"
       },
       { "name": "In a dashboard: the floor plan below the counters it explains", "path": "img/node-grid-dashboard.png" }

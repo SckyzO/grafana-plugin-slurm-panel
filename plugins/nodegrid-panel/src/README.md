@@ -10,7 +10,7 @@ series. This panel groups by node identity first, and says how many distinct
 nodes and how many drawn cells that produced whenever the two numbers
 disagree.
 
-![Six cabinets, one sled per node, coloured by Slurm state](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-by-rack.png)
+![Nine cabinets, one sled per node, coloured by Slurm state](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-by-rack.png)
 
 ## Data
 
@@ -44,7 +44,7 @@ plugin's repository is a worked example: its panel's `options.queries` and
 Hovering a cell reads everything the panel joined for that node, whichever
 facets the queries bound:
 
-![A tooltip over one cell, naming the node, its state, its partitions and its CPU allocation](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-tooltip.png)
+![A tooltip over one cell: the hostname, then its state, partitions and CPU allocation, then how long it has been drained and why](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-tooltip.png)
 
 ## Grouping
 
@@ -210,7 +210,7 @@ supported. Neither is a cabinet that mixes blade sizes within itself:
 the drawing true. A group with no declaration keeps one sled per node, a
 vertical stack that makes no claim about where anything sits sideways.
 
-![A floor mixing two-wide and four-wide cabinets, each standing on the same line](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-blades.png)
+![A floor mixing one, two, three and four nodes to a blade, every cabinet standing on the same line](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-blades.png)
 
 ### Cabinet height
 
@@ -261,7 +261,7 @@ noise at a couple thousand. A cell always names its node and state in
 words, in the tooltip and in its accessible label, regardless of which
 colour mode is active, so meaning never rests on colour alone.
 
-![GPU occupancy across six racks, with the GPU-less nodes drawn empty rather than coloured](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-gpu.png)
+![GPU occupancy on the three cabinets that have GPUs, each node shaded by how much of it is in use](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-gpu.png)
 
 **Display > Shape channel** adds a second encoding: a notch or a diagonal cut
 into the cell for the states that most need to stay visible without colour.
@@ -426,11 +426,11 @@ not fully resolve:
   `Range "rack5" matched no node: r[501-502].`;
 - a label that would group the data more completely than the source
   configured today, e.g.
-  `Label "rack" would group all 240. Grouping > Group by > Label.`
+  `Label "rack" would group all 540. Grouping > Group by > Label.`
   It is measured, never acted on; the panel does not switch sources by
   itself.
 
-![A warnings strip naming 200 unplaced nodes above a grid that still draws every one of them](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-unplaced.png)
+![A warnings strip naming 460 unplaced nodes above a grid that still draws every one of them](https://raw.githubusercontent.com/SckyzO/grafana-plugin-slurm-panel/main/plugins/nodegrid-panel/src/img/node-grid-unplaced.png)
 
 Four kinds of label are never proposed, however well they would score, so
 their absence from that line is not a bug:

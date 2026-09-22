@@ -20,14 +20,14 @@ cannot be shown beside its state.
 
 The value of this panel is the join and the density, not new data.
 
-![A cluster of six racks, one cell per node, coloured by state](plugins/nodegrid-panel/src/img/node-grid-by-rack.png)
+![Nine cabinets on one floor, one cell per node, coloured by state](plugins/nodegrid-panel/src/img/node-grid-by-rack.png)
 
 ## What the panel draws
 
 **One cell per node.** Distinct nodes, not series. A node in three partitions
 is one cell, and the panel says so when a node is drawn more than once.
 
-![A tooltip over one cell, naming the node, its state, its partitions and its CPU allocation](plugins/nodegrid-panel/src/img/node-grid-tooltip.png)
+![A tooltip over one cell: the hostname, then its state, partitions and CPU allocation, then how long it has been drained and why](plugins/nodegrid-panel/src/img/node-grid-tooltip.png)
 
 **A floor plan, not a grid.** The rack layout draws each group as a cabinet:
 sleds wide and short, filling from the floor. A chassis holding several nodes
@@ -35,7 +35,7 @@ is described by **Nodes per blade**, and a cabinet's real height by **Slots per
 rack**, so a half-filled rack stands on the floor with its empty slots above it
 rather than hanging from the ceiling.
 
-![A floor mixing two-wide and four-wide cabinets, each standing on the same line](plugins/nodegrid-panel/src/img/node-grid-blades.png)
+![A floor mixing one, two, three and four nodes to a blade, every cabinet standing on the same line](plugins/nodegrid-panel/src/img/node-grid-blades.png)
 
 ![A half-filled rack stands on the floor, with its empty slots above it](plugins/nodegrid-panel/src/img/node-grid-heights.png)
 
@@ -61,7 +61,7 @@ was declared; a state with no value mapping is drawn hollow and named rather
 than coloured by accident. A node missing from a supervision view is a worse
 failure than a node drawn in the wrong place.
 
-![A warnings strip naming 200 unplaced nodes above a grid that still draws every one of them](plugins/nodegrid-panel/src/img/node-grid-unplaced.png)
+![A warnings strip naming 460 unplaced nodes above a grid that still draws every one of them](plugins/nodegrid-panel/src/img/node-grid-unplaced.png)
 
 ## In a dashboard
 
