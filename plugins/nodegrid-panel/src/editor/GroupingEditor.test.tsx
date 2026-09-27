@@ -178,16 +178,17 @@ describe('the Ranges source', () => {
 });
 
 describe('the preview memo', () => {
-  // It exists so that typing in another field does not re-ingest every frame.
-  // Written as `value ?? { kind: 'none' }` it allocated a fresh object each
-  // render, and `source` is one of the memo's dependencies — so the memo
-  // missed on every render in exactly the case it was written for: an editor
-  // opened before any grouping is configured. Nothing would have caught that
-  // but a measurement, so here is the measurement.
+  // It exists so that a render which changes none of its inputs — the data,
+  // the panel options, the grouping source — does not re-ingest every frame.
+  // Written as `value ?? { kind: 'none' }` it allocated a fresh source each
+  // render, so in an editor opened before any grouping is configured the memo
+  // missed on every render. Nothing would have caught that but a measurement,
+  // so here is the measurement. Typing in another panel option is not such a
+  // render: it hands the editor a new options object, and the memo re-runs
+  // either way.
   it('does not re-ingest when nothing about the grouping changed', () => {
-    // One context object, reused: the data has not changed. A fresh element
-    // and a fresh onChange each time, because the scenario is a real
-    // re-render — the operator typing in another field — and React skips a
+    // One context object, reused: neither the data nor the options changed.
+    // A fresh element and a fresh onChange each time, because React skips a
     // rerender handed the identical element, which would make this test pass
     // whatever the component does.
     const context = contextWith([tableFrame(rows)], DEFAULT_OPTIONS);

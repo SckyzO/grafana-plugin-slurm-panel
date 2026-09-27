@@ -247,9 +247,9 @@ const COLOUR_MODE_LABEL: Record<Exclude<ColorMode, 'state'>, string> = {
  * carry: what the reader asked to be coloured by, and what label the state
  * was supposed to arrive under. Grouped rather than passed as two more
  * positional arguments — seven parameters is already past the point where an
- * options object would read better, and reshaping the rest touches the
- * forty-three call sites of summarise, which is its own change rather than a
- * rider on this one.
+ * options object would read better, and reshaping the rest touches every call
+ * site of summarise, one in the panel and the rest in its tests, which is its
+ * own change rather than a rider on this one.
  */
 export interface DisplayNotes {
   colorMode: ColorMode;

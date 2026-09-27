@@ -3,15 +3,6 @@ import type { MinimalFrame, Sample } from '../model/types.js';
 const isValueField = (name: string): boolean => name !== 'Time' && name !== 'time';
 
 /**
- * Flatten a frame into samples, reading whichever shape Prometheus returned.
- *
- * numeric-multi: one frame per series, every label on the value field, one row.
- * table:         one frame, a string column per label, one row per series.
- *
- * A panel that reads only one of the two sees no labels at all on the other,
- * so both paths are load-bearing rather than defensive.
- */
-/**
  * A label dictionary that inherits nothing.
  *
  * Prometheus label names are `[a-zA-Z_][a-zA-Z0-9_]*`, which admits
@@ -31,6 +22,15 @@ const isValueField = (name: string): boolean => name !== 'Time' && name !== 'tim
 const withoutPrototype = (from: Record<string, string> = {}): Record<string, string> =>
   Object.assign(Object.create(null) as Record<string, string>, from);
 
+/**
+ * Flatten a frame into samples, reading whichever shape Prometheus returned.
+ *
+ * numeric-multi: one frame per series, every label on the value field, one row.
+ * table:         one frame, a string column per label, one row per series.
+ *
+ * A panel that reads only one of the two sees no labels at all on the other,
+ * so both paths are load-bearing rather than defensive.
+ */
 export function toSamples(frame: MinimalFrame): Sample[] {
   const labelled = frame.fields.find(
     (f) => isValueField(f.name) && f.labels && Object.keys(f.labels).length > 0
