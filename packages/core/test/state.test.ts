@@ -1,4 +1,15 @@
-import { BASE_STATES, parseState } from '../src/state/parse.js';
+import { parseState } from '../src/state/parse.js';
+
+/**
+ * sinfo StateLong base states, plus inval which slurm_exporter emits. Kept
+ * here rather than exported by the parser: parseState deliberately validates
+ * against no list, so a copy in the package would only look as if it did.
+ */
+const BASE_STATES = [
+  'allocated', 'blocked', 'completing', 'down', 'drained', 'draining', 'fail', 'failing',
+  'future', 'idle', 'inval', 'maint', 'mixed', 'perfctrs', 'planned', 'power_down',
+  'power_up', 'reserved', 'unknown',
+] as const;
 
 describe('parseState splits a sinfo state into base and modifiers', () => {
   it.each([
@@ -44,8 +55,7 @@ describe('parseState splits a sinfo state into base and modifiers', () => {
   });
 
   it('parses every documented base state as itself, with no modifiers', () => {
-    // Consumes BASE_STATES so the list is verified rather than decorative, and
-    // catches a future Slurm state whose name ends in a modifier character —
+    // Catches a future Slurm state whose name ends in a modifier character:
     // that state would silently lose its last letter.
     for (const base of BASE_STATES) {
       expect(parseState(base)).toEqual({ base, modifiers: [], text: base, raw: base });

@@ -11,13 +11,6 @@ export interface ParsedState {
   raw: string;
 }
 
-/** sinfo StateLong base states, plus inval which slurm_exporter emits. */
-export const BASE_STATES = [
-  'allocated', 'blocked', 'completing', 'down', 'drained', 'draining', 'fail', 'failing',
-  'future', 'idle', 'inval', 'maint', 'mixed', 'perfctrs', 'planned', 'power_down',
-  'power_up', 'reserved', 'unknown',
-] as const;
-
 /**
  * sinfo compresses the node flags into a single trailing character. scontrol
  * shows the same thing expanded, as State=DOWN+DYNAMIC_NORM+NOT_RESPONDING.
