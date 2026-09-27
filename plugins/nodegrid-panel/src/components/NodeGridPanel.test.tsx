@@ -209,6 +209,22 @@ describe('NodeGridPanel', () => {
     expect(screen.queryByTestId('panel-warnings')).toBeNull();
   });
 
+  // The same wiring for the state label: summarise names back whatever it is
+  // handed, so only a panel-level test shows it is handed the configured one.
+  // Not the default, or a panel passing the default would pass too.
+  it('names the state label the panel is configured with when no node carries it', () => {
+    render(
+      <NodeGridPanel
+        {...baseProps}
+        data={rackData()}
+        options={{ ...DEFAULT_OPTIONS, labels: { ...DEFAULT_OPTIONS.labels, state: 'node_state' } }}
+        fieldConfig={plainConfig}
+      />
+    );
+
+    expect(screen.getByTestId('panel-warnings')).toHaveTextContent('No node carries a "node_state" label');
+  });
+
   it('draws one sled per node when nothing is declared', () => {
     // The default-unchanged promise, asserted rather than assumed: a reader
     // who never opens the option gets the cabinet the panel always drew.

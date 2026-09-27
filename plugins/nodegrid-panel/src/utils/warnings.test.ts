@@ -715,6 +715,13 @@ describe('summarise, the continuous colour modes', () => {
     expect(lines.join(' ')).toContain('"node_state"');
   });
 
+  it('does not call the cells hollow in a continuous mode, where they fill by the facet', () => {
+    const blank = [{ ...withCpu('c1'), state: '' }];
+    const lines = summarise(grouped(blank), [], [], notes(), undefined, undefined, display('cpu'));
+    expect(lines.join(' ')).toContain('No node carries a "status" label');
+    expect(lines.join(' ')).not.toContain('hollow');
+  });
+
   it('stays silent when some nodes have a state, which is a data question not a config one', () => {
     const mixed = [node('c1', ''), node('c2', 'idle')];
     const lines = summarise(grouped(mixed), [], [], notes(), undefined, undefined, display('state'));

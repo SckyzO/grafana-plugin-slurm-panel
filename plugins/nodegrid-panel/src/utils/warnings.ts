@@ -280,8 +280,14 @@ export function summarise(
   // Only when *no* node has a state, for the same reason as the colour-mode
   // line: a few blank states among many is a data question, not a
   // configuration one.
+  //
+  // What it costs depends on the mode. In State the fill is the state, so the
+  // cells go hollow; in a continuous mode they still fill by their fraction
+  // and what goes missing is the state itself, in the tooltip, the aria-label
+  // and ${__state}.
   if (display !== undefined && allNodes.length > 0 && allNodes.every((n) => n.state === '')) {
-    lines.push(`No node carries a "${display.stateLabel}" label: every cell is drawn hollow. ` + 'Data > State label.');
+    const cost = display.colorMode === 'state' ? 'every cell is drawn hollow' : "every node's state is blank";
+    lines.push(`No node carries a "${display.stateLabel}" label: ${cost}. Data > State label.`);
   }
 
   // Three of the four Colour by modes are driven by facets that have no field
