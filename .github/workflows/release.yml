@@ -75,7 +75,7 @@ jobs:
 
       - name: Sign the plugin
         if: ${{ env.HAS_SIGNING_TOKEN == 'true' }}
-        # Before `make package`, deliberately: signing writes MANIFEST.txt into
+        # Before packaging, deliberately: signing writes MANIFEST.txt into
         # dist/, and a manifest added after the archive is built is a manifest
         # nobody ships.
         env:
@@ -83,22 +83,38 @@ jobs:
         run: make sign
 
       # Packages the archive and its SHA1, then runs Grafana's own validator
-      # against that archive rather than against a fresh one.
-      - run: make validate
+      # against that archive rather than against a fresh one. SIGNED=1 when
+      # signing: without it, packaging rebuilds dist/ and the build empties
+      # it, manifest included.
+      - name: Package and validate
+        run: |
+          if [ "$HAS_SIGNING_TOKEN" = true ]; then
+            make validate SIGNED=1
+          else
+            make validate
+          fi
 
       - id: artifact
         name: Name the archive
+        # `signed` is read from the archive that ships, not from dist/: a
+        # manifest in dist/ says nothing about the zip, and only the zip is
+        # published.
         run: |
           dir=plugins/nodegrid-panel/.artifacts
           name=$(cat "$dir/zipname")
           echo "path=$dir/$name" >> "$GITHUB_OUTPUT"
           echo "name=$name" >> "$GITHUB_OUTPUT"
           echo "sha1=$(cut -d' ' -f1 "$dir/$name.sha1")" >> "$GITHUB_OUTPUT"
-          if [ -f "plugins/nodegrid-panel/dist/MANIFEST.txt" ]; then
-            echo "signed=yes" >> "$GITHUB_OUTPUT"
+          if unzip -Z1 "$dir/$name" | grep -qx 'tomzone-slurm-panel/MANIFEST.txt'; then
+            signed=yes
           else
-            echo "signed=no" >> "$GITHUB_OUTPUT"
+            signed=no
           fi
+          if [ "$HAS_SIGNING_TOKEN" = true ] && [ "$signed" = no ]; then
+            echo "::error::a signing token is set but the archive carries no MANIFEST.txt"
+            exit 1
+          fi
+          echo "signed=$signed" >> "$GITHUB_OUTPUT"
 
       - name: Publish the release
         # `gh` rather than a third-party action: every action this workflow

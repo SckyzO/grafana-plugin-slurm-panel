@@ -16,11 +16,11 @@ RUN := $(COMPOSE) run --rm tools
 .DEFAULT_GOAL := help
 .PHONY: help image deps install lock build watch test lint typecheck react-detect \
         format format-check check scrape e2e up down restart logs logs-once shell \
-        screenshots package sign validate clean
+        screenshots package sign validate package-check clean
 
 help: ## Show this help
 	@awk 'BEGIN { FS = ":.*## "; print "Targets:\n" } \
-	     /^[a-z][a-z-]*:.*## / { printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+	     /^[a-z][a-z-]*:.*## / { printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
 image: ## Build the toolchain image
 	$(COMPOSE) build tools
@@ -82,7 +82,7 @@ react-detect: build ## Check the panel for React 19 incompatibilities
 	@# either side gains support for the other.
 	$(RUN) sh -c 'cd plugins/nodegrid-panel && pnpm exec react-detect'
 
-check: format-check lint typecheck test build react-detect ## Everything CI runs before e2e
+check: format-check lint typecheck test build react-detect package-check ## Everything CI runs before e2e
 
 scrape: build ## Generate the Prometheus scrape config from dev/relabel/racks.txt
 	@# Running the generator here is what keeps it from being dead code: it is
@@ -204,20 +204,26 @@ sign: build ## Sign dist/ (needs GRAFANA_ACCESS_POLICY_TOKEN in the environment)
 	$(COMPOSE) run --rm -e GRAFANA_ACCESS_POLICY_TOKEN tools \
 	  pnpm --filter tomzone-slurm-panel sign
 
-package: build ## Package dist/ as the archive a release publishes, with its SHA1
+package: $(if $(SIGNED),deps,build) ## Package dist/ as the archive a release publishes, with its SHA1 (SIGNED=1 after make sign)
 	@# The archive holds exactly one top-level directory, named after the
 	@# plugin id: that is what Grafana unpacks into its plugins directory, and
 	@# the validator rejects any other shape. The version comes from
 	@# package.json rather than from a tag, so a tag that disagrees with it is
 	@# caught before a release is public rather than after.
 	@#
-	@# Run `make sign` first when signing: it writes MANIFEST.txt into dist/,
-	@# and a manifest added after the zip is built is a manifest nobody ships.
+	@# By default this builds first, so the archive can never hold a stale
+	@# build, or the development one `make watch` writes into the same dist/.
+	@# A signed archive cannot be built that way: webpack empties dist/ on
+	@# every build, and the MANIFEST.txt `make sign` wrote goes with it.
+	@# SIGNED=1 therefore packages dist/ as `make sign` left it, without
+	@# building, and refuses if the manifest is not there.
 	@#
 	@# The name is written to .artifacts/zipname because it carries the
 	@# version, and both `validate` below and the release workflow need to
 	@# name the file without recomputing how it is spelled.
 	$(RUN) sh -c 'cd plugins/nodegrid-panel \
+	  && if [ -n "$(SIGNED)" ] && [ ! -f dist/MANIFEST.txt ]; then \
+	       echo "SIGNED is set but dist/ carries no MANIFEST.txt - run make sign first" >&2; exit 1; fi \
 	  && version=$$(node -p "require(\"./package.json\").version") \
 	  && name="tomzone-slurm-panel-$$version.zip" \
 	  && rm -rf .artifacts tomzone-slurm-panel \
@@ -234,6 +240,25 @@ validate: package ## Run Grafana's official plugin validator on that archive
 	@# for the occasion: validating something other than what ships proves
 	@# nothing about what ships.
 	$(COMPOSE) run --rm validator "/archive/$$(cat plugins/nodegrid-panel/.artifacts/zipname)"
+
+package-check: build ## Prove that a signed dist/ reaches the archive with its manifest
+	@# The regression test for a release that signs. A stand-in manifest is
+	@# enough, since what is under test is packaging and not signing. It and
+	@# the archive built around it are removed whatever the outcome, so
+	@# neither can be taken for a signed build afterwards. The second half
+	@# checks the refusal: packaging "signed" without a manifest must fail.
+	@echo "stand-in written by make package-check" > plugins/nodegrid-panel/dist/MANIFEST.txt
+	@status=0; \
+	  $(MAKE) --no-print-directory package SIGNED=1 >/dev/null \
+	    && $(RUN) sh -c 'cd plugins/nodegrid-panel/.artifacts && zip -sf "$$(cat zipname)" | grep -q " tomzone-slurm-panel/MANIFEST.txt$$"' \
+	    || { echo "package-check: the archive does not carry dist/MANIFEST.txt" >&2; status=1; }; \
+	  rm -rf plugins/nodegrid-panel/.artifacts plugins/nodegrid-panel/dist/MANIFEST.txt; \
+	  if $(MAKE) --no-print-directory package SIGNED=1 >/dev/null 2>&1; then \
+	    echo "package-check: packaging with SIGNED=1 and no manifest did not fail" >&2; status=1; \
+	  fi; \
+	  rm -rf plugins/nodegrid-panel/.artifacts; \
+	  [ $$status -eq 0 ] && echo "package-check: a signed dist/ keeps its manifest in the archive"; \
+	  exit $$status
 
 clean: ## Remove the stack, the node_modules volumes and the build output
 	$(COMPOSE) down -v --remove-orphans

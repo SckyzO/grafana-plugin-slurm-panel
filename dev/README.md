@@ -386,10 +386,21 @@ publishes a GitHub release carrying both files. Every step of it is a `make`
 target you can run yourself:
 
 ```bash
-make sign       # needs GRAFANA_ACCESS_POLICY_TOKEN; writes dist/MANIFEST.txt
-make package    # tomzone-slurm-panel-<version>.zip and its .sha1
+make package    # builds, then tomzone-slurm-panel-<version>.zip and its .sha1
 make validate   # Grafana's validator, on the archive a release would publish
 ```
+
+A signed archive takes one more step and one flag. `make sign` builds and
+then writes `dist/MANIFEST.txt`; packaging must not build again after that,
+because every build empties `dist/` and the manifest with it:
+
+```bash
+make sign                # needs GRAFANA_ACCESS_POLICY_TOKEN
+make validate SIGNED=1   # packages dist/ as signed, without rebuilding it
+```
+
+`SIGNED=1` refuses to package a `dist/` that carries no manifest, and
+`make package-check`, part of `make check`, keeps that path honest.
 
 The tag has to agree with `plugins/nodegrid-panel/package.json`; the workflow
 refuses the release otherwise, because the archive is named from package.json
