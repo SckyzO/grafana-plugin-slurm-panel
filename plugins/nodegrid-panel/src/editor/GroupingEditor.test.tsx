@@ -90,6 +90,21 @@ describe('GroupingEditor preview', () => {
     expect(preview).toHaveTextContent('r2n01r2');
   });
 
+  it('shows a pattern example that groups the names it describes once copied', () => {
+    // A JSX attribute string interprets no escapes, so `\\d` written there
+    // reaches the reader as two backslashes, and the copied pattern looks for
+    // a literal one and matches nothing.
+    const described = renderEditor({ kind: 'capture', pattern: '' });
+    const example = /Example: (\S+)/.exec(screen.getByText(/Example:/).textContent ?? '')?.[1];
+    described.unmount();
+    expect(example).toBeDefined();
+
+    renderEditor({ kind: 'capture', pattern: example ?? '' }, jest.fn(), [
+      tableFrame([{ node: 'r3c1n07', status: 'idle', partition: 'batch' }]),
+    ]);
+    expect(screen.getByTestId('grouping-preview')).toHaveTextContent('r3c1n07r3');
+  });
+
   it('marks a chunk key as assumed', () => {
     renderEditor({ kind: 'chunk', size: 1 });
     const preview = screen.getByTestId('grouping-preview');
