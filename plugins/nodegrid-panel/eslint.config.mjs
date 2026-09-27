@@ -36,4 +36,13 @@ export default defineConfig([
     ],
   },
   ...baseConfig,
+  {
+    // This repository keeps value and type imports from one module on two
+    // lines, `import { a } from 'm'` and `import type { B } from 'm'`, and the
+    // rule as configured upstream treats that pair as a duplicate. Two value
+    // imports, or two type imports, from one module are still an error.
+    rules: {
+      'no-duplicate-imports': ['error', { allowSeparateTypeImports: true }],
+    },
+  },
 ]);
