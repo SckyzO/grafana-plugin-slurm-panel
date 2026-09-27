@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { ingest } from '../src/ingest/frames.js';
+import { toSamples } from '../src/ingest/labels.js';
 import type { LabelNames, MinimalFrame, QueryBindings } from '../src/model/types.js';
 
 const load = (name: string): MinimalFrame[] => {
@@ -186,6 +187,30 @@ describe('labels inherited from Object.prototype', () => {
     const node = ingest({ frames: frames(), queries: QUERIES, labels: LABELS }).nodes[0];
     for (const key of INHERITED) {
       expect(typeof node?.labels[key]).toBe('string');
+    }
+  });
+
+  // The half of the fix that lives in toSamples: the dictionaries it hands
+  // back answer only for labels the data sent, in both frame shapes. The
+  // tests above read node.labels, a dictionary ingest builds for itself, so
+  // they pass whatever toSamples returns.
+  it.each<[string, MinimalFrame]>([
+    ['series', { refId: 'A', fields: [{ name: 'Value', type: 'number', labels: { node: 'c1' }, values: [1] }] }],
+    [
+      'table',
+      {
+        refId: 'A',
+        fields: [
+          { name: 'node', type: 'string', values: ['c1'] },
+          { name: 'Value', type: 'number', values: [1] },
+        ],
+      },
+    ],
+  ])('answers nothing for a label a %s frame did not send', (_shape, frame) => {
+    const labels = toSamples(frame)[0]?.labels;
+    expect(labels?.['node']).toBe('c1');
+    for (const key of INHERITED) {
+      expect(labels?.[key]).toBeUndefined();
     }
   });
 
