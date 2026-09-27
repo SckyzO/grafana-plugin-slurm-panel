@@ -50,8 +50,8 @@ Two options are worth setting next, in this order:
 2. **Layout > Rack**, which draws each group as a cabinet instead of a
    wrapping row.
 
-Everything the panel cannot resolve, it says so in a strip above the grid
-rather than hiding — see [Warnings](#warnings).
+What the panel cannot resolve, it names in a strip above the grid rather than
+hiding, with three exceptions listed under [Warnings](#warnings).
 
 ## Data
 
@@ -465,7 +465,12 @@ a few hundred nodes.
 A strip above the grid names, rather than hides, anything the panel could
 not fully resolve:
 
-- a query skipped for carrying no node identity;
+- the state query skipped for carrying no node identity, e.g.
+  `Query A skipped: no node label or column`;
+- a CPU, memory or drain-age facet returning several differing values for
+  one node — two series for the same node, or a range query whose value
+  moved — e.g. `c001 returned 2 differing values for cpuAlloc`. The panel
+  does not pick one, so that node shows no value for the facet;
 - no node carrying the configured state label at all, e.g.
   `No node carries a "state" label: every cell is drawn hollow. Data > State label.`
   In **State** colour mode that draws the whole grid as hollow rings, which
@@ -487,6 +492,17 @@ not fully resolve:
   `3 nodes matched no range: c[41-43]. Drawn under "ungrouped".`;
 - a declared range that matched no node, drawn empty in its place, e.g.
   `Range "rack5" matched no node: r[501-502].`;
+- a line of the Ranges table that cannot be read, or a node two ranges both
+  claim, e.g.
+  `Line 3 declares "rack2" again; the first declaration keeps its nodes.`;
+- in the Rack layout, the same for **Nodes per blade, by group** and
+  **Slots per rack, by group**: a line that cannot be read, and a
+  declaration naming groups the panel is not drawing, e.g.
+  `Nodes per blade named 2 groups that are not drawn: rack[7-8].`;
+- a blade that leaves each sled under 10px wide, e.g.
+  `A blade of 4 leaves each node 6px wide in rack[1-2]. Raise Cell width.`;
+- a cabinet holding more than its declared height, e.g.
+  `rack1 needs 45 slots but 42 were declared.`;
 - a label that would group the data more completely than the source
   configured today, e.g.
   `Label "rack" would group all 540. Grouping > Group by > Label.`
@@ -512,6 +528,15 @@ the active source does. One that merely ties says nothing.
 A state matching no mapping keeps its raw text; Grafana would colour it with
 the threshold base colour (green, by default) rather than a mapped one, so
 the cell deliberately refuses that colour and draws a hollow ring instead.
+
+The strip prints eight lines at most, then `and N more warnings.`
+
+Three things are not named yet: a facet query whose samples carry no node
+label, a facet bound to a `refId` that matches no query, and a facet value
+that is not a finite number. Each leaves that facet absent from the cells and
+tooltips it would have filled. If the **Colour by** line above asks you to bind
+a facet that is already bound, one of these is why: run that facet's query in
+Explore and check its `refId` and its node label.
 
 ## In a dashboard
 
