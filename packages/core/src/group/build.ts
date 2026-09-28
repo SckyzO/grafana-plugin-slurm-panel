@@ -24,6 +24,12 @@ export interface BuildOptions {
    */
   multiValueLabel?: boolean;
   /**
+   * The label node.partitions was read from: the fan-out applies when the
+   * source groups by this one. `partition` unless the panel was told the data
+   * names it otherwise.
+   */
+  partitionLabel?: string;
+  /**
    * Group keys the source declared, in declaration order. Keys named here are
    * emitted in this order and emitted even when no node matched them, so an
    * empty rack stays visible in its place on the floor. Keys not named here
@@ -74,9 +80,10 @@ export function buildGroups(
   };
 
   const multiValued = opts.multiValueLabel === true && source.kind === 'label';
+  const partitionLabel = opts.partitionLabel ?? 'partition';
 
   for (const node of nodes) {
-    if (multiValued && source.kind === 'label' && source.label === 'partition' && node.partitions.length > 0) {
+    if (multiValued && source.kind === 'label' && source.label === partitionLabel && node.partitions.length > 0) {
       // A node in three partitions is drawn three times, which is the whole
       // of what multiValueLabel asks for. cellCount then exceeds nodeCount by
       // design; there is deliberately no flag saying so, because ingest keys

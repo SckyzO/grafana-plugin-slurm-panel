@@ -328,6 +328,39 @@ describe('NodeGridPanel', () => {
     expect(screen.getByTestId('panel-warnings')).toHaveTextContent('No node carries a "node_state" label');
   });
 
+  it('fans a node out across its partitions under a renamed partition label', () => {
+    // Data > partition label renamed to `part`, grouping by that same label,
+    // Node may appear in several groups on. The fan-out compared the grouping
+    // label to the literal `partition`, so it never ran; and since `part`
+    // differs across c1's series, ingest drops it from c1's labels and c1
+    // fell under "ungrouped" with a strip line blaming the data.
+    const table = createDataFrame({
+      refId: 'A',
+      fields: [
+        { name: 'node', type: FieldType.string, values: ['c1', 'c1', 'c2'] },
+        { name: 'part', type: FieldType.string, values: ['cpu', 'debug', 'cpu'] },
+        { name: 'status', type: FieldType.string, values: ['idle', 'idle', 'idle'] },
+        { name: 'Value', type: FieldType.number, values: [1, 1, 1] },
+      ],
+    });
+    render(
+      <NodeGridPanel
+        {...baseProps}
+        data={{ state: LoadingState.Done, series: [table], timeRange: getDefaultTimeRange() }}
+        options={{
+          ...DEFAULT_OPTIONS,
+          labels: { ...DEFAULT_OPTIONS.labels, partition: 'part' },
+          grouping: { kind: 'label', label: 'part' },
+          multiValueLabel: true,
+        }}
+        fieldConfig={plainConfig}
+      />
+    );
+    expect(screen.getAllByTestId('node-cell-c1')).toHaveLength(2);
+    expect(screen.getByTestId('node-group-debug')).toBeInTheDocument();
+    expect(screen.queryByTestId('node-group-ungrouped')).toBeNull();
+  });
+
   it('draws one sled per node when nothing is declared', () => {
     // The default-unchanged promise, asserted rather than assumed: a reader
     // who never opens the option gets the cabinet the panel always drew.

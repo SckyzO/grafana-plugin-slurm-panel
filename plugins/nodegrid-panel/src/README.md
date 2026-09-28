@@ -169,9 +169,10 @@ itself: a panel that reconfigured itself because a third party edited the
 scrape would change behaviour with nothing in its own JSON to explain why.
 
 **Grouping > Node may appear in several groups** draws a node once per
-partition when grouping by the `partition` label, the only label this
-fan-out supports, since it needs a per-node list of every value the label
-takes, and the engine only builds that list for partitions.
+partition when grouping by the partition label — `partition`, or whatever
+`options.labels.partition` names — the only label this fan-out supports,
+since it needs a per-node list of every value the label takes, and the engine
+only builds that list for partitions.
 
 ### Showing part of the cluster
 

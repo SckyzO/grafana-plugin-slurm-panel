@@ -42,6 +42,7 @@ export function useNodeModel(data: PanelData, options: PanelOptions, replaceVari
 
     const model = buildGroups(nodes, source, {
       multiValueLabel: options.multiValueLabel,
+      partitionLabel: options.labels.partition,
       order: declaredKeys(source),
     });
 

@@ -196,7 +196,7 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
         path: 'multiValueLabel',
         name: 'Node may appear in several groups',
         description:
-          'Draw a node once per partition it belongs to. Only the partition label is supported: fanning out an arbitrary multi-valued label would need a per-node map of every value, which the engine does not build.',
+          'Draw a node once per partition it belongs to, when grouping by the partition label (options.labels.partition, `partition` by default). Only that label is supported: fanning out an arbitrary multi-valued label would need a per-node map of every value, which the engine does not build.',
         defaultValue: DEFAULT_OPTIONS.multiValueLabel,
         category: ['Grouping'],
       });
