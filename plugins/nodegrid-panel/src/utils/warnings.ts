@@ -235,6 +235,18 @@ const causeOf = (source: KeySource, plural: boolean): string => {
   }
 };
 
+/** One ingest warning as a strip line. */
+const ingestLine = (warning: IngestWarning): string => {
+  if (warning.kind !== 'no-identity') {
+    return warning.detail;
+  }
+  const query = `Query ${warning.refId ?? '?'}`;
+  // Part of a query is not the query: the grid is drawn from the rest of it.
+  return warning.skippedSeries !== undefined && warning.totalSeries !== undefined
+    ? `${query} skipped ${warning.skippedSeries} of ${warning.totalSeries} series: ${warning.detail}`
+    : `${query} skipped: ${warning.detail}`;
+};
+
 /** What the Colour by radio calls each mode, so the line names what was clicked. */
 const COLOUR_MODE_LABEL: Record<Exclude<ColorMode, 'state'>, string> = {
   cpu: 'CPU',
@@ -348,9 +360,7 @@ export function summarise(
   }
 
   for (const warning of warnings) {
-    lines.push(
-      warning.kind === 'no-identity' ? `Query ${warning.refId ?? '?'} skipped: ${warning.detail}` : warning.detail
-    );
+    lines.push(ingestLine(warning));
   }
 
   // `none` puts every node in `ungrouped` deliberately. Warning about it would

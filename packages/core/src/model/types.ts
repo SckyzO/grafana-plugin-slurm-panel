@@ -77,6 +77,13 @@ export interface IngestWarning {
   kind: IngestWarningKind;
   refId?: string;
   detail: string;
+  /**
+   * A no-identity warning about part of a query only: how many of the series
+   * it returned were skipped, out of how many that held data. Absent when the
+   * whole query was skipped.
+   */
+  skippedSeries?: number;
+  totalSeries?: number;
 }
 
 export interface IngestResult {

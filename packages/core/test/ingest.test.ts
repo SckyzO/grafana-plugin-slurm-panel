@@ -80,6 +80,96 @@ describe('ingest reports rather than guesses', () => {
   });
 });
 
+describe('ingest names a query that carries no node identity', () => {
+  // Every bound query, not only the state query, and once per query rather
+  // than once per frame: a time-series query returns one frame per series,
+  // and a line per frame repeated one sentence down the strip.
+  const stateFrames = load('node-status.numeric-multi.json');
+  const blind = (refId: string, name = 'Value'): MinimalFrame => ({
+    refId,
+    fields: [
+      { name: 'Time', type: 'time', values: [1] },
+      { name, type: 'number', labels: { instance: 'exporter:9341' }, values: [1] },
+    ],
+  });
+  const NO_IDENTITY = { kind: 'no-identity', detail: 'no node label or column' };
+
+  it('names a facet query once, however many series it returned', () => {
+    const { warnings } = ingest({
+      frames: [...stateFrames, blind('B'), blind('B'), blind('B')],
+      queries: { state: 'A', cpuAlloc: 'B' },
+      labels: LABELS,
+    });
+    expect(warnings).toEqual([{ ...NO_IDENTITY, refId: 'B' }]);
+  });
+
+  it.each(['cpuTotal', 'memAlloc', 'memTotal', 'gresUsed', 'gresTotal', 'drainReason', 'drainSince'])(
+    'covers the %s query too',
+    (role) => {
+      const { warnings } = ingest({
+        frames: [...stateFrames, blind('Z')],
+        queries: { state: 'A', [role]: 'Z' },
+        labels: LABELS,
+      });
+      expect(warnings).toEqual([{ ...NO_IDENTITY, refId: 'Z' }]);
+    }
+  );
+
+  it('names a query aggregated down to no label at all', () => {
+    // `sum(slurm_node_cpu_alloc)`: one number for the whole cluster, which no
+    // node can claim.
+    const sum: MinimalFrame = {
+      refId: 'B',
+      fields: [
+        { name: 'Time', type: 'time', values: [1] },
+        { name: 'Value', type: 'number', values: [540] },
+      ],
+    };
+    const { warnings } = ingest({ frames: [...stateFrames, sum], queries: { state: 'A', cpuAlloc: 'B' }, labels: LABELS });
+    expect(warnings).toEqual([{ ...NO_IDENTITY, refId: 'B' }]);
+  });
+
+  it('names a query once when two roles share it', () => {
+    const { warnings } = ingest({
+      frames: [...stateFrames, blind('B')],
+      queries: { state: 'A', cpuAlloc: 'B', cpuTotal: 'B' },
+      labels: LABELS,
+    });
+    expect(warnings).toEqual([{ ...NO_IDENTITY, refId: 'B' }]);
+  });
+
+  it('says nothing about an empty result, which is what a quiet facet looks like', () => {
+    // No node drained, so no drain reason: Prometheus answers with one frame
+    // carrying the refId and no field at all. That is data, not a fault.
+    const { warnings } = ingest({
+      frames: [...stateFrames, { refId: 'B', fields: [] }],
+      queries: { state: 'A', drainReason: 'B' },
+      labels: LABELS,
+    });
+    expect(warnings).toEqual([]);
+  });
+
+  it('counts the series skipped when only some of them carry identity', () => {
+    const { nodes, warnings } = ingest({ frames: [...stateFrames, blind('A')], queries: QUERIES, labels: LABELS });
+    expect(nodes.length).toBeGreaterThan(0);
+    expect(warnings).toEqual([
+      { ...NO_IDENTITY, refId: 'A', skippedSeries: 1, totalSeries: stateFrames.length + 1 },
+    ]);
+  });
+
+  it('stays quiet about a facet query whose series all carry identity', () => {
+    const cpu: MinimalFrame = {
+      refId: 'B',
+      fields: [
+        { name: 'Time', type: 'time', values: [1] },
+        { name: 'Value', type: 'number', labels: { node: 'c1' }, values: [4] },
+      ],
+    };
+    const { warnings } = ingest({ frames: [...stateFrames, cpu], queries: { state: 'A', cpuAlloc: 'B' }, labels: LABELS });
+    expect(warnings).toEqual([]);
+  });
+});
+
 describe('ingest joins the facets that carry no partition label', () => {
   const stateFrames = load('node-status.numeric-multi.json');
   const drainFrame: MinimalFrame = {

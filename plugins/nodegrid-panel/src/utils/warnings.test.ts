@@ -148,6 +148,18 @@ describe('summarise', () => {
     ).toContain('Query B skipped: no node label or column');
   });
 
+  it('says how much of a query was skipped when only part of it was', () => {
+    // "Query A skipped" would claim the whole query went, when the grid is
+    // drawn from the rest of it.
+    const lines = summarise(
+      model(0, 0),
+      [{ kind: 'no-identity', refId: 'A', detail: 'no node label or column', skippedSeries: 1, totalSeries: 40 }],
+      [],
+      notes()
+    );
+    expect(lines).toContain('Query A skipped 1 of 40 series: no node label or column');
+  });
+
   describe('summarise, slot notes', () => {
     const slotNotes = (over: Partial<SlotNotes> = {}): SlotNotes => ({
       problems: [],

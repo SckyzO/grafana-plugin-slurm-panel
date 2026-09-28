@@ -1,6 +1,6 @@
 import { toSamples } from './labels.js';
 import type {
-  GresEntry, IngestInput, IngestResult, IngestWarning, MinimalFrame, NodeFacets, SlurmNode,
+  GresEntry, IngestInput, IngestResult, IngestWarning, MinimalFrame, NodeFacets, Sample, SlurmNode,
 } from '../model/types.js';
 
 type ScalarFacet = 'cpuAlloc' | 'cpuTotal' | 'memAlloc' | 'memTotal' | 'drainSince';
@@ -8,6 +8,15 @@ const SCALAR_FACETS: ScalarFacet[] = ['cpuAlloc', 'cpuTotal', 'memAlloc', 'memTo
 
 const framesFor = (frames: MinimalFrame[], refId: string | undefined): MinimalFrame[] =>
   refId === undefined ? [] : frames.filter((f) => f.refId === refId);
+
+/**
+ * Whether a frame holds any data at all. An empty Prometheus result still
+ * comes back as a frame carrying its refId, with no field in it, and a quiet
+ * facet looks exactly like that: a drain-reason query on a cluster with
+ * nothing drained. That is an answer, not a query that lost its identity.
+ */
+const carriesData = (frame: MinimalFrame): boolean =>
+  frame.fields.some((f) => f.type !== 'time' && f.name !== 'Time' && f.name !== 'time' && f.values.length > 0);
 
 const toNumber = (value: unknown): number | undefined =>
   typeof value === 'number' && Number.isFinite(value) ? value : undefined;
@@ -29,6 +38,25 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
   // see the comment where this is populated, below.
   const ambiguousLabelKeys = new Map<string, Set<string>>();
 
+  // Which frames of each bound query held data, and which of those carried no
+  // node identity. Kept per refId rather than per role, because one query can
+  // serve two roles, and reported once per query at the end rather than once
+  // per frame: a time-series query returns a frame per series, and a line per
+  // frame repeats one sentence down the strip.
+  const identity = new Map<string, { frames: Set<MinimalFrame>; blind: Set<MinimalFrame> }>();
+  const noteIdentity = (frame: MinimalFrame, identified: number): void => {
+    if (frame.refId === undefined || !carriesData(frame)) {
+      return;
+    }
+    const entry = identity.get(frame.refId) ?? { frames: new Set<MinimalFrame>(), blind: new Set<MinimalFrame>() };
+    entry.frames.add(frame);
+    if (identified === 0) {
+      entry.blind.add(frame);
+    }
+    identity.set(frame.refId, entry);
+  };
+  const identifiedIn = (samples: Sample[]): number => samples.filter((s) => s.labels[labels.node] !== undefined).length;
+
   // --- identity and state -------------------------------------------------
   for (const frame of framesFor(frames, queries.state)) {
     // Narrow to `{ sample, name: string }` here, in the same step that
@@ -39,8 +67,8 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
       return typeof name === 'string' ? [{ sample, name }] : [];
     });
 
+    noteIdentity(frame, identified.length);
     if (identified.length === 0) {
-      warnings.push(warn('no-identity', frame.refId, 'no node label or column'));
       continue;
     }
 
@@ -102,7 +130,9 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
     const seen = new Map<string, Set<number>>();
 
     for (const frame of framesFor(frames, refId)) {
-      for (const sample of toSamples(frame)) {
+      const samples = toSamples(frame);
+      noteIdentity(frame, identifiedIn(samples));
+      for (const sample of samples) {
         const name = sample.labels[labels.node];
         const value = toNumber(sample.value);
         if (name === undefined || value === undefined) {
@@ -139,7 +169,9 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
   // --- gres, keyed per model ----------------------------------------------
   const applyGres = (refId: string | undefined, key: 'used' | 'total'): void => {
     for (const frame of framesFor(frames, refId)) {
-      for (const sample of toSamples(frame)) {
+      const samples = toSamples(frame);
+      noteIdentity(frame, identifiedIn(samples));
+      for (const sample of samples) {
         const name = sample.labels[labels.node];
         const type = sample.labels[labels.gresType];
         const value = toNumber(sample.value);
@@ -167,7 +199,9 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
 
   // --- drain reason, which carries no partition label ---------------------
   for (const frame of framesFor(frames, queries.drainReason)) {
-    for (const sample of toSamples(frame)) {
+    const samples = toSamples(frame);
+    noteIdentity(frame, identifiedIn(samples));
+    for (const sample of samples) {
       const name = sample.labels[labels.node];
       const reason = sample.labels[labels.reason];
       if (name === undefined || reason === undefined) {
@@ -180,5 +214,21 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
     }
   }
 
-  return { nodes: [...nodes.values()].sort((a, b) => a.name.localeCompare(b.name)), warnings };
+  // First in the list: a query that lost its identity explains the other
+  // lines, and often an empty grid, better than anything after it.
+  const identityWarnings: IngestWarning[] = [];
+  for (const [refId, { frames: held, blind }] of identity) {
+    if (blind.size === 0) {
+      continue;
+    }
+    const warning = warn('no-identity', refId, 'no node label or column');
+    identityWarnings.push(
+      blind.size === held.size ? warning : { ...warning, skippedSeries: blind.size, totalSeries: held.size }
+    );
+  }
+
+  return {
+    nodes: [...nodes.values()].sort((a, b) => a.name.localeCompare(b.name)),
+    warnings: [...identityWarnings, ...warnings],
+  };
 }
