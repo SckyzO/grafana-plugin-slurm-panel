@@ -296,7 +296,7 @@ describe('NodeCell', () => {
     );
     screen.getByTestId('node-cell-node-idle').click();
 
-    expect(openSpy).toHaveBeenCalledWith('about:blank', '_self');
+    expect(openSpy).toHaveBeenCalledWith('about:blank', '_self', 'noopener,noreferrer');
 
     openSpy.mockRestore();
   });

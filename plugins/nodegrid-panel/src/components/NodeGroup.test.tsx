@@ -204,7 +204,7 @@ describe('NodeGroup', () => {
     renderGroup(group, { ...DEFAULT_OPTIONS, layout: 'wrap' }, { hrefFor });
 
     screen.getByTestId('node-cell-node-a').click();
-    expect(openSpy).toHaveBeenCalledWith('/d/some-dash?var-node=node-a', '_self');
+    expect(openSpy).toHaveBeenCalledWith('/d/some-dash?var-node=node-a', '_self', 'noopener,noreferrer');
 
     openSpy.mockRestore();
   });

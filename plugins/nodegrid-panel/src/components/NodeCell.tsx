@@ -135,7 +135,11 @@ export function NodeCell({
         // typed `string | undefined` — nothing in the type stops a future
         // caller handing it an unsanitised one. sanitizeUrl is idempotent,
         // so the second pass costs a comparison and removes the asymmetry.
-        onClick={href ? () => window.open(textUtil.sanitizeUrl(href), '_self') : undefined}
+        // noopener,noreferrer although the link opens in the same tab, where
+        // there is no opener to protect: Grafana's plugin validator rejects a
+        // window.open without them, and a caller that changes the target to a
+        // new tab keeps the protection without having to remember it.
+        onClick={href ? () => window.open(textUtil.sanitizeUrl(href), '_self', 'noopener,noreferrer') : undefined}
       />
     </Tooltip>
   );

@@ -70,7 +70,11 @@ describe('NodeGridPanel', () => {
     screen.getByTestId('node-cell-rack1-node07').click();
 
     // The node name and raw state landed in the href, not the placeholder text.
-    expect(openSpy).toHaveBeenCalledWith('/d/some-dash?var-node=rack1-node07&var-state=drained', '_self');
+    expect(openSpy).toHaveBeenCalledWith(
+      '/d/some-dash?var-node=rack1-node07&var-state=drained',
+      '_self',
+      'noopener,noreferrer'
+    );
     expect(openSpy).not.toHaveBeenCalledWith(expect.stringContaining('${__node}'), expect.anything());
     expect(openSpy).not.toHaveBeenCalledWith(expect.stringContaining('${__state}'), expect.anything());
 
@@ -158,7 +162,7 @@ describe('NodeGridPanel', () => {
     render(<NodeGridPanel {...baseProps} data={rackData()} options={DEFAULT_OPTIONS} fieldConfig={fieldConfig} />);
     screen.getByTestId('node-cell-c1').click();
 
-    expect(openSpy).toHaveBeenCalledWith('/d/some-dash?var-node=c1', '_self');
+    expect(openSpy).toHaveBeenCalledWith('/d/some-dash?var-node=c1', '_self', 'noopener,noreferrer');
 
     openSpy.mockRestore();
   });
