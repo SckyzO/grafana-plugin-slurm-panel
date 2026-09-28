@@ -25,8 +25,10 @@ export function PanelWarnings({ lines }: { lines: string[] }) {
   // In the panel, not in a console nobody opens.
   return (
     <div className={styles.strip} data-testid="panel-warnings" role="status">
-      {lines.map((line) => (
-        <div className={styles.line} key={line}>
+      {/* Keyed by position too: nothing upstream promises the lines are
+          distinct, and the list is rebuilt whole on every change. */}
+      {lines.map((line, i) => (
+        <div className={styles.line} key={`${i}:${line}`}>
           <Icon name="exclamation-triangle" size="sm" />
           <span>{line}</span>
         </div>
