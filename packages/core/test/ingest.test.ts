@@ -43,6 +43,15 @@ describe.each([
     expect(byName).toEqual({ c1: 'mixed-', c9: 'drained', c10: 'down', g1: 'idle' });
   });
 
+  it('keeps a label every series of a node agrees on, and drops one they do not', () => {
+    // What a grouping by label reads. c1's three series agree on `status` and
+    // differ on `partition`: the first has to survive the merge, the second
+    // cannot, since no single value of it is true of the node.
+    const c1 = result().nodes.find((n) => n.name === 'c1');
+    expect(c1?.labels['status']).toBe('mixed-');
+    expect(c1?.labels['partition']).toBeUndefined();
+  });
+
   it('reports no warnings on well-formed input', () => {
     expect(result().warnings).toEqual([]);
   });
