@@ -172,8 +172,8 @@ node count; set `SYNTH_NODES` directly instead and `SYNTH_RACKS` does nothing
 at all. Either way, node names carry no location, just `c<n>` and `g<n>`, flat
 and counting within their own family, because the real exporter's don't.
 `SYNTH_SEED` fixes which node lands in which state, so a screenshot or a
-failing e2e run reproduces exactly; `SYNTH_PARTITIONS` renames the
-partitions.
+failing e2e run reproduces exactly. The four families and the partitions
+they sit in are fixed in `dev/synthetic-exporter/serve.py`.
 
 **Real** points at the `slurm_exporter` test cluster instead. Start it with
 `make -C <slurm_exporter>/scripts/testing setup`, then change the Prometheus
