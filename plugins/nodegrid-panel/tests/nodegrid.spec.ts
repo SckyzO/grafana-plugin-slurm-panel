@@ -266,6 +266,14 @@ test.describe('the continuous colour modes', () => {
   });
 
   test('groups the same nodes four different ways', async ({ page }) => {
+    // Six full page loads, one per panel on purpose (below), each waiting for
+    // its grid: measured at 3 to 4.5 seconds apiece on the nightly image, so
+    // Playwright's default 30 seconds for the whole test ran out on the
+    // seventh step with every one of them succeeding. gotoPanelWithData
+    // allows itself up to a minute for one panel; the test now has room for
+    // the loads it makes and one reload.
+    test.setTimeout(60_000);
+
     // These four panels read the same 32-row CSV, so a differing cell count
     // means a grouping key dropped nodes rather than regrouping them.
     //
