@@ -1,8 +1,9 @@
-import { collectUnmapped, summarise, ruleFor, groupingNotes } from './warnings';
-import type { DisplayProcessor } from '@grafana/data';
+import { collectUnmapped, summarise, ruleFor, groupingNotes, unresolvedBindings } from './warnings';
+import { LoadingState, getDefaultTimeRange } from '@grafana/data';
+import type { DataFrame, DataQueryRequest, DisplayProcessor, PanelData } from '@grafana/data';
 import { buildGroups, parseRangeTable, UNGROUPED } from '@slurm-views/core';
 import type { GroupedModel, KeySource, SlurmNode } from '@slurm-views/core';
-import type { GroupingNotes, SlotNotes } from './warnings';
+import type { GroupingNotes, SlotNotes, UnresolvedBinding } from './warnings';
 
 const node = (name: string, state: string): SlurmNode => ({
   name,
@@ -768,5 +769,92 @@ describe('summarise, the continuous colour modes', () => {
   it('stays silent when the panel has no nodes at all, which the empty state already covers', () => {
     const lines = summarise(grouped([]), [], [], notes(), undefined, undefined, display('cpu'));
     expect(lines.join(' ')).not.toContain('no node carries');
+  });
+});
+
+describe('unresolvedBindings', () => {
+  // A binding whose refId matches no returned frame used to be invisible: on
+  // a facet nothing at all, on the state query "No nodes. Check that the state
+  // query returns a node label". The first attempt at naming it read the
+  // frames without asking whether the queries had come back yet, and Grafana
+  // draws a panel before they do, with no series at all: every binding
+  // reported itself missing on every dashboard open.
+  const frame = (refId: string): DataFrame => ({ refId, fields: [], length: 0 });
+  const data = (over: Partial<PanelData> & { targets?: Array<{ refId: string; hide?: boolean }> }): PanelData => {
+    const { targets, ...rest } = over;
+    return {
+      state: LoadingState.Done,
+      series: [],
+      timeRange: getDefaultTimeRange(),
+      ...(targets !== undefined ? { request: { targets } as unknown as DataQueryRequest } : {}),
+      ...rest,
+    };
+  };
+
+  it('says nothing while the queries are still loading', () => {
+    const loading = data({ state: LoadingState.Loading, targets: [{ refId: 'A' }, { refId: 'B' }] });
+    expect(unresolvedBindings(loading, { state: 'A', cpuAlloc: 'B' })).toEqual([]);
+  });
+
+  it('says nothing about a binding whose query returned a frame, even an empty one', () => {
+    const done = data({ series: [frame('A'), frame('B')], targets: [{ refId: 'A' }, { refId: 'B' }] });
+    expect(unresolvedBindings(done, { state: 'A', cpuAlloc: 'B' })).toEqual([]);
+  });
+
+  it('names a binding to a query the panel does not have, and the ones it does', () => {
+    const done = data({ series: [frame('A')], targets: [{ refId: 'A' }, { refId: 'B' }] });
+    expect(unresolvedBindings(done, { state: 'A', cpuAlloc: 'C' })).toEqual([
+      { refId: 'C', roles: ['cpuAlloc'], cause: 'missing', known: ['A', 'B'] },
+    ]);
+  });
+
+  it('names a hidden query as hidden, not as missing', () => {
+    const done = data({ series: [frame('A')], targets: [{ refId: 'A' }, { refId: 'B', hide: true }] });
+    expect(unresolvedBindings(done, { state: 'A', drainReason: 'B' })).toEqual([
+      { refId: 'B', roles: ['drainReason'], cause: 'hidden' },
+    ]);
+  });
+
+  it('names a visible query that returned nothing, once for every role it serves', () => {
+    const done = data({ series: [frame('A')], targets: [{ refId: 'A' }, { refId: 'B' }] });
+    expect(unresolvedBindings(done, { state: 'A', cpuAlloc: 'B', cpuTotal: 'B' })).toEqual([
+      { refId: 'B', roles: ['cpuAlloc', 'cpuTotal'], cause: 'no-data' },
+    ]);
+  });
+
+  it('falls back to "no data" when the request is not available to say more', () => {
+    const done = data({ series: [frame('A')] });
+    expect(unresolvedBindings(done, { state: 'A', cpuAlloc: 'B' })).toEqual([
+      { refId: 'B', roles: ['cpuAlloc'], cause: 'no-data' },
+    ]);
+  });
+});
+
+describe('summarise, unresolved bindings', () => {
+  const empty = (): GroupedModel => buildGroups([], { kind: 'none' }, { multiValueLabel: false });
+  const noted = (unresolved: UnresolvedBinding[]) =>
+    summarise(empty(), [], [], notes(), undefined, undefined, {
+      colorMode: 'state',
+      stateLabel: 'status',
+      queries: { state: 'A' },
+      unresolved,
+    });
+
+  it('says which queries exist when a binding names one that does not', () => {
+    expect(noted([{ refId: 'C', roles: ['cpuAlloc'], cause: 'missing', known: ['A', 'B'] }])).toContain(
+      'No query C for cpuAlloc: this panel has A, B.'
+    );
+  });
+
+  it('says a hidden query is hidden', () => {
+    expect(noted([{ refId: 'B', roles: ['drainReason'], cause: 'hidden' }])).toContain(
+      'Query B (drainReason) is hidden, so it returns nothing.'
+    );
+  });
+
+  it('says a visible query returned nothing, naming every role it serves', () => {
+    expect(noted([{ refId: 'B', roles: ['cpuAlloc', 'cpuTotal'], cause: 'no-data' }])).toContain(
+      'Query B (cpuAlloc, cpuTotal) returned no data.'
+    );
   });
 });

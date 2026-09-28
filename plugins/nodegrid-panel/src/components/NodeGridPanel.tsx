@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import { css } from '@emotion/css';
-import { FieldType, getDisplayProcessor, textUtil } from '@grafana/data';
+import { FieldType, getDisplayProcessor, LoadingState, textUtil } from '@grafana/data';
 import type { Field, GrafanaTheme2, PanelProps } from '@grafana/data';
 import { getTemplateSrv } from '@grafana/runtime';
 import { useTheme2 } from '@grafana/ui';
@@ -10,7 +10,7 @@ import { useNodeModel } from '../hooks/useNodeModel';
 import { NodeGroup } from './NodeGroup';
 import { PanelWarnings } from './PanelWarnings';
 import { layoutBlades, layoutSlots, resolveCellSize } from './rackGeometry';
-import { collectUnmapped, summarise } from '../utils/warnings';
+import { collectUnmapped, summarise, unresolvedBindings } from '../utils/warnings';
 import type { PanelOptions } from '../types';
 
 const getStyles = (theme: GrafanaTheme2, layout: PanelOptions['layout'], centred: boolean) => ({
@@ -136,6 +136,7 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
     });
     return { table, layout };
   }, [options.slotOverrides, options.slotsPerRack, cell.height, model.groups, blades.layout]);
+  const unresolved = useMemo(() => unresolvedBindings(data, options.queries), [data, options.queries]);
   const lines = useMemo(
     () =>
       summarise(
@@ -159,18 +160,38 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
               overflowing: slots.layout.overflowing,
             }
           : undefined,
-        { colorMode: options.colorMode, stateLabel: options.labels.state }
+        { colorMode: options.colorMode, stateLabel: options.labels.state, queries: options.queries, unresolved }
       ),
-    [model, warnings, unmapped, grouping, options.layout, options.colorMode, options.labels.state, blades, slots]
+    [
+      model,
+      warnings,
+      unmapped,
+      grouping,
+      options.layout,
+      options.colorMode,
+      options.labels.state,
+      options.queries,
+      unresolved,
+      blades,
+      slots,
+    ]
   );
 
   if (model.groups.length === 0) {
     // A no-identity warning is the reason there is nothing to draw, so it
-    // belongs here as much as in the populated case below.
+    // belongs here as much as in the populated case below. Nothing to say
+    // before the queries are back: an empty grid then is not an answer. And
+    // when the strip already names the state query as unresolved, advice
+    // about its node label would send the reader to the wrong place.
+    const stateUnresolved = unresolved.some((b) => b.roles.includes('state'));
     return (
       <div className={styles.outer}>
         <PanelWarnings lines={lines} />
-        <div className={styles.empty}>No nodes. Check that the state query returns a node label.</div>
+        {data.state === LoadingState.Done && (
+          <div className={styles.empty}>
+            {stateUnresolved ? 'No nodes.' : 'No nodes. Check that the state query returns a node label.'}
+          </div>
+        )}
       </div>
     );
   }

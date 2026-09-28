@@ -1,10 +1,12 @@
-import type { DisplayProcessor } from '@grafana/data';
+import { LoadingState } from '@grafana/data';
+import type { DisplayProcessor, PanelData } from '@grafana/data';
 import { collapseHostlist, suggestLabel, UNGROUPED } from '@slurm-views/core';
 import type {
   CoverageSuggestion,
   GroupedModel,
   IngestWarning,
   KeySource,
+  QueryBindings,
   RangeTable,
   SlurmNode,
 } from '@slurm-views/core';
@@ -235,6 +237,58 @@ const causeOf = (source: KeySource, plural: boolean): string => {
   }
 };
 
+/** A query binding the returned data holds no frame for, and why. */
+export type UnresolvedBinding =
+  | { refId: string; roles: string[]; cause: 'missing'; known: string[] }
+  | { refId: string; roles: string[]; cause: 'hidden' | 'no-data' };
+
+/**
+ * The bindings whose refId matches no returned frame. An empty Prometheus
+ * result still comes back as a frame carrying its refId, so no frame at all
+ * means the query does not exist, is hidden, or answered nothing.
+ *
+ * Only once the queries are done. Grafana draws a panel before they return,
+ * with no series at all, and read then every binding looks unresolved: the
+ * first version of this check reported them all on every dashboard open.
+ */
+export function unresolvedBindings(
+  data: Pick<PanelData, 'state' | 'series' | 'request'>,
+  queries: QueryBindings
+): UnresolvedBinding[] {
+  if (data.state !== LoadingState.Done) {
+    return [];
+  }
+  const returned = new Set(data.series.map((frame) => frame.refId));
+  const roles = new Map<string, string[]>();
+  for (const [role, refId] of Object.entries(queries)) {
+    if (typeof refId === 'string' && !returned.has(refId)) {
+      roles.set(refId, [...(roles.get(refId) ?? []), role]);
+    }
+  }
+  // The request is absent when the data did not come from a query runner;
+  // without it, "returned nothing" is all that can honestly be said.
+  const targets = data.request?.targets;
+  return [...roles].map(([refId, served]): UnresolvedBinding => {
+    const target = targets?.find((t) => t.refId === refId);
+    if (targets !== undefined && target === undefined) {
+      return { refId, roles: served, cause: 'missing', known: targets.map((t) => t.refId) };
+    }
+    return { refId, roles: served, cause: target?.hide === true ? 'hidden' : 'no-data' };
+  });
+}
+
+const bindingLine = (binding: UnresolvedBinding): string => {
+  const roles = binding.roles.join(', ');
+  switch (binding.cause) {
+    case 'missing':
+      return `No query ${binding.refId} for ${roles}: this panel has ${binding.known.length > 0 ? binding.known.join(', ') : 'none'}.`;
+    case 'hidden':
+      return `Query ${binding.refId} (${roles}) is hidden, so it returns nothing.`;
+    default:
+      return `Query ${binding.refId} (${roles}) returned no data.`;
+  }
+};
+
 /** One ingest warning as a strip line. */
 const ingestLine = (warning: IngestWarning): string => {
   if (warning.kind === 'non-finite') {
@@ -258,10 +312,10 @@ const COLOUR_MODE_LABEL: Record<Exclude<ColorMode, 'state'>, string> = {
 };
 
 /**
- * The two display-time facts the warning pass needs that the model does not
- * carry: what the reader asked to be coloured by, and what label the state
- * was supposed to arrive under. Grouped rather than passed as two more
- * positional arguments — seven parameters is already past the point where an
+ * The display-time facts the warning pass needs that the model does not
+ * carry: what the reader asked to be coloured by, what label the state was
+ * supposed to arrive under, and which query bindings the data did not
+ * answer. Grouped rather than passed as more positional arguments — seven parameters is already past the point where an
  * options object would read better, and reshaping the rest touches every call
  * site of summarise, one in the panel and the rest in its tests, which is its
  * own change rather than a rider on this one.
@@ -270,6 +324,10 @@ export interface DisplayNotes {
   colorMode: ColorMode;
   /** The configured Data > State label, named back when nothing arrives under it. */
   stateLabel: string;
+  /** The panel's query bindings. */
+  queries?: QueryBindings;
+  /** Bindings the returned data holds no frame for; see unresolvedBindings. */
+  unresolved?: UnresolvedBinding[];
 }
 
 export function summarise(
@@ -281,7 +339,9 @@ export function summarise(
   slots?: SlotNotes,
   display?: DisplayNotes
 ): string[] {
-  const lines: string[] = [];
+  // First: a binding that resolves to nothing explains an empty grid, or an
+  // empty facet, before anything else can.
+  const lines: string[] = (display?.unresolved ?? []).map(bindingLine);
   const allNodes = model.groups.flatMap((g) => g.nodes);
 
   // A node whose state label resolved to nothing gets an empty string, and an

@@ -8,7 +8,7 @@ import {
   createDataFrame,
   getDefaultTimeRange,
 } from '@grafana/data';
-import type { FieldConfigSource, PanelData, PanelProps } from '@grafana/data';
+import type { DataQueryRequest, FieldConfigSource, PanelData, PanelProps } from '@grafana/data';
 import { setTemplateSrv } from '@grafana/runtime';
 import { NodeGridPanel } from './NodeGridPanel';
 import { frameHeight, rackWidthFor, resolveCellSize, sledWidthFor } from './rackGeometry';
@@ -207,6 +207,53 @@ describe('NodeGridPanel', () => {
     render(<NodeGridPanel {...baseProps} data={rackData()} options={DEFAULT_OPTIONS} fieldConfig={fieldConfig} />);
 
     expect(screen.queryByTestId('panel-warnings')).toBeNull();
+  });
+
+  // Grafana draws a panel before its queries return, with no series at all.
+  // Read as a finished answer, that is a cluster with no nodes and every
+  // binding unresolved, and the panel said so, with advice about the node
+  // label, on every dashboard open.
+  it('says nothing while its queries are loading', () => {
+    const loading: PanelData = {
+      state: LoadingState.Loading,
+      series: [],
+      timeRange: getDefaultTimeRange(),
+      request: { targets: [{ refId: 'A' }, { refId: 'B' }] } as unknown as DataQueryRequest,
+    };
+    render(
+      <NodeGridPanel
+        {...baseProps}
+        data={loading}
+        options={{ ...DEFAULT_OPTIONS, queries: { state: 'A', cpuAlloc: 'B' } }}
+        fieldConfig={plainConfig}
+      />
+    );
+    expect(screen.queryByTestId('panel-warnings')).toBeNull();
+    expect(screen.queryByText(/Check that the state query/)).toBeNull();
+  });
+
+  it('names a facet bound to a query the panel does not have, once the queries are back', () => {
+    render(
+      <NodeGridPanel
+        {...baseProps}
+        data={{ ...rackData(), request: { targets: [{ refId: 'A' }] } as unknown as DataQueryRequest }}
+        options={{ ...DEFAULT_OPTIONS, queries: { state: 'A', cpuAlloc: 'Z' } }}
+        fieldConfig={plainConfig}
+      />
+    );
+    expect(screen.getByTestId('panel-warnings')).toHaveTextContent('No query Z for cpuAlloc: this panel has A.');
+  });
+
+  it('does not blame the node label when the state query is hidden', () => {
+    const hidden: PanelData = {
+      state: LoadingState.Done,
+      series: [],
+      timeRange: getDefaultTimeRange(),
+      request: { targets: [{ refId: 'A', hide: true }] } as unknown as DataQueryRequest,
+    };
+    render(<NodeGridPanel {...baseProps} data={hidden} options={DEFAULT_OPTIONS} fieldConfig={plainConfig} />);
+    expect(screen.getByTestId('panel-warnings')).toHaveTextContent('Query A (state) is hidden, so it returns nothing.');
+    expect(screen.queryByText(/Check that the state query/)).toBeNull();
   });
 
   // The same wiring for the state label: summarise names back whatever it is
