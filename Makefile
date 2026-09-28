@@ -251,11 +251,17 @@ package: $(if $(SIGNED),deps,build) ## Package dist/ as the archive a release pu
 	  && printf %s "$$name" > .artifacts/zipname \
 	  && echo "packaged plugins/nodegrid-panel/.artifacts/$$name"'
 
-validate: package ## Run Grafana's official plugin validator on that archive
+validate: package ## Run Grafana's official plugin validator on that archive (SOURCE_URI= to compare it with the source)
 	@# On the archive a release would publish, not on a different one built
 	@# for the occasion: validating something other than what ships proves
 	@# nothing about what ships.
-	$(COMPOSE) run --rm validator "/archive/$$(cat plugins/nodegrid-panel/.artifacts/zipname)"
+	@#
+	@# SOURCE_URI is the URL a catalogue submission asks for, a GitHub
+	@# .../tree/<branch or tag> URL. Given it, the validator clones that ref
+	@# and runs the analyzers that compare the archive with its source, which
+	@# the review will run whether or not they were tried first.
+	$(COMPOSE) run --rm validator $(if $(SOURCE_URI),-sourceCodeUri '$(SOURCE_URI)') \
+	  "/archive/$$(cat plugins/nodegrid-panel/.artifacts/zipname)"
 
 package-check: build ## Prove that a signed dist/ reaches the archive with its manifest
 	@# The regression test for a release that signs. A stand-in manifest is
