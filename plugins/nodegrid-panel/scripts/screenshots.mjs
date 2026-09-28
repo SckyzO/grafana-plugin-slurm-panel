@@ -60,8 +60,20 @@ try {
   // scrape, which is always seconds, and reported an empty history on a
   // stack that had been up two hours.
   const q = encodeURIComponent('time() - min_over_time(timestamp(slurm_node_status)[6h:1m])');
-  const r = await (await fetch(`${prom}/api/v1/query?query=${q}`)).json();
-  const seconds = Number(r?.data?.result?.[0]?.value?.[1] ?? 0);
+  const res = await fetch(`${prom}/api/v1/query?query=${q}`);
+  const r = await res.json();
+  // A query that failed is not a history of zero minutes, and a value that is
+  // not a number is not a reason to stay quiet: read either way, the first
+  // warned about the wrong thing and the second, `NaN < 1200` being false,
+  // switched the warning off.
+  if (!res.ok || r?.status !== 'success') {
+    throw new Error(`HTTP ${res.status}${r?.error ? `: ${r.error}` : ''}`);
+  }
+  const raw = r.data?.result?.[0]?.value?.[1];
+  const seconds = raw === undefined ? 0 : Number(raw);
+  if (!Number.isFinite(seconds)) {
+    throw new Error(`the history came back as ${raw}`);
+  }
   if (seconds < 20 * 60) {
     console.warn(
       `\n  ! Prometheus holds ${Math.round(seconds / 60)} min of history.` +
@@ -69,8 +81,8 @@ try {
         '\n  ! running and take it again.\n'
     );
   }
-} catch {
-  console.warn('  ! could not ask Prometheus how long it has been scraping');
+} catch (e) {
+  console.warn(`  ! could not ask Prometheus how long it has been scraping: ${e.message}`);
 }
 
 /**
