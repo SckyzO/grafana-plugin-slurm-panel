@@ -51,7 +51,8 @@ Two options are worth setting next, in this order:
    wrapping row.
 
 What the panel cannot resolve, it names in a strip above the grid rather than
-hiding, with three exceptions listed under [Warnings](#warnings).
+hiding — see [Warnings](#warnings), which also lists the two things it leaves
+unsaid.
 
 ## Data
 
@@ -465,8 +466,17 @@ a few hundred nodes.
 A strip above the grid names, rather than hides, anything the panel could
 not fully resolve:
 
-- the state query skipped for carrying no node identity, e.g.
-  `Query A skipped: no node label or column`;
+- a query bound to a role that resolves to nothing once the queries are back:
+  one the panel does not have, e.g. `No query C for cpuAlloc: this panel has A, B.`,
+  one that is hidden, or one that returned no data. Never while the queries
+  are still loading, when nothing has arrived yet;
+- a query skipped for carrying no node identity, the state query or any facet,
+  e.g. `Query B skipped: no node label or column`, or
+  `Query A skipped 3 of 40 series: no node label or column` when only part of
+  it was. An empty result is an answer, not a fault, and stays silent: a
+  drain-reason query on a cluster with nothing drained returns exactly that;
+- a facet value that is not a finite number, a NaN or an Inf, on the nodes
+  the grid draws, e.g. `Query B: cpuAlloc is not a finite number on c[1-3].`;
 - a CPU, memory or drain-age facet returning several differing values for
   one node — two series for the same node, or a range query whose value
   moved — e.g. `c001 returned 2 differing values for cpuAlloc`. The panel
@@ -480,7 +490,9 @@ not fully resolve:
 - a continuous **Colour by** mode whose facet no node carries — the three
   non-state modes are bound in the panel JSON, so choosing one without binding
   it draws every cell empty. Only when _no_ node has it: partial coverage is
-  normal and stays silent;
+  normal and stays silent. When both of the mode's queries are bound, the line
+  names them rather than asking you to bind them, e.g.
+  `Its queries (B, C) return nothing the grid can use.`;
 - a grouping source that cannot work at all, named as itself rather than
   blamed on the node names: a capture pattern that does not compile, or an
   **Ordinals per group** of zero;
@@ -531,12 +543,9 @@ the cell deliberately refuses that colour and draws a hollow ring instead.
 
 The strip prints eight lines at most, then `and N more warnings.`
 
-Three things are not named yet: a facet query whose samples carry no node
-label, a facet bound to a `refId` that matches no query, and a facet value
-that is not a finite number. Each leaves that facet absent from the cells and
-tooltips it would have filled. If the **Colour by** line above asks you to bind
-a facet that is already bound, one of these is why: run that facet's query in
-Explore and check its `refId` and its node label.
+Two things are left unsaid. A facet sample naming a node the state query did
+not return is dropped, since there is no cell to put it in; and a GPU query
+returning several values for the same node and model keeps the last one read.
 
 ## In a dashboard
 
