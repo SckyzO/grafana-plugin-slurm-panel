@@ -55,6 +55,21 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
     }
     identity.set(frame.refId, entry);
   };
+  // Values that are numbers but not finite — a NaN from a division by zero in
+  // the query, an Inf — per query and facet. Dropped like a missing label
+  // before, so the cell just showed no data. Reported at the end, once the
+  // nodes the grid draws are known. A null is left alone: it is a gap in a
+  // series, not a value.
+  const nonFinite = new Map<string, { refId: string; facet: string; names: Set<string> }>();
+  const noteValue = (refId: string | undefined, facet: string, name: string | undefined, value: unknown): void => {
+    if (refId === undefined || name === undefined || typeof value !== 'number' || Number.isFinite(value)) {
+      return;
+    }
+    const key = `${refId}\u0000${facet}`;
+    const entry = nonFinite.get(key) ?? { refId, facet, names: new Set<string>() };
+    entry.names.add(name);
+    nonFinite.set(key, entry);
+  };
   const identifiedIn = (samples: Sample[]): number => samples.filter((s) => s.labels[labels.node] !== undefined).length;
 
   // --- identity and state -------------------------------------------------
@@ -134,6 +149,7 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
       noteIdentity(frame, identifiedIn(samples));
       for (const sample of samples) {
         const name = sample.labels[labels.node];
+        noteValue(refId, facet, name, sample.value);
         const value = toNumber(sample.value);
         if (name === undefined || value === undefined) {
           continue;
@@ -174,6 +190,7 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
       for (const sample of samples) {
         const name = sample.labels[labels.node];
         const type = sample.labels[labels.gresType];
+        noteValue(refId, key === 'used' ? 'gresUsed' : 'gresTotal', name, sample.value);
         const value = toNumber(sample.value);
         if (name === undefined || type === undefined || value === undefined) {
           continue;
@@ -227,8 +244,18 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
     );
   }
 
+  // Only nodes the grid draws: a sample naming a node the state query never
+  // returned has no cell for the line to explain.
+  const nonFiniteWarnings: IngestWarning[] = [];
+  for (const { refId, facet, names } of nonFinite.values()) {
+    const drawn = [...names].filter((name) => nodes.has(name)).sort((a, b) => a.localeCompare(b));
+    if (drawn.length > 0) {
+      nonFiniteWarnings.push({ ...warn('non-finite', refId, `${facet} is not a finite number`), nodes: drawn });
+    }
+  }
+
   return {
     nodes: [...nodes.values()].sort((a, b) => a.name.localeCompare(b.name)),
-    warnings: [...identityWarnings, ...warnings],
+    warnings: [...identityWarnings, ...warnings, ...nonFiniteWarnings],
   };
 }

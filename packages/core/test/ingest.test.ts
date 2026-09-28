@@ -170,6 +170,62 @@ describe('ingest names a query that carries no node identity', () => {
   });
 });
 
+describe('ingest names a facet value that is not a finite number', () => {
+  // A NaN from a division by zero in the query, or an Inf, used to be
+  // dropped in the same `continue` as a missing label, so the cell simply
+  // showed no data. Named once per query and facet, and only for nodes the
+  // grid draws: a sample naming a node the state query never returned has
+  // no cell to explain.
+  const stateFrames = load('node-status.numeric-multi.json');
+  const valued = (refId: string, node: string, value: unknown, extra: Record<string, string> = {}): MinimalFrame => ({
+    refId,
+    fields: [
+      { name: 'Time', type: 'time', values: [1] },
+      { name: 'Value', type: 'number', labels: { node, ...extra }, values: [value] },
+    ],
+  });
+
+  it('names the nodes once per query and facet', () => {
+    const { warnings } = ingest({
+      frames: [...stateFrames, valued('B', 'c1', Number.NaN), valued('B', 'c9', Number.POSITIVE_INFINITY), valued('B', 'c10', 4)],
+      queries: { state: 'A', cpuAlloc: 'B' },
+      labels: LABELS,
+    });
+    expect(warnings).toEqual([
+      { kind: 'non-finite', refId: 'B', detail: 'cpuAlloc is not a finite number', nodes: ['c1', 'c9'] },
+    ]);
+  });
+
+  it('covers the GPU queries, which are keyed per model', () => {
+    const { warnings } = ingest({
+      frames: [...stateFrames, valued('G', 'g1', Number.NaN, { gres_type: 'gpu:a100' })],
+      queries: { state: 'A', gresUsed: 'G' },
+      labels: LABELS,
+    });
+    expect(warnings).toEqual([
+      { kind: 'non-finite', refId: 'G', detail: 'gresUsed is not a finite number', nodes: ['g1'] },
+    ]);
+  });
+
+  it('leaves out a node the grid does not draw', () => {
+    const { warnings } = ingest({
+      frames: [...stateFrames, valued('B', 'zz9', Number.NaN)],
+      queries: { state: 'A', cpuAlloc: 'B' },
+      labels: LABELS,
+    });
+    expect(warnings).toEqual([]);
+  });
+
+  it('says nothing about a missing point, which is a gap and not a value', () => {
+    const { warnings } = ingest({
+      frames: [...stateFrames, valued('B', 'c1', null)],
+      queries: { state: 'A', cpuAlloc: 'B' },
+      labels: LABELS,
+    });
+    expect(warnings).toEqual([]);
+  });
+});
+
 describe('ingest joins the facets that carry no partition label', () => {
   const stateFrames = load('node-status.numeric-multi.json');
   const drainFrame: MinimalFrame = {

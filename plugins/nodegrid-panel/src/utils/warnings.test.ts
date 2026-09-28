@@ -160,6 +160,16 @@ describe('summarise', () => {
     expect(lines).toContain('Query A skipped 1 of 40 series: no node label or column');
   });
 
+  it('names the nodes behind a value that is not a finite number, as a hostlist', () => {
+    const lines = summarise(
+      model(0, 0),
+      [{ kind: 'non-finite', refId: 'B', detail: 'cpuAlloc is not a finite number', nodes: ['c1', 'c2', 'c3'] }],
+      [],
+      notes()
+    );
+    expect(lines).toContain('Query B: cpuAlloc is not a finite number on c[1-3].');
+  });
+
   describe('summarise, slot notes', () => {
     const slotNotes = (over: Partial<SlotNotes> = {}): SlotNotes => ({
       problems: [],

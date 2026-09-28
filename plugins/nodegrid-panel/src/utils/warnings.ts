@@ -237,6 +237,9 @@ const causeOf = (source: KeySource, plural: boolean): string => {
 
 /** One ingest warning as a strip line. */
 const ingestLine = (warning: IngestWarning): string => {
+  if (warning.kind === 'non-finite') {
+    return `Query ${warning.refId ?? '?'}: ${warning.detail} on ${listOf(warning.nodes ?? [])}.`;
+  }
   if (warning.kind !== 'no-identity') {
     return warning.detail;
   }

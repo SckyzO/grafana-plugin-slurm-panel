@@ -71,7 +71,7 @@ export interface SlurmNode {
   facets: NodeFacets;
 }
 
-export type IngestWarningKind = 'no-identity' | 'ambiguous-scalar';
+export type IngestWarningKind = 'no-identity' | 'ambiguous-scalar' | 'non-finite';
 
 export interface IngestWarning {
   kind: IngestWarningKind;
@@ -84,6 +84,8 @@ export interface IngestWarning {
    */
   skippedSeries?: number;
   totalSeries?: number;
+  /** The nodes a warning is about, when there can be many: a non-finite value. */
+  nodes?: string[];
 }
 
 export interface IngestResult {
