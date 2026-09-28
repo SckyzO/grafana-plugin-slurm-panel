@@ -695,6 +695,25 @@ describe('summarise, the continuous colour modes', () => {
     );
   });
 
+  it('does not tell the reader to bind a facet that is already bound', () => {
+    // Bound, and still nothing: the queries answer, but with nothing a cell
+    // can use. Advice to bind them sends the reader to fix what is not broken.
+    const lines = summarise(grouped([bare('c1')]), [], [], notes(), undefined, undefined, {
+      ...display('cpu'),
+      queries: { state: 'A', cpuAlloc: 'B', cpuTotal: 'C' },
+    });
+    expect(lines.join(' ')).toContain('Its queries (B, C) return nothing the grid can use.');
+    expect(lines.join(' ')).not.toContain('Bind the facet');
+  });
+
+  it('still says to bind when only part of the mode is bound', () => {
+    const lines = summarise(grouped([bare('c1')]), [], [], notes(), undefined, undefined, {
+      ...display('mem'),
+      queries: { state: 'A', memAlloc: 'B' },
+    });
+    expect(lines.join(' ')).toContain('Bind the facet');
+  });
+
   it('stays silent on partial coverage, which is normal and documented', () => {
     // A node in a continuous mode with no data for that facet is drawn as a
     // hollow ring rather than filled, deliberately and documented

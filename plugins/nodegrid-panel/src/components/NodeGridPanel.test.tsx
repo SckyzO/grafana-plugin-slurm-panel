@@ -195,6 +195,20 @@ describe('NodeGridPanel', () => {
     expect(screen.getByTestId('panel-warnings')).toHaveTextContent('Colour by CPU, but no node carries that data');
   });
 
+  it('does not advise binding a colour mode whose queries are bound', () => {
+    render(
+      <NodeGridPanel
+        {...baseProps}
+        data={rackData()}
+        options={{ ...DEFAULT_OPTIONS, colorMode: 'cpu', queries: { state: 'A', cpuAlloc: 'B', cpuTotal: 'C' } }}
+        fieldConfig={plainConfig}
+      />
+    );
+    const strip = screen.getByTestId('panel-warnings');
+    expect(strip).toHaveTextContent('Its queries (B, C) return nothing the grid can use.');
+    expect(strip).not.toHaveTextContent('Bind the facet');
+  });
+
   it('says nothing of the kind in State mode, on the same data', () => {
     const fieldConfig: FieldConfigSource = {
       defaults: {

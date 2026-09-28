@@ -304,6 +304,13 @@ const ingestLine = (warning: IngestWarning): string => {
     : `${query} skipped: ${warning.detail}`;
 };
 
+/** The facets each continuous mode needs, both of them, for a cell to fill. */
+const MODE_FACETS: Record<Exclude<ColorMode, 'state'>, Array<keyof QueryBindings>> = {
+  cpu: ['cpuAlloc', 'cpuTotal'],
+  mem: ['memAlloc', 'memTotal'],
+  gres: ['gresUsed', 'gresTotal'],
+};
+
 /** What the Colour by radio calls each mode, so the line names what was clicked. */
 const COLOUR_MODE_LABEL: Record<Exclude<ColorMode, 'state'>, string> = {
   cpu: 'CPU',
@@ -378,9 +385,17 @@ export function summarise(
   if (display !== undefined && display.colorMode !== 'state') {
     const mode = display.colorMode;
     if (allNodes.length > 0 && allNodes.every((n) => fractionFor(n, mode) === undefined)) {
+      // Bound and still empty is a different fault from unbound: the queries
+      // answer, with nothing a cell can use, and the lines above usually say
+      // why. Telling the reader to bind them would send them to the one place
+      // that is not broken.
+      const refIds = MODE_FACETS[mode].map((facet) => display.queries?.[facet]);
+      const bound = refIds.every((refId): refId is string => refId !== undefined);
       lines.push(
         `Colour by ${COLOUR_MODE_LABEL[mode]}, but no node carries that data: every cell is drawn empty. ` +
-          'Bind the facet in the panel JSON (panel menu > Edit panel JSON, options.queries).'
+          (bound
+            ? `Its queries (${[...new Set(refIds)].join(', ')}) return nothing the grid can use.`
+            : 'Bind the facet in the panel JSON (panel menu > Edit panel JSON, options.queries).')
       );
     }
   }
