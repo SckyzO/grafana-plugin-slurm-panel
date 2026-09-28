@@ -1,6 +1,6 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { css } from '@emotion/css';
-import { FieldType, getDisplayProcessor, LoadingState, textUtil } from '@grafana/data';
+import { FieldType, getDisplayProcessor, textUtil } from '@grafana/data';
 import type { Field, GrafanaTheme2, PanelProps } from '@grafana/data';
 import { getTemplateSrv } from '@grafana/runtime';
 import { useTheme2 } from '@grafana/ui';
@@ -11,6 +11,7 @@ import { NodeGroup } from './NodeGroup';
 import { PanelWarnings } from './PanelWarnings';
 import { layoutBlades, layoutSlots, resolveCellSize } from './rackGeometry';
 import { collectUnmapped, summarise, unresolvedBindings } from '../utils/warnings';
+import type { UnresolvedBinding } from '../utils/warnings';
 import type { PanelOptions } from '../types';
 
 const getStyles = (theme: GrafanaTheme2, layout: PanelOptions['layout'], centred: boolean) => ({
@@ -35,6 +36,9 @@ const getStyles = (theme: GrafanaTheme2, layout: PanelOptions['layout'], centred
   }),
   empty: css({ color: theme.colors.text.secondary, padding: theme.spacing(1) }),
 });
+
+/** One empty list, so a panel with no answer yet does not hand its memos a new one each render. */
+const NO_BINDINGS: UnresolvedBinding[] = [];
 
 export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: PanelProps<PanelOptions>) {
   const theme = useTheme2();
@@ -136,7 +140,19 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
     });
     return { table, layout };
   }, [options.slotOverrides, options.slotsPerRack, cell.height, model.groups, blades.layout]);
-  const unresolved = useMemo(() => unresolvedBindings(data, options.queries), [data, options.queries]);
+  // Undefined until the queries are Done. The last answer is kept across a
+  // refresh, which draws the panel again while Loading with the previous
+  // series: recomputing then would blank the binding lines for the length of
+  // every query and put them back after it, shifting the grid each time.
+  // Kept in state, the way React stores information from previous renders:
+  // `fresh` is memoised, so once kept it is the same array and this settles.
+  const fresh = useMemo(() => unresolvedBindings(data, options.queries), [data, options.queries]);
+  const [kept, setKept] = useState<UnresolvedBinding[] | undefined>(undefined);
+  if (fresh !== undefined && fresh !== kept) {
+    setKept(fresh);
+  }
+  const unresolved = fresh ?? kept ?? NO_BINDINGS;
+  const answered = fresh !== undefined || kept !== undefined;
   const lines = useMemo(
     () =>
       summarise(
@@ -187,7 +203,7 @@ export function NodeGridPanel({ data, options, fieldConfig, replaceVariables }: 
     return (
       <div className={styles.outer}>
         <PanelWarnings lines={lines} />
-        {data.state === LoadingState.Done && (
+        {answered && (
           <div className={styles.empty}>
             {stateUnresolved ? 'No nodes.' : 'No nodes. Check that the state query returns a node label.'}
           </div>

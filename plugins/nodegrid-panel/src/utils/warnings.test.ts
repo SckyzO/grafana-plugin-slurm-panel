@@ -810,9 +810,9 @@ describe('unresolvedBindings', () => {
     };
   };
 
-  it('says nothing while the queries are still loading', () => {
+  it('has no answer while the queries are still loading', () => {
     const loading = data({ state: LoadingState.Loading, targets: [{ refId: 'A' }, { refId: 'B' }] });
-    expect(unresolvedBindings(loading, { state: 'A', cpuAlloc: 'B' })).toEqual([]);
+    expect(unresolvedBindings(loading, { state: 'A', cpuAlloc: 'B' })).toBeUndefined();
   });
 
   it('says nothing about a binding whose query returned a frame, even an empty one', () => {

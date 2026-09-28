@@ -258,6 +258,48 @@ describe('NodeGridPanel', () => {
     expect(screen.getByTestId('panel-warnings')).toHaveTextContent('No query Z for cpuAlloc: this panel has A.');
   });
 
+  it('keeps naming an unresolved binding while the next refresh loads', () => {
+    const options: PanelOptions = { ...DEFAULT_OPTIONS, queries: { state: 'A', cpuAlloc: 'Z' } };
+    const done: PanelData = { ...rackData(), request: { targets: [{ refId: 'A' }] } as unknown as DataQueryRequest };
+    const { rerender } = render(
+      <NodeGridPanel {...baseProps} data={done} options={options} fieldConfig={plainConfig} />
+    );
+    expect(screen.getByTestId('panel-warnings')).toHaveTextContent('No query Z for cpuAlloc');
+
+    rerender(
+      <NodeGridPanel
+        {...baseProps}
+        data={{ ...done, state: LoadingState.Loading }}
+        options={options}
+        fieldConfig={plainConfig}
+      />
+    );
+    expect(screen.getByTestId('panel-warnings')).toHaveTextContent('No query Z for cpuAlloc');
+  });
+
+  it('keeps the empty-grid message while the next refresh loads', () => {
+    const hidden: PanelData = {
+      state: LoadingState.Done,
+      series: [],
+      timeRange: getDefaultTimeRange(),
+      request: { targets: [{ refId: 'A', hide: true }] } as unknown as DataQueryRequest,
+    };
+    const { rerender } = render(
+      <NodeGridPanel {...baseProps} data={hidden} options={DEFAULT_OPTIONS} fieldConfig={plainConfig} />
+    );
+    expect(screen.getByText('No nodes.')).toBeInTheDocument();
+
+    rerender(
+      <NodeGridPanel
+        {...baseProps}
+        data={{ ...hidden, state: LoadingState.Loading }}
+        options={DEFAULT_OPTIONS}
+        fieldConfig={plainConfig}
+      />
+    );
+    expect(screen.getByText('No nodes.')).toBeInTheDocument();
+  });
+
   it('does not blame the node label when the state query is hidden', () => {
     const hidden: PanelData = {
       state: LoadingState.Done,

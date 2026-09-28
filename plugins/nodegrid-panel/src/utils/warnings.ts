@@ -247,16 +247,18 @@ export type UnresolvedBinding =
  * result still comes back as a frame carrying its refId, so no frame at all
  * means the query does not exist, is hidden, or answered nothing.
  *
- * Only once the queries are done. Grafana draws a panel before they return,
- * with no series at all, and read then every binding looks unresolved: the
- * first version of this check reported them all on every dashboard open.
+ * Undefined until the queries are done: there is no answer yet. A panel can
+ * be drawn before they return, with no series at all, and read then every
+ * binding looks unresolved; the first version of this check reported them
+ * all on every dashboard open. The caller keeps the last answer across a
+ * refresh, which draws the panel again while Loading.
  */
 export function unresolvedBindings(
   data: Pick<PanelData, 'state' | 'series' | 'request'>,
   queries: QueryBindings
-): UnresolvedBinding[] {
+): UnresolvedBinding[] | undefined {
   if (data.state !== LoadingState.Done) {
-    return [];
+    return undefined;
   }
   const returned = new Set(data.series.map((frame) => frame.refId));
   const roles = new Map<string, string[]>();
