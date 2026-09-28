@@ -23,6 +23,16 @@ services:
       GF_AUTH_BASIC_ENABLED: 'true'
       GF_DEFAULT_APP_MODE: development
       GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: tomzone-slurm-panel
+      # From 12.4, Grafana preinstalls a list of plugins in the background and,
+      # by default, replaces any it already ships with the newest compatible
+      # release from grafana.com. From 13.2 that list includes prometheus. The
+      # replacement lands after `make up` has declared the stack ready — every
+      # cold start of 13.2.2 measured did it, 13.1.7 to 13.2.1 — and for about a
+      # second the datasource is missing from what a page is told at load: its
+      # queries are never sent, and only a reload recovers. That was issue #7.
+      # Off, the image runs the plugin it was built with, which is what
+      # pinning GRAFANA_VERSION was for in the first place.
+      GF_PLUGINS_PREINSTALL_AUTO_UPDATE: 'false'
     volumes:
       - ../plugins/nodegrid-panel/dist:/var/lib/grafana/plugins/tomzone-slurm-panel
       - ./provisioning:/etc/grafana/provisioning

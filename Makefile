@@ -131,9 +131,12 @@ up: scrape ## Start Grafana, Prometheus and the synthetic exporter
 	@#     draws as "No nodes".
 	@#
 	@# Waiting on the query rather than on the three parts is what keeps this
-	@# honest: any fourth thing that has to be true is covered too. These
-	@# dashboards all refresh every 30s, so an empty first render eventually
-	@# heals on a screen — but a test asserting inside 15s has already failed.
+	@# honest: any fourth thing that has to be true is covered too. What it
+	@# cannot cover is a condition that stops being true afterwards, which is
+	@# what Grafana's plugin auto-update did (issue #7, and the note on
+	@# GF_PLUGINS_PREINSTALL_AUTO_UPDATE in the compose file). A page loaded
+	@# while the datasource plugin was missing is told the datasource does not
+	@# exist, and a reload is what recovers it; the `e2e` target checks for it.
 	@$(RUN) sh -c 'for _ in $$(seq 1 90); do \
 	    curl -sf -u admin:admin -H "Content-Type: application/json" -X POST \
 	      http://grafana:3000/api/ds/query \
@@ -181,7 +184,20 @@ logs-once: ## Print Grafana's logs and exit (used by CI on failure)
 	$(COMPOSE) logs grafana
 
 e2e: up ## Run the browser tests against the running stack
-	$(RUN) pnpm e2e
+	@# The suite, then a look at what Grafana did while it ran. Replacing a
+	@# datasource plugin under a page that is loading drops the datasource
+	@# from what that page is told, and its panels never query: issue #7,
+	@# which read as a random handful of red tests on a cold stack. It is
+	@# turned off in dev/docker-compose.yml; this names it if it comes back,
+	@# whether or not a test happened to load a page in that second.
+	@status=0; $(RUN) pnpm e2e || status=$$?; \
+	  if $(COMPOSE) logs grafana 2>/dev/null \
+	      | grep -E 'msg="Updating plugin"|Could not find plugin definition for data source' >&2; then \
+	    echo "e2e: Grafana replaced or lost a datasource plugin while the stack was up (issue #7);" \
+	      "see GF_PLUGINS_PREINSTALL_AUTO_UPDATE in dev/docker-compose.yml" >&2; \
+	    status=1; \
+	  fi; \
+	  exit $$status
 
 shell: deps ## Open a shell in the toolchain container
 	$(RUN) bash

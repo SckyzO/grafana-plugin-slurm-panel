@@ -6,13 +6,12 @@ import type { Page } from '@playwright/test';
  *
  * `make up` already waits for Prometheus to return node data before handing
  * the stack over, so this should succeed on the first attempt. It reloads
- * anyway, because a panel whose first query runs against an unscraped
- * Prometheus renders empty, and the dashboards refresh every 30s — longer
- * than any assertion here waits. Raising a timeout past the refresh interval
- * would work and would slow every run down to pay for the rare one; a reload
- * costs nothing when the data is already there. Before those dashboards had a
- * refresh at all an empty render never healed, which is what made this suite
- * flake roughly one run in ten.
+ * anyway, because a panel can come up empty for reasons that do not heal on
+ * the dashboard's 30s refresh — a page loaded while Grafana was replacing
+ * its Prometheus plugin was told the datasource does not exist (issue #7,
+ * now turned off in the compose file) — and a reload costs nothing when the
+ * data is already there. Raising a timeout past the refresh interval would
+ * slow every run down to pay for the rare one.
  *
  * The anchor is a group that must exist once the data is there; it is the
  * cheapest proof that the panel drew something rather than nothing.
