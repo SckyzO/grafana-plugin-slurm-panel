@@ -73,6 +73,12 @@ export function expandHostlist(expr: string): Expansion {
       if (prefix === '' && suffix === '') {
         return { names: [], error: `cannot read "${item}"` };
       }
+      // Counted like a range is: a generated table of literal names never
+      // reaches the bracket branch below, and the cap is on names, however
+      // they were written.
+      if (names.length + 1 > EXPANSION_CAP) {
+        return { names: [], error: `expands past ${EXPANSION_CAP} names` };
+      }
       names.push(prefix + suffix);
       continue;
     }

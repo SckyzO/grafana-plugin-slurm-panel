@@ -49,6 +49,21 @@ describe('expandHostlist', () => {
     expect(names).toEqual([]);
     expect(error).toContain(String(EXPANSION_CAP));
   });
+
+  it('holds the cap for plain names too, not only for bracketed ranges', () => {
+    // A generated table of literal names, one per node, never goes through the
+    // bracket branch; the cap has to count those as well.
+    const plain = Array.from({ length: EXPANSION_CAP + 1 }, (_, i) => `n${i}`).join(',');
+    const { names, error } = expandHostlist(plain);
+    expect(names).toEqual([]);
+    expect(error).toContain(String(EXPANSION_CAP));
+  });
+
+  it('accepts exactly as many plain names as the cap allows', () => {
+    const plain = Array.from({ length: EXPANSION_CAP }, (_, i) => `n${i}`).join(',');
+    expect(expandHostlist(plain)).toEqual({ names: expect.any(Array) });
+    expect(expandHostlist(plain).names).toHaveLength(EXPANSION_CAP);
+  });
 });
 
 describe('collapseHostlist', () => {
