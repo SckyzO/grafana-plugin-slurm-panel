@@ -52,10 +52,6 @@ export default defineConfig<PluginOptions>(baseConfig, {
    */
   workers: process.env.CI ? 2 : 4,
   use: {
-    // The scaffold keeps a trace on the first retry, and there is none here:
-    // with retries at 0 no trace was ever written, which is the evidence a
-    // red run on a runner most needs.
-    trace: 'retain-on-failure',
     baseURL: process.env.GRAFANA_URL ?? `http://localhost:${process.env.GRAFANA_PORT ?? 3000}`,
     provisioningRootDir: resolve(__dirname, '../../dev/provisioning'),
   },
