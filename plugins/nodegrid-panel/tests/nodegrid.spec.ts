@@ -65,13 +65,16 @@ test.describe('the node grid renders against a real Grafana', () => {
     const dashboard = await readProvisionedDashboard({ fileName: 'slurm-prod.json' });
     await gotoDashboardPage(dashboard);
 
+    const cells = page.locator('[data-testid^="node-cell-"]');
     const mapped = page.locator('[data-testid^="node-cell-"][data-mapped="true"]');
-    // All 540 synthetic nodes match a shipped mapping today: the twenty-one
-    // rules cover every sinfo state in both spellings, suffixes included. 400
-    // stays a lower bound (survives a SYNTH_NODES change) while still failing
-    // on a partial render — the largest rack is eighty cells, which a bound of
-    // 10 would let through unnoticed.
-    await expect.poll(() => mapped.count(), { timeout: 15_000 }).toBeGreaterThan(400);
+    // Every synthetic node matches a shipped rule: the twenty-one rules cover
+    // every sinfo state in both spellings, flags included. So every cell, not
+    // a fraction of them: a lower bound of 400 let the loss of a whole rule
+    // through, since the `mixed` rule alone covers about a hundred nodes. The
+    // count itself still follows SYNTH_NODES.
+    await expect.poll(() => cells.count(), { timeout: 15_000 }).toBeGreaterThan(500);
+    const drawn = await cells.count();
+    await expect.poll(() => mapped.count(), { timeout: 15_000 }).toBe(drawn);
 
     const colours = await mapped.evaluateAll((nodes) =>
       Array.from(new Set(nodes.map((n) => getComputedStyle(n).backgroundColor)))
@@ -159,9 +162,10 @@ test.describe('the node grid renders against a real Grafana', () => {
       await expect.poll(() => cells.count(), { timeout: 20_000, message: `${title} drew nothing` }).toBeGreaterThan(0);
 
       const [drawn, coloured] = [await cells.count(), await mapped.count()];
-      // Every cell but the deliberately unknown state on panel 1, which is
-      // there precisely to be unmapped.
-      expect(coloured, `${title}: ${coloured} of ${drawn} cells matched a rule`).toBeGreaterThanOrEqual(drawn - 1);
+      // Every cell. The deliberately unknown state this once allowed for is
+      // gone, and a bound of one short let a missing rule through on a panel
+      // where that rule covered a single row.
+      expect(coloured, `${title}: ${coloured} of ${drawn} cells matched a rule`).toBe(drawn);
 
       for (const c of await mapped.evaluateAll((n) =>
         Array.from(new Set(n.map((x) => getComputedStyle(x).backgroundColor)))
