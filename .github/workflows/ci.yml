@@ -48,8 +48,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # lint, typecheck, test, build, and the React 19 compatibility scan.
+      # lint, typecheck, test, build, the React 19 compatibility scan, and
+      # the packaging check.
       - run: make check
+
+      # Grafana's validator, on the archive a release would publish. Otherwise
+      # the first time it runs on a given tree is the release itself, after
+      # the tag is public; and the validator image is pinned, so a Dependabot
+      # bump of it is validated on its own pull request, not on release day.
+      - run: make validate
 
   resolve-versions:
     name: Resolve Grafana e2e versions
