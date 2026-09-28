@@ -123,7 +123,13 @@ async function panelBox(uid, id, hover) {
   // fail rather than write a wrong file; this one now agrees with it.
   let pos;
   try {
-    const r = await (await fetch(`${url}/api/dashboards/uid/${uid}`)).json();
+    const res = await fetch(`${url}/api/dashboards/uid/${uid}`);
+    // Checked before the body is read for a panel: a 401 or a 404 has a JSON
+    // body too, with no panels in it, and was reported as a renumbered panel.
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const r = await res.json();
     pos = r?.dashboard?.panels?.find((x) => x.id === id)?.gridPos;
   } catch (e) {
     throw new Error(`could not read dashboard ${uid} to size panel ${id}: ${e.message}`);
