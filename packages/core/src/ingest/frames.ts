@@ -216,28 +216,47 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
 
   // --- gres, keyed per model ----------------------------------------------
   const applyGres = (refId: string | undefined, key: 'used' | 'total'): void => {
+    const facet = key === 'used' ? 'gresUsed' : 'gresTotal';
+    // Every value seen per node and model before any is kept, as the scalar
+    // facets do: keeping the last one read let series order decide what a
+    // GPU cell showed when two series for the same model disagreed.
+    const seen = new Map<string, { name: string; type: string; values: Set<number> }>();
     for (const frame of framesFor(frames, refId)) {
       const samples = toSamples(frame);
       noteIdentity(frame, identifiedIn(samples));
       for (const sample of samples) {
         const name = sample.labels[labels.node];
         const type = sample.labels[labels.gresType];
-        noteValue(refId, key === 'used' ? 'gresUsed' : 'gresTotal', name, sample.value);
+        noteValue(refId, facet, name, sample.value);
         const value = toNumber(sample.value);
         if (name === undefined || type === undefined || value === undefined) {
           continue;
         }
-        const node = nodes.get(name);
-        if (!node) {
-          continue;
-        }
-        let entry: GresEntry | undefined = node.facets.gres.find((g) => g.type === type);
-        if (!entry) {
-          entry = { type };
-          node.facets.gres.push(entry);
-        }
-        entry[key] = value;
+        const id = `${name}\u0000${type}`;
+        const bucket = seen.get(id) ?? { name, type, values: new Set<number>() };
+        bucket.values.add(value);
+        seen.set(id, bucket);
       }
+    }
+    for (const { name, type, values } of seen.values()) {
+      const node = nodes.get(name);
+      if (!node) {
+        continue;
+      }
+      if (values.size > 1) {
+        warnings.push(warn('ambiguous-scalar', refId, `${name} returned ${values.size} differing values for ${facet} ${type}`));
+        continue;
+      }
+      const value = [...values][0];
+      if (value === undefined) {
+        continue;
+      }
+      let entry: GresEntry | undefined = node.facets.gres.find((g) => g.type === type);
+      if (!entry) {
+        entry = { type };
+        node.facets.gres.push(entry);
+      }
+      entry[key] = value;
     }
   };
   applyGres(queries.gresUsed, 'used');

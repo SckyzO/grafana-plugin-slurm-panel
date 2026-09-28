@@ -51,7 +51,7 @@ Two options are worth setting next, in this order:
    wrapping row.
 
 What the panel cannot resolve, it names in a strip above the grid rather than
-hiding — see [Warnings](#warnings), which also lists the two things it leaves
+hiding — see [Warnings](#warnings), which also names the one thing it leaves
 unsaid.
 
 ## Data
@@ -492,10 +492,11 @@ not fully resolve:
   query across a state change, or two exporters caught mid-change, can do,
   e.g. `Query A returned more than one state for c[1-2], so their state is left blank.`
   The panel picks neither; the instant query it ships with cannot produce this;
-- a CPU, memory or drain-age facet returning several differing values for
-  one node — two series for the same node, or a range query whose value
-  moved — e.g. `c001 returned 2 differing values for cpuAlloc`. The panel
-  does not pick one, so that node shows no value for the facet;
+- a CPU, memory, GPU or drain-age facet returning several differing values
+  for one node — two series for the same node, or a range query whose value
+  moved — e.g. `c001 returned 2 differing values for cpuAlloc`, or
+  `g1 returned 2 differing values for gresUsed gpu:a100` per GPU model. The
+  panel does not pick one, so that node shows no value for the facet;
 - no node carrying the configured state label at all, e.g.
   `No node carries a "state" label: every cell is drawn hollow. Data > State label.`
   In **State** colour mode that draws the whole grid as hollow rings, which
@@ -558,9 +559,8 @@ the cell deliberately refuses that colour and draws a hollow ring instead.
 
 The strip prints eight lines at most, then `and N more warnings.`
 
-Two things are left unsaid. A facet sample naming a node the state query did
-not return is dropped, since there is no cell to put it in; and a GPU query
-returning several values for the same node and model keeps the last one read.
+One thing is left unsaid: a facet sample naming a node the state query did not
+return is dropped, since there is no cell to put it in.
 
 ## In a dashboard
 

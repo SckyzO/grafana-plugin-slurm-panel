@@ -315,6 +315,45 @@ describe('ingest joins the facets that carry no partition label', () => {
     ]);
   });
 
+  it('refuses to pick between two GPU values for one node and model', () => {
+    // The scalar facets already refuse; the GPU loop kept whichever row it
+    // read last. Two series for the same node and model disagreeing — a range
+    // query whose value moved — is the same fact and gets the same answer.
+    const twice: MinimalFrame[] = ['2', '5'].map((v) => ({
+      refId: 'G',
+      fields: [
+        { name: 'Time', type: 'time', values: [1] },
+        { name: 'Value', type: 'number', labels: { node: 'g1', gres_type: 'gpu:a100' }, values: [Number(v)] },
+      ],
+    }));
+    const { nodes, warnings } = ingest({
+      frames: [...stateFrames, ...twice],
+      queries: { state: 'A', gresUsed: 'G' },
+      labels: LABELS,
+    });
+    expect(warnings).toContainEqual({
+      kind: 'ambiguous-scalar', refId: 'G', detail: 'g1 returned 2 differing values for gresUsed gpu:a100',
+    });
+    expect(nodes.find((n) => n.name === 'g1')?.facets.gres.find((g) => g.type === 'gpu:a100')?.used).toBeUndefined();
+  });
+
+  it('keeps a GPU value that repeats unchanged', () => {
+    const same: MinimalFrame[] = [1, 2].map((t) => ({
+      refId: 'G',
+      fields: [
+        { name: 'Time', type: 'time', values: [t] },
+        { name: 'Value', type: 'number', labels: { node: 'g1', gres_type: 'gpu:a100' }, values: [3] },
+      ],
+    }));
+    const { nodes, warnings } = ingest({
+      frames: [...stateFrames, ...same],
+      queries: { state: 'A', gresUsed: 'G' },
+      labels: LABELS,
+    });
+    expect(warnings).toEqual([]);
+    expect(nodes.find((n) => n.name === 'g1')?.facets.gres).toEqual([{ type: 'gpu:a100', used: 3 }]);
+  });
+
   it('reports an ambiguous scalar instead of keeping an arbitrary row', () => {
     const twice: MinimalFrame[] = [
       { refId: 'D', fields: [
