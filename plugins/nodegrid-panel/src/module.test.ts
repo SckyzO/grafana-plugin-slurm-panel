@@ -62,7 +62,15 @@ describe('the layout-dependent options', () => {
   });
 
   it('leaves the options that govern both layouts unconditional', () => {
-    for (const path of ['layout', 'cellWidth', 'cellHeight', 'shapeChannel', 'colorMode', 'showNodeCount']) {
+    for (const path of [
+      'layout',
+      'cellWidth',
+      'cellHeight',
+      'shapeChannel',
+      'accessibleState',
+      'colorMode',
+      'showNodeCount',
+    ]) {
       expect(optionAt(path).showIf).toBeUndefined();
     }
   });
@@ -85,5 +93,12 @@ describe('the defaults a reader inherits without configuring anything', () => {
     // exists, so this pins both.
     expect(DEFAULT_OPTIONS.shapeChannel).toBe(false);
     expect(optionAt('shapeChannel').name).toBe('Shape channel');
+  });
+
+  it('keeps saying the mapped name to a screen reader, and offers the exact state', () => {
+    // Every cell's accessible name is a shipped default: moving it would
+    // change what every screen-reader user of every existing panel hears.
+    expect(DEFAULT_OPTIONS.accessibleState).toBe('mapped');
+    expect(optionAt('accessibleState').name).toBe('Accessible state');
   });
 });

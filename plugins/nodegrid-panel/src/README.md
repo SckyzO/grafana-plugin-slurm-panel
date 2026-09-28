@@ -327,6 +327,14 @@ not need them. Turn it on if you read with a red-green deficiency, in
 greyscale, or on paper — the paragraph below says exactly which pair of states
 makes that necessary.
 
+**Display > Accessible state** chooses what a screen reader hears for each
+cell's state. **Mapped name**, the default, says what the Value mappings call
+it, which is what the colour means: `draining` is heard as "drained", `idle*`
+as "not responding". **Exact state** says what Slurm reports, the way the
+tooltip does: "draining", "idle, not responding". The first is what the
+panel has always said; the second is for a reader who needs the state itself
+rather than its family.
+
 The same floor drawn both ways — same nodes, same colours, one option apart.
 A notch survives what hue does not:
 
@@ -344,7 +352,9 @@ Colour encodes the decision an operator makes about a node, not which of the
 twenty-one states it is in. No palette separates that many at a glance. **Nine
 colours, six decisions.** The hue says what to do; the shade inside a hue says
 the degree, never the decision. The exact state is always spelled out in the
-cell's tooltip and in its accessible label, in every colour mode.
+cell's tooltip, and the cell's accessible label carries the state in words in
+every colour mode: its mapped name by default, or the exact state with
+**Display > Accessible state**.
 
 | Default colour                                                                                                                         | Theme name        | What it decides              | States it covers                                                                    |
 | -------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ---------------------------- | ----------------------------------------------------------------------------------- |

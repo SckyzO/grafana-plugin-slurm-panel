@@ -3,6 +3,9 @@ import type { KeySource, LabelNames, QueryBindings } from '@slurm-views/core';
 export type Layout = 'wrap' | 'rack';
 export type ColorMode = 'state' | 'cpu' | 'mem' | 'gres';
 
+/** What a cell's accessible name says of its state; see PanelOptions.accessibleState. */
+export type AccessibleState = 'mapped' | 'exact';
+
 export interface PanelOptions {
   labels: LabelNames;
   queries: QueryBindings;
@@ -45,6 +48,11 @@ export interface PanelOptions {
   /** Centre the row of cabinets in the panel instead of packing it left. */
   centreRacks: boolean;
   shapeChannel: boolean;
+  /**
+   * What a cell's accessible name says of its state: the name the Value
+   * mappings give it, or the state exactly as Slurm reports it.
+   */
+  accessibleState: AccessibleState;
   colorMode: ColorMode;
 }
 
@@ -80,5 +88,8 @@ export const DEFAULT_OPTIONS: PanelOptions = {
   // off, the option is one click away under Display, and the README says who
   // should reach for it rather than leaving them to find out.
   shapeChannel: false,
+  // What every cell has always said, so what every screen-reader user of an
+  // existing panel keeps hearing.
+  accessibleState: 'mapped',
   colorMode: 'state',
 };

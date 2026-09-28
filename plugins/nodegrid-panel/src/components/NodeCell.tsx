@@ -3,10 +3,11 @@ import { css, cx } from '@emotion/css';
 import { textUtil } from '@grafana/data';
 import type { DisplayProcessor, GrafanaTheme2 } from '@grafana/data';
 import { Tooltip, useTheme2 } from '@grafana/ui';
+import { parseState } from '@slurm-views/core';
 import type { SlurmNode } from '@slurm-views/core';
 import { NodeTooltip } from './NodeTooltip';
 import { fractionFor } from '../utils/colorMode';
-import type { ColorMode } from '../types';
+import type { AccessibleState, ColorMode } from '../types';
 
 const getStyles = (theme: GrafanaTheme2) => ({
   cell: css({
@@ -40,6 +41,8 @@ export interface NodeCellProps {
   valueDisplay: DisplayProcessor;
   colorMode: ColorMode;
   shapeChannel: boolean;
+  /** What the accessible name says of the state; the mapped name unless told otherwise. */
+  accessibleState?: AccessibleState;
   href?: string;
 }
 
@@ -72,6 +75,7 @@ export function NodeCell({
   valueDisplay,
   colorMode,
   shapeChannel,
+  accessibleState = 'mapped',
   href,
 }: NodeCellProps) {
   const theme = useTheme2();
@@ -115,8 +119,10 @@ export function NodeCell({
         data-filled={filled}
         // Meaning never rests on colour alone: the state is spelled out here
         // in every colour mode, including the continuous ones where the fill
-        // carries utilisation instead of state.
-        aria-label={`${node.name}, ${dv.text}`}
+        // carries utilisation instead of state. The mapped name by default,
+        // which is what the colour means; the exact state, as the tooltip
+        // gives it, when the panel asks for it.
+        aria-label={`${node.name}, ${accessibleState === 'exact' ? parseState(node.state).text : dv.text}`}
         style={{
           width,
           height,

@@ -92,6 +92,7 @@ export function NodeGroup({
       valueDisplay={valueDisplay}
       colorMode={colorMode}
       shapeChannel={options.shapeChannel}
+      accessibleState={options.accessibleState}
       href={hrefFor(node)}
     />
   ));

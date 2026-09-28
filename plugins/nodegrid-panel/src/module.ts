@@ -169,6 +169,20 @@ export const plugin = new PanelPlugin<PanelOptions>(NodeGridPanel)
         category: ['Display'],
       })
       .addRadio({
+        path: 'accessibleState',
+        name: 'Accessible state',
+        description:
+          'What a screen reader hears for each cell: the name the Value mappings give its state ("drained", "not responding"), or the state exactly as Slurm reports it ("draining", "idle, not responding"). The tooltip always shows the exact state.',
+        defaultValue: DEFAULT_OPTIONS.accessibleState,
+        settings: {
+          options: [
+            { value: 'mapped', label: 'Mapped name' },
+            { value: 'exact', label: 'Exact state' },
+          ],
+        },
+        category: ['Display'],
+      })
+      .addRadio({
         path: 'colorMode',
         name: 'Colour by',
         description: 'One encoding at a time. Continuous modes are driven by Thresholds.',

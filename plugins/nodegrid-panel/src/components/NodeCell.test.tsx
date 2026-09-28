@@ -35,6 +35,38 @@ const nodeWith = (state: string): SlurmNode => ({
 });
 
 describe('NodeCell', () => {
+  describe('the accessible name', () => {
+    // What a screen reader hears. The mapped name is what the colour means,
+    // and what the panel has always said; the exact state is what Slurm
+    // reports, which is what the tooltip spells out. `draining` maps to
+    // "drained", so the two differ.
+    const cellFor = (accessibleState?: 'mapped' | 'exact') => {
+      render(
+        <NodeCell
+          node={nodeWith('draining')}
+          width={14}
+          height={14}
+          stateDisplay={displayFor('draining')}
+          valueDisplay={displayFor('draining')}
+          colorMode="state"
+          shapeChannel={false}
+          {...(accessibleState === undefined ? {} : { accessibleState })}
+        />
+      );
+      return screen.getByTestId('node-cell-node-draining');
+    };
+    const mapped = displayFor('draining')('draining').text;
+
+    it('says the mapped name by default, as it always has', () => {
+      expect(mapped).not.toBe('draining');
+      expect(cellFor()).toHaveAttribute('aria-label', `node-draining, ${mapped}`);
+    });
+
+    it('says the exact state when asked to', () => {
+      expect(cellFor('exact')).toHaveAttribute('aria-label', 'node-draining, draining');
+    });
+  });
+
   it('renders idle as mapped: filled, no unmapped ring', () => {
     render(
       <NodeCell

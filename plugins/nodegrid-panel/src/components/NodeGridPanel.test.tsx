@@ -361,6 +361,22 @@ describe('NodeGridPanel', () => {
     expect(screen.queryByTestId('node-group-ungrouped')).toBeNull();
   });
 
+  it('hands the accessible-state option down to every cell', () => {
+    const draining = createDataFrame({
+      refId: 'A',
+      fields: [{ name: 'Value', type: FieldType.number, values: [1], labels: { node: 'c1', status: 'draining' } }],
+    });
+    render(
+      <NodeGridPanel
+        {...baseProps}
+        data={{ state: LoadingState.Done, series: [draining], timeRange: getDefaultTimeRange() }}
+        options={{ ...DEFAULT_OPTIONS, accessibleState: 'exact' }}
+        fieldConfig={plainConfig}
+      />
+    );
+    expect(screen.getByTestId('node-cell-c1')).toHaveAttribute('aria-label', 'c1, draining');
+  });
+
   it('draws one sled per node when nothing is declared', () => {
     // The default-unchanged promise, asserted rather than assumed: a reader
     // who never opens the option gets the cabinet the panel always drew.
