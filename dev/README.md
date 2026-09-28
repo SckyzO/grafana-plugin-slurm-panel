@@ -402,6 +402,21 @@ make validate SIGNED=1   # packages dist/ as signed, without rebuilding it
 `SIGNED=1` refuses to package a `dist/` that carries no manifest, and
 `make package-check`, part of `make check`, keeps that path honest.
 
+The catalogue form asks for the source as well as the archive, and its
+review runs the validator against both. Run that first, on the branch or tag
+you will submit, and point it at the plugin's own directory, not the
+repository root:
+
+```bash
+make validate SOURCE_URI=https://github.com/SckyzO/grafana-plugin-slurm-panel/tree/v0.1.0/plugins/nodegrid-panel
+```
+
+Two results are expected, neither a finding about this plugin: links to the
+tag report as possibly broken until the tag exists, and the `go-sec` pass
+reports "Scan incomplete: gosec returned an empty report", which it does for
+any source with no Go in it (plugin-validator 0.49.4 to 0.49.8). The release
+notes carry this same source URL.
+
 The tag has to agree with `plugins/nodegrid-panel/package.json`; the workflow
 refuses the release otherwise, because the archive is named from package.json
 and a tag that disagrees publishes one version under another's name.

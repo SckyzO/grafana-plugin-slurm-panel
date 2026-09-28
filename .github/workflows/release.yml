@@ -141,13 +141,18 @@ jobs:
           SIGNED: ${{ steps.artifact.outputs.signed }}
         run: |
           url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${NAME}"
+          # The plugin's own directory, not the repository root: pointed at
+          # the root, the validator finds a workspace, not a plugin, and says
+          # the source does not match the archive.
+          source="https://github.com/${GITHUB_REPOSITORY}/tree/${GITHUB_REF_NAME}/plugins/nodegrid-panel"
           {
             echo "Signed: ${SIGNED}"
             echo
-            echo "Submitting this version to the Grafana catalogue needs these two values:"
+            echo "Submitting this version to the Grafana catalogue needs these three values:"
             echo
             echo "- Archive URL: \`${url}\`"
             echo "- SHA1: \`${SHA1}\`"
+            echo "- Source code URL: \`${source}\`"
           } > notes.md
           gh release create "${GITHUB_REF_NAME}" "${ZIP}" "${ZIP}.sha1" \
             --title "${GITHUB_REF_NAME}" --notes-file notes.md
@@ -158,5 +163,6 @@ jobs:
             echo "|---|---|"
             echo "| Archive URL | \`${url}\` |"
             echo "| SHA1 | \`${SHA1}\` |"
+            echo "| Source code URL | \`${source}\` |"
             echo "| Signed | ${SIGNED} |"
           } >> "$GITHUB_STEP_SUMMARY"
