@@ -277,7 +277,10 @@ package-check: build ## Prove that a signed dist/ reaches the archive with its m
 	  exit $$status
 
 clean: ## Remove the stack, the node_modules volumes and the build output
-	$(COMPOSE) down -v --remove-orphans
+	@# With the tools profile: the node_modules volumes belong to the tools
+	@# service, and `down -v` only removes the volumes of services whose
+	@# profile is active, so without it they all survived a clean.
+	$(COMPOSE) --profile tools down -v --remove-orphans
 	rm -rf plugins/nodegrid-panel/dist plugins/nodegrid-panel/.artifacts \
 	       plugins/nodegrid-panel/playwright-report plugins/nodegrid-panel/test-results \
 	       packages/core/dist coverage
