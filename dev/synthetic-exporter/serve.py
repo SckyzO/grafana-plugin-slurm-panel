@@ -26,7 +26,8 @@ node count:
 
     PROFILE=production   # default. A cluster that is working.
     PROFILE=incident      # production, plus one rack down and a drain storm.
-    PROFILE=showcase      # every base state and every modifier, uniformly.
+    PROFILE=showcase      # every base state and every modifier, idle and
+                           # mixed, and the unflagged state, drawn most often.
                            # Today's old default, kept for demos that want to
                            # show every colour the panel can paint at once.
 
@@ -74,9 +75,11 @@ else:
     )
     PROFILE = "production"
 
-# The full, unweighted spread. Used only by the `showcase` profile: every
-# base state and every modifier, uniformly likely, so a dashboard built to
-# show every colour the panel can paint still gets the full set at once. This
+# The full spread. Used only by the `showcase` profile: every base state sinfo
+# prints and every modifier, so a dashboard built to show every colour the
+# panel can paint gets the full set at once. Not uniform: idle and mixed are
+# listed more than once, and so is the unflagged state, so the grid still
+# reads as a cluster rather than as noise. This
 # used to be the only shape the exporter produced; measured against a real
 # cluster it left 3.8% of nodes with an invalid registration, 2.7% down, 1.9%
 # failed and only 8.7% idle, which is not a working cluster, it is one in
@@ -84,8 +87,9 @@ else:
 # looks like.
 BASE_STATES = [
     "idle", "idle", "idle", "idle", "mixed", "mixed", "allocated",
-    "drained", "draining", "down", "fail", "maint", "planned",
+    "drained", "draining", "down", "fail", "failing", "maint", "planned",
     "blocked", "perfctrs", "reserved", "completing", "inval",
+    "future", "power_down", "power_up", "unknown",
 ]
 MODIFIERS = ["", "", "", "", "", "*", "~", "#", "!", "%", "$", "@", "^", "-"]
 

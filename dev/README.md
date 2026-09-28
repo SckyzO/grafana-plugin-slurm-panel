@@ -149,7 +149,7 @@ count. Three values, `production` the default:
 |---|---|
 | `production` (default) | A cluster that is working: weighted mostly `allocated` and `mixed`, real idle capacity behind it, and only a sliver of `drained`, `down`, `maint` and `fail`, percentages measured against a real cluster, not invented. |
 | `incident` | The same weighted shape, except every node in `cpu2` (`c81`..`c160`, the block `dev/relabel/racks.txt` names that way) is `down`, and roughly 15% of the remaining nodes are `drained` or `draining`. |
-| `showcase` | A uniform draw over every base state and every one of the nine state modifiers, including states a 20-node docker cluster would otherwise rarely reach, like `blocked` and `perfctrs`. It is the shape to reach for when a dashboard has to show every colour the panel can paint at once. |
+| `showcase` | A draw over every base state and every one of the nine state modifiers, idle and mixed weighted up, including states a 20-node docker cluster would otherwise rarely reach, like `blocked` and `perfctrs`. It is the shape to reach for when a dashboard has to show every colour the panel can paint at once. |
 
 An unrecognised value falls back to `production` and says so on the
 exporter's stderr, rather than crashing or picking something silently. Drain
