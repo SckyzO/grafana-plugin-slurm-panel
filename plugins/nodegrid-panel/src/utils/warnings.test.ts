@@ -161,6 +161,16 @@ describe('summarise', () => {
     expect(lines).toContain('Query A skipped 1 of 40 series: no node label or column');
   });
 
+  it('names the nodes whose state was split between two, and says what that costs', () => {
+    const lines = summarise(
+      model(0, 0),
+      [{ kind: 'ambiguous-state', refId: 'A', detail: 'returned more than one state', nodes: ['c1', 'c2'] }],
+      [],
+      notes()
+    );
+    expect(lines).toContain('Query A returned more than one state for c[1-2], so their state is left blank.');
+  });
+
   it('names the nodes behind a value that is not a finite number, as a hostlist', () => {
     const lines = summarise(
       model(0, 0),

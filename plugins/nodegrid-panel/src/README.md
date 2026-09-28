@@ -478,6 +478,10 @@ not fully resolve:
   drain-reason query on a cluster with nothing drained returns exactly that;
 - a facet value that is not a finite number, a NaN or an Inf, on the nodes
   the grid draws, e.g. `Query B: cpuAlloc is not a finite number on c[1-3].`;
+- a node the state query returned under more than one state, which a range
+  query across a state change, or two exporters caught mid-change, can do,
+  e.g. `Query A returned more than one state for c[1-2], so their state is left blank.`
+  The panel picks neither; the instant query it ships with cannot produce this;
 - a CPU, memory or drain-age facet returning several differing values for
   one node — two series for the same node, or a range query whose value
   moved — e.g. `c001 returned 2 differing values for cpuAlloc`. The panel

@@ -293,6 +293,10 @@ const bindingLine = (binding: UnresolvedBinding): string => {
 
 /** One ingest warning as a strip line. */
 const ingestLine = (warning: IngestWarning): string => {
+  if (warning.kind === 'ambiguous-state') {
+    // Not "hollow": in a continuous mode the cell still fills by its fraction.
+    return `Query ${warning.refId ?? '?'} ${warning.detail} for ${listOf(warning.nodes ?? [])}, so their state is left blank.`;
+  }
   if (warning.kind === 'non-finite') {
     return `Query ${warning.refId ?? '?'}: ${warning.detail} on ${listOf(warning.nodes ?? [])}.`;
   }

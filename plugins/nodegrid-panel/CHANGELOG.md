@@ -13,8 +13,9 @@ cabinet slot.
 
 What the panel cannot resolve, it names rather than hides: a query bound to a
 role that does not exist, is hidden or returned nothing, once the queries are
-back; a query, or part of one, with no node identity; a facet value that is not
-a finite number; a facet returning differing values for one node; a state
+back; a query, or part of one, with no node identity; a node reported under
+two states; a facet value that is not a finite number; a facet returning
+differing values for one node; a state
 matching no value mapping (with the rule to paste), nodes no grouping source
 could place, a declared group that matched nothing, a table line it cannot
 read, a blade or slot declaration naming groups it does not draw, a blade too

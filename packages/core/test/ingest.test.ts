@@ -179,6 +179,45 @@ describe('ingest names a query that carries no node identity', () => {
   });
 });
 
+describe('ingest refuses to pick between two states for one node', () => {
+  // A state query over a range, or two exporters mid-change, returns a node
+  // under two states: one series per distinct label set. The first one read
+  // used to win, so Prometheus's series order chose the colour. The instant
+  // query the panel ships with cannot produce this.
+  const series = (node: string, status: string | undefined, partition: string): MinimalFrame => ({
+    refId: 'A',
+    fields: [
+      { name: 'Time', type: 'time', values: [1] },
+      {
+        name: 'Value',
+        type: 'number',
+        labels: { node, partition, ...(status === undefined ? {} : { status }) },
+        values: [1],
+      },
+    ],
+  });
+
+  it('leaves the state blank and names the node, whichever series comes first', () => {
+    const forward = [series('c1', 'idle', 'cpu'), series('c1', 'mixed', 'debug'), series('c2', 'idle', 'cpu')];
+    for (const frames of [forward, [...forward].reverse()]) {
+      const { nodes, warnings } = ingest({ frames, queries: QUERIES, labels: LABELS });
+      expect(Object.fromEntries(nodes.map((n) => [n.name, n.state]))).toEqual({ c1: '', c2: 'idle' });
+      expect(warnings).toEqual([
+        { kind: 'ambiguous-state', refId: 'A', detail: 'returned more than one state', nodes: ['c1'] },
+      ]);
+    }
+  });
+
+  it('takes the one state there is when another series carries none', () => {
+    // First read used to win here too: a series without the label, seen
+    // first, left the node blank however many series named its state.
+    const frames = [series('c1', undefined, 'cpu'), series('c1', 'idle', 'debug')];
+    const { nodes, warnings } = ingest({ frames, queries: QUERIES, labels: LABELS });
+    expect(nodes[0]?.state).toBe('idle');
+    expect(warnings).toEqual([]);
+  });
+});
+
 describe('ingest names a facet value that is not a finite number', () => {
   // A NaN from a division by zero in the query, or an Inf, used to be
   // dropped in the same `continue` as a missing label, so the cell simply

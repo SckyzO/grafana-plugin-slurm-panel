@@ -44,6 +44,8 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
   // per frame: a time-series query returns a frame per series, and a line per
   // frame repeats one sentence down the strip.
   const identity = new Map<string, { frames: Set<MinimalFrame>; blind: Set<MinimalFrame> }>();
+  // Every state each node was reported under; settled after the state loop.
+  const statesOf = new Map<string, Set<string>>();
   const noteIdentity = (frame: MinimalFrame, identified: number): void => {
     if (frame.refId === undefined || !carriesData(frame)) {
       return;
@@ -89,10 +91,18 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
 
     for (const { sample, name } of identified) {
       let node = nodes.get(name);
+      const state = sample.labels[labels.state];
+      if (state !== undefined) {
+        const seen = statesOf.get(name) ?? new Set<string>();
+        seen.add(state);
+        statesOf.set(name, seen);
+      }
       if (!node) {
         node = {
           name,
-          state: sample.labels[labels.state] ?? '',
+          // Settled once every series is read, below: which series comes
+          // first is Prometheus's order, not the node's.
+          state: '',
           partitions: [],
           // No prototype: the loop below asks `node.labels[key] === undefined`
           // to mean "not seen yet", and on a plain object literal a label
@@ -137,6 +147,28 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
 
   for (const node of nodes.values()) {
     node.partitions.sort();
+  }
+
+  // One state per node, or none. A state query over a range, or two
+  // exporters caught mid-change, returns a node under two states, and
+  // keeping either would be keeping a colour nobody can justify.
+  const splitStates: string[] = [];
+  for (const [name, states] of statesOf) {
+    const node = nodes.get(name);
+    if (node === undefined) {
+      continue;
+    }
+    if (states.size === 1) {
+      node.state = [...states][0] ?? '';
+    } else {
+      splitStates.push(name);
+    }
+  }
+  if (splitStates.length > 0) {
+    warnings.push({
+      ...warn('ambiguous-state', queries.state, 'returned more than one state'),
+      nodes: splitStates.sort((a, b) => a.localeCompare(b)),
+    });
   }
 
   // --- scalar facets ------------------------------------------------------
