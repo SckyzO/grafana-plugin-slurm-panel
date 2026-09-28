@@ -5,6 +5,11 @@ export interface StateModifier {
 
 export interface ParsedState {
   base: string;
+  /**
+   * Zero or one entry: sinfo appends a single flag character to the state,
+   * and that is what is parsed here. scontrol's expanded form, which can
+   * carry several, is not an input this reads.
+   */
   modifiers: StateModifier[];
   /** Human-readable form for the tooltip: "mixed, planned by backfill". */
   text: string;

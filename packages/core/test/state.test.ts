@@ -43,7 +43,7 @@ describe('parseState splits a sinfo state into base and modifiers', () => {
     expect(parsed.text).toBe('idle?');
   });
 
-  it('does not strip a modifier character off an unknown base state', () => {
+  it('splits a documented modifier off a base state it has never seen', () => {
     // A state Slurm adds in a future release must survive intact.
     const parsed = parseState('quiescing*');
     expect(parsed.base).toBe('quiescing');
