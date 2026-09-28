@@ -638,3 +638,9 @@ overtaken by the implementation without the document following it.
 This is a default changing, which is a breaking change for anyone who had
 come to rely on it. Nobody has: the plugin is unpublished.
 
+
+## Revision (2026-09-28)
+
+| Was | Is |
+|---|---|
+| One panel, `Shape channel`, on the grouping and layout dashboard | A matched pair on the colour and state dashboard (`slurm-node-colour`): panel 6 with the channel off, the shipped default, beside panel 7 with it on. They are the pair the shipped README shows, and the grouping dashboard carries neither. The 2026-09-19 line was written before the dev dashboards went from five to three |

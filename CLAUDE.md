@@ -58,9 +58,12 @@ sanctioned way to move the lockfile.
 - The panel's own tests sit beside their subject
   (`src/**/*.test.ts[x]`), and its browser tests in
   `plugins/nodegrid-panel/tests/`.
-- The e2e suite resolves panels **by title**. Renaming a panel in
-  `dev/provisioning/dashboards/*.json`, or moving one below the fold — Grafana
-  lazy-renders those and never mounts them — breaks tests that look unrelated.
+- The e2e suite and the screenshot script resolve panels by **dashboard uid
+  and numeric panel id** (`?viewPanel=<id>`). Renumbering a panel in
+  `dev/provisioning/dashboards/*.json` breaks tests that look unrelated;
+  renaming one only changes a failure message. The tests that open the whole
+  `slurm-prod` dashboard also need its panels above the fold — Grafana
+  lazy-renders the rest and never mounts them.
 
 ## Changes
 
