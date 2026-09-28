@@ -51,7 +51,10 @@ const rules = table.groups
       '      - source_labels: [node]',
       `        regex: ${group.members.map(escape).join('|')}`,
       '        target_label: rack',
-      `        replacement: ${group.name}`,
+      // Quoted: a group name may begin with `*`, `&`, `[`, `{` or `!`, which
+      // bare YAML reads as an alias, an anchor, a list, a map or a tag. A
+      // JSON string is a valid YAML double-quoted scalar.
+      `        replacement: ${JSON.stringify(group.name)}`,
     ].join('\n')
   );
 

@@ -22,7 +22,10 @@ const run = () => runOn(TABLE);
 const rulesFrom = (output) =>
   [...output.matchAll(/regex:\s*(\S+)[\s\S]*?replacement:\s*(.+)/g)].map(([, regex, replacement]) => ({
     regex: new RegExp(`^(?:${regex})$`),
-    group: replacement,
+    // Read as the JSON string it is written as: a group name has to reach
+    // Prometheus as a quoted YAML scalar, since a bare `*rack` is an alias
+    // and a bare `[r1]` a list.
+    group: JSON.parse(replacement),
   }));
 
 test('the generated relabel config emits one rule per declared group', () => {
@@ -73,6 +76,9 @@ fs.writeFileSync(
     // this node is exactly what that mistake would also match.
     'confusable: axb1',
     'spaced group: c[1-2]',
+    // Legal group names that YAML reads as something else when bare.
+    '*star: d[1-2]',
+    '[br]: e1',
     '',
   ].join('\n')
 );
@@ -95,6 +101,9 @@ test('the generated relabel config survives padding, a regex metacharacter and a
     axb1: 'confusable',
     c1: 'spaced group',
     c2: 'spaced group',
+    d1: '*star',
+    d2: '*star',
+    e1: '[br]',
   };
 
   // The parser itself classified every node the way this test expects —
