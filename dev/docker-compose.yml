@@ -137,7 +137,7 @@ services:
     # own dependencies — and a tag named in a Makefile is invisible to the
     # dependabot entry that watches every other image in this file.
     profiles: ['tools']
-    image: grafana/plugin-validator-cli:v0.49.4
+    image: grafana/plugin-validator-cli:v0.49.8
     volumes:
       - ../plugins/nodegrid-panel/.artifacts:/archive:ro
 
