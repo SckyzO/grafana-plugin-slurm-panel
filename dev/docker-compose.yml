@@ -40,7 +40,7 @@ services:
       - prometheus
 
   prometheus:
-    image: prom/prometheus:v3.14.0
+    image: prom/prometheus:v3.15.0
     # The default two flags, plus --web.enable-lifecycle: the generated
     # scrape file changes without the container changing (it is
     # bind-mounted), so `make scrape` has nothing to signal short of asking
