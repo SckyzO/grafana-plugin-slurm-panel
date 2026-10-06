@@ -73,9 +73,9 @@
   },
   "dependencies": {
     "@emotion/css": "11.10.6",
-    "@grafana/data": "^13.2.1",
-    "@grafana/runtime": "^13.2.1",
-    "@grafana/schema": "^13.2.1",
+    "@grafana/data": "^13.2.3",
+    "@grafana/runtime": "^13.2.3",
+    "@grafana/schema": "^13.2.3",
     "@grafana/ui": "^13.2.1",
     "@slurm-views/core": "workspace:*",
     "react": "^18.3.0",

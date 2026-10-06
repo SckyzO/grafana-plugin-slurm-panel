@@ -196,17 +196,17 @@ importers:
         specifier: 11.10.6
         version: 11.10.6(supports-color@8.1.1)
       '@grafana/data':
-        specifier: ^13.2.1
-        version: 13.2.1(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)
+        specifier: ^13.2.3
+        version: 13.2.3(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)
       '@grafana/runtime':
-        specifier: ^13.2.1
-        version: 13.2.1(@babel/runtime@8.0.5)(@codemirror/lint@6.9.7)(@codemirror/search@6.7.2)(@codemirror/theme-one-dark@6.1.3)(@types/react@18.3.31)(codemirror@6.0.2)(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)
+        specifier: ^13.2.3
+        version: 13.2.3(@babel/runtime@8.0.5)(@codemirror/lint@6.9.7)(@codemirror/search@6.7.2)(@codemirror/theme-one-dark@6.1.3)(@types/react@18.3.31)(codemirror@6.0.2)(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)
       '@grafana/schema':
-        specifier: ^13.2.1
-        version: 13.2.1
+        specifier: ^13.2.3
+        version: 13.2.3
       '@grafana/ui':
         specifier: ^13.2.1
-        version: 13.2.1(@babel/runtime@8.0.5)(@codemirror/lint@6.9.7)(@codemirror/search@6.7.2)(@codemirror/theme-one-dark@6.1.3)(@types/react@18.3.31)(codemirror@6.0.2)(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)
+        version: 13.2.3(@babel/runtime@8.0.5)(@codemirror/lint@6.9.7)(@codemirror/search@6.7.2)(@codemirror/theme-one-dark@6.1.3)(@types/react@18.3.31)(codemirror@6.0.2)(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)
       '@slurm-views/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -368,8 +368,8 @@ importers:
   tests/contract:
     devDependencies:
       '@grafana/data':
-        specifier: ^13.2.1
-        version: 13.2.1(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@8.1.1)(typescript@5.9.2)
+        specifier: ^13.2.3
+        version: 13.2.3(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@8.1.1)(typescript@5.9.2)
       jsdom:
         specifier: ^26.0.0
         version: 26.1.0(supports-color@8.1.1)
@@ -769,8 +769,8 @@ packages:
   '@formatjs/intl-localematcher@0.6.2':
     resolution: {integrity: sha512-XOMO2Hupl0wdd172Y06h6kLpBz6Dv+J4okPLl4LPtzbr8f66WbIoy4ev98EBuZ6ZK4h5ydTN6XneT4QVpD7cdA==}
 
-  '@grafana/data@13.2.1':
-    resolution: {integrity: sha512-Nu5UPwPrKbdZTKthDbK21u1rJ4MxdOVeCfHH5TiQX/4By7dbsDUUqoWKGR4ousuF23nrQ6BxhzxRE3Q6jEd2EQ==}
+  '@grafana/data@13.2.3':
+    resolution: {integrity: sha512-EClmL+1ri5uQi0oTbXQCvNvRQ8a+mHbzX+CUlWvu+N4gVLRD0Zfa3k/POfJyxArdlpH3j3mN/3hmfnuogm63Nw==}
     peerDependencies:
       react: '>=19'
       react-dom: '>=19'
@@ -778,8 +778,8 @@ packages:
   '@grafana/e2e-selectors@13.2.0-30594044109':
     resolution: {integrity: sha512-CRN0CTsSkAC3qQvufbR7duUzSX2Jfgc/g5ap+eSrjcFcS+vAVUDGfQVLK6y5ojN+B0gATNIbmVlCGngQxmm+eA==}
 
-  '@grafana/e2e-selectors@13.2.1':
-    resolution: {integrity: sha512-UhV1pzSBspFMJdi1tJqwwByPt7HQJImXm1u0j798pPF8Od6FIbao7KENMqeZJU47wLBKwbSonJkLfzmXSHvDOA==}
+  '@grafana/e2e-selectors@13.2.3':
+    resolution: {integrity: sha512-K/loC4FXn5xl6hc2ebrK2bj5LDqXQV+vFtqFLKtkrNqUOSFM9zkcuHraMfZQwPYFzDCGHg1aA6RlfHMZp408+A==}
 
   '@grafana/eslint-config@9.0.0':
     resolution: {integrity: sha512-Jw7/kyO29iNKiHrDwsVwP3/YSNdYCt8ofCgSFNfcYQeK7+Z3zn1RrMBXWohVQ47OuwjXr6AUqo5ReQBCPq6Fzw==}
@@ -800,8 +800,8 @@ packages:
   '@grafana/faro-web-sdk@2.11.0':
     resolution: {integrity: sha512-oGwdqlFJkIrK6V45wDlPaggNXOJCcXRFobho0PBQvohAB4Y4UTyMH18Sr1Tznp3z6POr/zh7RUtB0L/iN2X+HA==}
 
-  '@grafana/i18n@13.2.1':
-    resolution: {integrity: sha512-B5sYhxwaBJYPEgHpJpUQvwJx9WawrMMSc0ISrhz7jKALfGAfJOkyfBVt9Aah5TGsQ920wE/RpAW/U3KZCd+0yQ==}
+  '@grafana/i18n@13.2.3':
+    resolution: {integrity: sha512-BS2XCJv98UdrqIPX5SlqlhEHm94Xxwv3+0Tk22aH6NiZV2bN+IsCywNKqrGVk+Gxrz7ysl7hYRU0R/jBwa6Q5g==}
     peerDependencies:
       react: '>=19'
 
@@ -826,14 +826,14 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
-  '@grafana/runtime@13.2.1':
-    resolution: {integrity: sha512-5zbJx/G/DUJoFqYZD65rBjt1lnFJKemnavF5glQMThTn80Nyl4Yyj1jjMCDKhK7YljtbcvuUZXlEuCibdz57Og==}
+  '@grafana/runtime@13.2.3':
+    resolution: {integrity: sha512-TS8Qdzkg3uOUefgpfl+6kIK6LeOE60PLLBMvDayCMXmqhoqM/c4ufNVyPOTkAfFiM8BA2AFgG8d+qelJQnYtuQ==}
     peerDependencies:
       react: '>=19'
       react-dom: '>=19'
 
-  '@grafana/schema@13.2.1':
-    resolution: {integrity: sha512-E2olDA8cPCJUDG6qy+9Zez5cqTa1Hcm9mTzmWWRKhJ519s1F2R8YBXNMqQQbKwlHECwldhS+Ry+ddptlSQM0IQ==}
+  '@grafana/schema@13.2.3':
+    resolution: {integrity: sha512-rk8FEO7yuFfRTK/JD39747SZFQ+iCTQbpm6Mh2OjnqGx/g/uQQFx56t64eCLXWEyoR68ru4cigcGKrXk+ozrLg==}
 
   '@grafana/sign-plugin@3.3.3':
     resolution: {integrity: sha512-bCdRRCYB8NccQbEnmDcLqZrODLP1R4nhYwOzYGtQMTh7xISf7ddj2HlpPN4DeX1aPhV9yCNxcCyLZm3N6zjATQ==}
@@ -843,8 +843,8 @@ packages:
   '@grafana/tsconfig@2.2.0':
     resolution: {integrity: sha512-hhhXetqhSKTfgErStfWVPhqo4JPi+lNqBJNhBF6RT4ZIM4vwKxEfnfsyswT+NwHIXNrOz23xoOGeKWPpxmaHWQ==}
 
-  '@grafana/ui@13.2.1':
-    resolution: {integrity: sha512-szyrRtysNNlOcAb3YB7Ro1dHqp5/IQG09Qf9Vm/2PQh7e/X8ShvEAP+Y4GEowMziUyniZ19tKte1o+seUg+h+A==}
+  '@grafana/ui@13.2.3':
+    resolution: {integrity: sha512-hs7y5Hk1n962kZQR9rtZvjOiMW+RsIUcb70F8JTQhFaDz17Sw4aJGjHVnnp0cBnluG6UTMcDC3+/rLeXJAEIgw==}
     peerDependencies:
       react: '>=19'
       react-dom: '>=19'
@@ -6136,11 +6136,11 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@grafana/data@13.2.1(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)':
+  '@grafana/data@13.2.3(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)':
     dependencies:
       '@braintree/sanitize-url': 7.0.1
-      '@grafana/i18n': 13.2.1(eslint@9.39.5(supports-color@8.1.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)
-      '@grafana/schema': 13.2.1
+      '@grafana/i18n': 13.2.3(eslint@9.39.5(supports-color@8.1.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)
+      '@grafana/schema': 13.2.3
       '@leeoniya/ufuzzy': 1.0.19
       '@react-hookz/web': 25.3.0(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/d3-interpolate': 3.0.4
@@ -6175,11 +6175,11 @@ snapshots:
       - supports-color
       - typescript
 
-  '@grafana/data@13.2.1(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@8.1.1)(typescript@5.9.2)':
+  '@grafana/data@13.2.3(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@8.1.1)(typescript@5.9.2)':
     dependencies:
       '@braintree/sanitize-url': 7.0.1
-      '@grafana/i18n': 13.2.1(eslint@9.39.5(supports-color@8.1.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@8.1.1)(typescript@5.9.2)
-      '@grafana/schema': 13.2.1
+      '@grafana/i18n': 13.2.3(eslint@9.39.5(supports-color@8.1.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@8.1.1)(typescript@5.9.2)
+      '@grafana/schema': 13.2.3
       '@leeoniya/ufuzzy': 1.0.19
       '@react-hookz/web': 25.3.0(js-cookie@3.0.8)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@types/d3-interpolate': 3.0.4
@@ -6218,7 +6218,7 @@ snapshots:
     dependencies:
       semver: 7.8.5
 
-  '@grafana/e2e-selectors@13.2.1':
+  '@grafana/e2e-selectors@13.2.3':
     dependencies:
       semver: 7.8.5
 
@@ -6245,7 +6245,7 @@ snapshots:
       ua-parser-js: 1.0.41
       web-vitals: 6.2.1
 
-  '@grafana/i18n@13.2.1(eslint@9.39.5(supports-color@8.1.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)':
+  '@grafana/i18n@13.2.3(eslint@9.39.5(supports-color@8.1.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)':
     dependencies:
       '@formatjs/intl-durationformat': 0.7.6
       '@typescript-eslint/utils': 8.70.0(eslint@9.39.5(supports-color@8.1.1))(supports-color@8.1.1)(typescript@5.9.2)
@@ -6263,7 +6263,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@grafana/i18n@13.2.1(eslint@9.39.5(supports-color@8.1.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@8.1.1)(typescript@5.9.2)':
+  '@grafana/i18n@13.2.3(eslint@9.39.5(supports-color@8.1.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@8.1.1)(typescript@5.9.2)':
     dependencies:
       '@formatjs/intl-durationformat': 0.7.6
       '@typescript-eslint/utils': 8.70.0(eslint@9.39.5(supports-color@8.1.1))(supports-color@8.1.1)(typescript@5.9.2)
@@ -6308,13 +6308,13 @@ snapshots:
       - typanion
       - typescript
 
-  '@grafana/runtime@13.2.1(@babel/runtime@8.0.5)(@codemirror/lint@6.9.7)(@codemirror/search@6.7.2)(@codemirror/theme-one-dark@6.1.3)(@types/react@18.3.31)(codemirror@6.0.2)(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)':
+  '@grafana/runtime@13.2.3(@babel/runtime@8.0.5)(@codemirror/lint@6.9.7)(@codemirror/search@6.7.2)(@codemirror/theme-one-dark@6.1.3)(@types/react@18.3.31)(codemirror@6.0.2)(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)':
     dependencies:
-      '@grafana/data': 13.2.1(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)
-      '@grafana/e2e-selectors': 13.2.1
+      '@grafana/data': 13.2.3(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)
+      '@grafana/e2e-selectors': 13.2.3
       '@grafana/faro-web-sdk': 2.11.0
-      '@grafana/schema': 13.2.1
-      '@grafana/ui': 13.2.1(@babel/runtime@8.0.5)(@codemirror/lint@6.9.7)(@codemirror/search@6.7.2)(@codemirror/theme-one-dark@6.1.3)(@types/react@18.3.31)(codemirror@6.0.2)(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)
+      '@grafana/schema': 13.2.3
+      '@grafana/ui': 13.2.3(@babel/runtime@8.0.5)(@codemirror/lint@6.9.7)(@codemirror/search@6.7.2)(@codemirror/theme-one-dark@6.1.3)(@types/react@18.3.31)(codemirror@6.0.2)(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)
       '@openfeature/core': 1.12.0
       '@openfeature/localstorage-provider': 0.1.2(@openfeature/web-sdk@1.10.0(@openfeature/core@1.12.0))
       '@openfeature/ofrep-web-provider': 0.4.3(@openfeature/core@1.12.0)(@openfeature/web-sdk@1.10.0(@openfeature/core@1.12.0))
@@ -6344,7 +6344,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@grafana/schema@13.2.1': {}
+  '@grafana/schema@13.2.3': {}
 
   '@grafana/sign-plugin@3.3.3(supports-color@8.1.1)':
     dependencies:
@@ -6355,7 +6355,7 @@ snapshots:
 
   '@grafana/tsconfig@2.2.0': {}
 
-  '@grafana/ui@13.2.1(@babel/runtime@8.0.5)(@codemirror/lint@6.9.7)(@codemirror/search@6.7.2)(@codemirror/theme-one-dark@6.1.3)(@types/react@18.3.31)(codemirror@6.0.2)(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)':
+  '@grafana/ui@13.2.3(@babel/runtime@8.0.5)(@codemirror/lint@6.9.7)(@codemirror/search@6.7.2)(@codemirror/theme-one-dark@6.1.3)(@types/react@18.3.31)(codemirror@6.0.2)(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)':
     dependencies:
       '@codemirror/autocomplete': 6.20.3
       '@codemirror/lang-go': 6.0.1
@@ -6373,12 +6373,12 @@ snapshots:
       '@emotion/react': 11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1)
       '@emotion/serialize': 1.3.3
       '@floating-ui/react': 0.27.20(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@grafana/data': 13.2.1(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)
-      '@grafana/e2e-selectors': 13.2.1
+      '@grafana/data': 13.2.3(eslint@9.39.5(supports-color@8.1.1))(js-cookie@3.0.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)
+      '@grafana/e2e-selectors': 13.2.3
       '@grafana/faro-web-sdk': 2.11.0
-      '@grafana/i18n': 13.2.1(eslint@9.39.5(supports-color@8.1.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)
+      '@grafana/i18n': 13.2.3(eslint@9.39.5(supports-color@8.1.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.2)
       '@grafana/react-data-grid': 7.0.0-beta.57(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@grafana/schema': 13.2.1
+      '@grafana/schema': 13.2.3
       '@hello-pangea/dnd': 18.0.1(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@lezer/highlight': 1.2.3
       '@monaco-editor/react': 4.7.0(monaco-editor@0.34.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -6672,7 +6672,7 @@ snapshots:
       '@jest/schemas': 29.6.3
       '@types/istanbul-lib-coverage': 2.0.6
       '@types/istanbul-reports': 3.0.4
-      '@types/node': 22.20.2
+      '@types/node': 24.13.4
       '@types/yargs': 17.0.35
       chalk: 4.1.2
 
@@ -9802,7 +9802,7 @@ snapshots:
   jest-util@29.7.0:
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 22.20.2
+      '@types/node': 24.13.4
       chalk: 4.1.2
       ci-info: 3.9.0
       graceful-fs: 4.2.11
