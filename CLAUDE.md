@@ -62,6 +62,10 @@ sanctioned way to move the lockfile.
 - Tests sit beside their subject (`src/**/*.test.ts[x]`): the engine's run in
   Jest's `core` project under plain Node, the panel's in the `panel` project
   under jsdom. Browser tests live in `plugins/nodegrid-panel/tests/`.
+- **Test data never goes under `src/` as JSON.** The scaffold's build copies
+  every JSON file under `src/` into the archive; captured frames live in
+  `plugins/nodegrid-panel/fixtures/`, and `tests/contract` fails the build if
+  any JSON but `plugin.json` ships.
 - The e2e suite and the screenshot script resolve panels by **dashboard uid
   and numeric panel id** (`?viewPanel=<id>`). Renumbering a panel in
   `dev/provisioning/dashboards/*.json` breaks tests that look unrelated;
