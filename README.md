@@ -93,8 +93,8 @@ Requires Grafana **12.3 or later**.
 
 | | |
 |---|---|
-| `plugins/nodegrid-panel` | `tomzone-slurm-panel`, one cell per node |
-| `packages/core` | the engine: ingest, state parsing, grouping. No Grafana import |
+| `plugins/nodegrid-panel` | `tomzone-slurm-panel`, one cell per node, and everything it is built from |
+| `plugins/nodegrid-panel/src/core` | the engine: ingest, state parsing, grouping, layout. No Grafana import |
 | `dev/` | the toolchain image, and a self-contained Grafana + Prometheus + synthetic exporter stack |
 
 ## Getting started

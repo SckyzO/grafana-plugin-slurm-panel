@@ -77,18 +77,34 @@ Read the relevant one before changing behaviour it covers. They record the
 alternatives that were rejected and what it would cost to revisit them, which is
 the part that does not survive in the code.
 
-## Why `packages/core` imports nothing from Grafana
+## Why the engine imports nothing from Grafana
 
-`@grafana/data` touches `window` and `document` at import time and throws
-under plain Node; there is no way to import it outside a DOM. Keeping the
-engine (ingest, state parsing, grouping) free of any Grafana import is what
-lets its tests run under plain Node with nothing more than `jest`, no browser
-and no Grafana instance, and it is what keeps the panel itself thin: the
-panel package translates a `DataFrame` into the engine's plain structural
-types and translates the result back into React, and does nothing else that
-the engine could have done for it. If a change to `packages/core` needs
-anything from `@grafana/data`, `@grafana/ui` or `@grafana/runtime`, that
-logic belongs in the panel package instead.
+The engine (ingest, state parsing, grouping, layout) lives in
+`plugins/nodegrid-panel/src/core`. `@grafana/data` touches `window` and
+`document` at import time and throws under plain Node; there is no way to
+import it outside a DOM. Keeping the engine free of any Grafana import is
+what lets its tests run under plain Node, no browser and no Grafana
+instance, and it is what keeps the panel itself thin: the panel translates a
+`DataFrame` into the engine's plain structural types and translates the
+result back into React, and does nothing else that the engine could have
+done for it. If a change under `src/core` needs anything from
+`@grafana/data`, `@grafana/ui` or `@grafana/runtime`, that logic belongs in
+the panel instead.
+
+None of that rests on review. The plugin's ESLint config refuses an
+`@grafana` import under `src/core`; its tests run in Jest's `core` project,
+under plain Node, where `document` is not defined; and `tsconfig.core.json`
+checks it with no DOM library and with `noUncheckedIndexedAccess` and
+`exactOptionalPropertyTypes`, on stricter terms than the panel.
+`dev/relabel/generate.mjs` and `tests/contract` run its TypeScript source
+directly under Node, which strips the types; that is why its imports carry
+their `.ts` extension and why `tsconfig.core.json` holds it to erasable
+syntax.
+
+It used to be a workspace package of its own, `packages/core`. It moved into
+the plugin's directory because the Grafana catalogue reviews that directory
+as the plugin's whole source: everything the plugin is built from has to be
+in it.
 
 ## Bug fixes need a regression test
 

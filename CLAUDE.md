@@ -47,17 +47,21 @@ sanctioned way to move the lockfile.
 
 ## Layout invariants
 
-- **`packages/core` imports nothing from Grafana.** The engine — ingest, state
-  parsing, grouping, layout — is testable without a browser and stays that way.
-  Anything that needs `@grafana/*` belongs in `plugins/nodegrid-panel`.
-- **Core imports carry a `.js` extension** (`./hostlist.js`), because the
-  package is ESM and TypeScript does not rewrite specifiers.
-- **Core tests live in `packages/core/test/`, never under `src/`.** `testMatch`
-  is `<rootDir>/test/**/*.test.ts`; a test file under `src/` never runs and
-  passes silently.
-- The panel's own tests sit beside their subject
-  (`src/**/*.test.ts[x]`), and its browser tests in
-  `plugins/nodegrid-panel/tests/`.
+- **Everything the plugin is built from lives in `plugins/nodegrid-panel`.**
+  The Grafana catalogue reviews that directory as the plugin's whole source; a
+  dependency on code outside it sent the 0.1.0 submission back.
+- **The engine, `src/core`, imports nothing from Grafana.** Ingest, state
+  parsing, grouping, layout: testable without a browser, and kept that way by
+  the plugin's ESLint config, a Jest project under plain Node, and
+  `tsconfig.core.json` (no DOM lib, stricter flags). Anything that needs
+  `@grafana/*` belongs outside `src/core`.
+- **Engine imports carry their `.ts` extension** (`./hostlist.ts`): Node runs
+  these files directly for `dev/relabel/generate.mjs` and `tests/contract`, and
+  resolves only real file names. Keep to erasable syntax there — no `enum`,
+  `import type` for types — or `tsconfig.core.json` fails before Node does.
+- Tests sit beside their subject (`src/**/*.test.ts[x]`): the engine's run in
+  Jest's `core` project under plain Node, the panel's in the `panel` project
+  under jsdom. Browser tests live in `plugins/nodegrid-panel/tests/`.
 - The e2e suite and the screenshot script resolve panels by **dashboard uid
   and numeric panel id** (`?viewPanel=<id>`). Renumbering a panel in
   `dev/provisioning/dashboards/*.json` breaks tests that look unrelated;

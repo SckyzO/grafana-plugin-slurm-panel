@@ -454,3 +454,9 @@ claims.
 | Rung 2 chains *Labels to fields* then *Join by field* | *Labels to fields* is not needed and does not help: it turns each series' labels into columns **in place**, leaving one frame per series. Query A needs `Format: Table`, which makes Prometheus return a single frame with `node` already a column. The only transformation is `Join by field` |
 | Rung 2's panel support is "believed complete, not verified" | Verified end to end against a live stack. Two things a first reading of the Grafana docs does not give: the panel's own datasource must be `-- Mixed --` or the second query never runs, silently; and the joined frame's `refId` is `joinByField-A-B`, not `A`, which is what **State query** has to name |
 | The inventory column was going to be `rack` | It is `zone`. A column that agrees with one relabelling already supplies proves nothing about whether the join ran |
+
+## Revision (2026-11-03)
+
+| Was | Is |
+|---|---|
+| The hostlist parser, grouping and coverage signal in `packages/core`, which `dev/relabel/generate.mjs` imported from its compiled `dist/` | The same modules under `plugins/nodegrid-panel/src/core`, with no workspace package. The Grafana catalogue reviews the plugin's directory as its whole source and sent 0.1.0 back for depending on code outside it. Paths above that begin `packages/core/src/` now begin `plugins/nodegrid-panel/src/core/`. The engine still imports nothing from Grafana and is still tested under plain Node. The generator imports the engine's TypeScript source and Node strips the types, so it still runs the very parser the panel bundles, with no build step between them |

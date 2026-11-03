@@ -250,3 +250,9 @@ for the occasion would prove less.
 |---|---|
 | "The dev fixture suits it: 240 nodes over six racks of forty gives ten rows" | 400 nodes over four compute racks of eighty and two gpu racks of forty. A compute rack gives twenty rows at four per blade, a gpu rack twenty at two — the point of the sizes is that both fill the same cabinet |
 | The e2e test proved blade density by counting rows, ten against twenty | It counts sleds across, four against two. Row count no longer separates the two densities, because the rack sizes now follow them; width is what blade density decides, and it is what that test always claimed to check |
+
+## Revision (2026-11-03)
+
+| Was | Is |
+|---|---|
+| `parseBladeTable` in `packages/core/src/layout/blades.ts`, exported from `packages/core/src/index.ts` | The same modules under `plugins/nodegrid-panel/src/core`, with no workspace package. The Grafana catalogue reviews the plugin's directory as its whole source and sent 0.1.0 back for depending on code outside it. Paths above that begin `packages/core/src/` now begin `plugins/nodegrid-panel/src/core/`. The engine still imports nothing from Grafana and is still tested under plain Node: `src/core/layout/blades.ts`, exported from `src/core/index.ts` |

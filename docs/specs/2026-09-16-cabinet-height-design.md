@@ -413,3 +413,9 @@ The old arrangement made the compute cabinets read as half empty. They were:
 forty nodes in a quad-blade cabinet occupy ten slots, and a cabinet holding a
 quarter of what it can take is a half-empty cabinet drawn faithfully. The
 defect was in the fixture's arithmetic, not in the rendering.
+
+## Revision (2026-11-03)
+
+| Was | Is |
+|---|---|
+| The slot parser's tests in `packages/core/test/slots.test.ts`, held there by `packages/core/jest.config.js`, whose `testMatch` skipped anything under `src/` | The same modules under `plugins/nodegrid-panel/src/core`, with no workspace package. The Grafana catalogue reviews the plugin's directory as its whole source and sent 0.1.0 back for depending on code outside it. Paths above that begin `packages/core/src/` now begin `plugins/nodegrid-panel/src/core/`. The engine still imports nothing from Grafana and is still tested under plain Node: the tests are `src/core/layout/slots.test.ts`, beside the parser, and the `core` project of the plugin's `jest.config.js` matches `src/core/**/*.test.ts`, so a test there runs |

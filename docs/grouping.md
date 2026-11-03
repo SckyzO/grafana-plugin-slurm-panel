@@ -205,7 +205,8 @@ The range table borrows `sinfo`'s own notation, `c[1-40]`, rather than
 inventing a grammar, so it reads the way a Slurm administrator already
 reads and writes node sets. The panel and `dev/relabel/generate.mjs` (see
 below) share one parser for it, checked directly against
-`packages/core/src/group/hostlist.ts` and `packages/core/src/group/ranges.ts`:
+`plugins/nodegrid-panel/src/core/group/hostlist.ts` and
+`plugins/nodegrid-panel/src/core/group/ranges.ts`:
 
 1. **One line per group**, `name: hostlist`. The name is whatever you want
    the header to say; the hostlist is everything after the first colon.

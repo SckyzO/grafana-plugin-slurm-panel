@@ -644,3 +644,9 @@ come to rely on it. Nobody has: the plugin is unpublished.
 | Was | Is |
 |---|---|
 | One panel, `Shape channel`, on the grouping and layout dashboard | A matched pair on the colour and state dashboard (`slurm-node-colour`): panel 6 with the channel off, the shipped default, beside panel 7 with it on. They are the pair the shipped README shows, and the grouping dashboard carries neither. The 2026-09-19 line was written before the dev dashboards went from five to three |
+
+## Revision (2026-11-03)
+
+| Was | Is |
+|---|---|
+| The engine in its own workspace package, `packages/core`, beside the plugin in the tree above, taken by the panel as a `workspace:*` dependency | The same modules under `plugins/nodegrid-panel/src/core`, with no workspace package. The Grafana catalogue reviews the plugin's directory as its whole source and sent 0.1.0 back for depending on code outside it. Paths above that begin `packages/core/src/` now begin `plugins/nodegrid-panel/src/core/`. The engine still imports nothing from Grafana and is still tested under plain Node: its tests sit beside the modules they cover and run in the `core` project of the plugin's `jest.config.js`, which is the plain Node environment the jsdom paragraph above contrasts with |
