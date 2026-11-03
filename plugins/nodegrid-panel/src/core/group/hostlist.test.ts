@@ -1,4 +1,4 @@
-import { expandHostlist, collapseHostlist, EXPANSION_CAP } from '../src/group/hostlist.js';
+import { expandHostlist, collapseHostlist, EXPANSION_CAP } from './hostlist.ts';
 
 describe('expandHostlist', () => {
   it('expands a simple range', () => {

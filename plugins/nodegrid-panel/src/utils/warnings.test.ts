@@ -1,8 +1,8 @@
 import { collectUnmapped, summarise, ruleFor, groupingNotes, unresolvedBindings } from './warnings';
 import { LoadingState, getDefaultTimeRange } from '@grafana/data';
 import type { DataFrame, DataQueryRequest, DisplayProcessor, PanelData } from '@grafana/data';
-import { buildGroups, parseRangeTable, UNGROUPED } from '@slurm-views/core';
-import type { GroupedModel, KeySource, SlurmNode } from '@slurm-views/core';
+import { buildGroups, parseRangeTable, UNGROUPED } from '../core';
+import type { GroupedModel, KeySource, SlurmNode } from '../core';
 import type { GroupingNotes, SlotNotes, UnresolvedBinding } from './warnings';
 
 const node = (name: string, state: string): SlurmNode => ({
@@ -205,7 +205,7 @@ describe('summarise', () => {
 
     it('collapses declared groups that are not drawn into one line', () => {
       // rack9 and rack10 are consecutive, so listOf's hostlist collapsing
-      // (see packages/core/test/hostlist.test.ts) folds them into one range
+      // (see src/core/group/hostlist.test.ts) folds them into one range
       // rather than joining them with a comma.
       const lines = summarise(
         model(4, 4),

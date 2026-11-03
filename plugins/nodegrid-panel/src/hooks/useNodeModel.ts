@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { FieldType } from '@grafana/data';
 import type { DataFrame, Field, InterpolateFunction, PanelData } from '@grafana/data';
-import { buildGroups, declaredKeys, ingest, parseRangeTable } from '@slurm-views/core';
-import type { GroupedModel, IngestWarning, KeySource, MinimalFrame } from '@slurm-views/core';
+import { buildGroups, declaredKeys, ingest, parseRangeTable } from '../core';
+import type { GroupedModel, IngestWarning, KeySource, MinimalFrame } from '../core';
 import { groupingNotes } from '../utils/warnings';
 import type { GroupingNotes } from '../utils/warnings';
 import type { PanelOptions } from '../types';

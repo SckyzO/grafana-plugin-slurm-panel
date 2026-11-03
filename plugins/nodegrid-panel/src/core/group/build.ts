@@ -1,6 +1,6 @@
-import { makeKeyFn, ordinalOf, UNGROUPED } from './keys.js';
-import type { KeySource } from './keys.js';
-import type { SlurmNode } from '../model/types.js';
+import { makeKeyFn, ordinalOf, UNGROUPED } from './keys.ts';
+import type { KeySource } from './keys.ts';
+import type { SlurmNode } from '../model/types.ts';
 
 export interface NodeGroup {
   key: string;

@@ -1,4 +1,4 @@
-import type { SlurmNode } from '@slurm-views/core';
+import type { SlurmNode } from '../core';
 import type { ColorMode } from '../types';
 
 /**

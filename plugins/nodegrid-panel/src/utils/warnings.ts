@@ -1,6 +1,6 @@
 import { LoadingState } from '@grafana/data';
 import type { DisplayProcessor, PanelData } from '@grafana/data';
-import { collapseHostlist, suggestLabel, UNGROUPED } from '@slurm-views/core';
+import { collapseHostlist, suggestLabel, UNGROUPED } from '../core';
 import type {
   CoverageSuggestion,
   GroupedModel,
@@ -9,7 +9,7 @@ import type {
   QueryBindings,
   RangeTable,
   SlurmNode,
-} from '@slurm-views/core';
+} from '../core';
 import { fractionFor } from './colorMode';
 import type { ColorMode } from '../types';
 

@@ -1,4 +1,4 @@
-import { toSamples } from './labels.js';
+import { toSamples } from './labels.ts';
 import type {
   GresEntry,
   IngestInput,
@@ -8,7 +8,7 @@ import type {
   NodeFacets,
   Sample,
   SlurmNode,
-} from '../model/types.js';
+} from '../model/types.ts';
 
 type ScalarFacet = 'cpuAlloc' | 'cpuTotal' | 'memAlloc' | 'memTotal' | 'drainSince';
 const SCALAR_FACETS: ScalarFacet[] = ['cpuAlloc', 'cpuTotal', 'memAlloc', 'memTotal', 'drainSince'];

@@ -1,12 +1,19 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { ingest } from '../src/ingest/frames.js';
-import { toSamples } from '../src/ingest/labels.js';
-import type { LabelNames, MinimalFrame, QueryBindings } from '../src/model/types.js';
+import { ingest } from './frames.ts';
+import { toSamples } from './labels.ts';
+import type { LabelNames, MinimalFrame, QueryBindings } from '../model/types.ts';
+import numericMulti from './fixtures/node-status.numeric-multi.json';
+import table from './fixtures/node-status.table.json';
+
+// Imported rather than read from disk: the plugin's Jest compiles tests to
+// CommonJS, where `import.meta.url` does not exist, and an import needs no
+// file system access to begin with.
+const FIXTURES: Record<string, unknown> = {
+  'node-status.numeric-multi.json': numericMulti,
+  'node-status.table.json': table,
+};
 
 const load = (name: string): MinimalFrame[] => {
-  const path = fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
-  const raw = JSON.parse(readFileSync(path, 'utf8')) as Array<{
+  const raw = FIXTURES[name] as Array<{
     schema: { refId?: string; fields: Array<{ name: string; type?: string; labels?: Record<string, string> }> };
     data: { values: unknown[][] };
   }>;

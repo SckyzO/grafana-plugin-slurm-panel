@@ -1,4 +1,4 @@
-import type { KeySource, LabelNames, QueryBindings } from '@slurm-views/core';
+import type { KeySource, LabelNames, QueryBindings } from './core';
 
 export type Layout = 'wrap' | 'rack';
 export type ColorMode = 'state' | 'cpu' | 'mem' | 'gres';

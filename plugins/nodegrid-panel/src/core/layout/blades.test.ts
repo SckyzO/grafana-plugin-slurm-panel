@@ -1,4 +1,4 @@
-import { MAX_BLADE, MIN_BLADE, parseBladeTable } from '../src/layout/blades.js';
+import { MAX_BLADE, MIN_BLADE, parseBladeTable } from './blades.ts';
 
 describe('parseBladeTable', () => {
   it('reads a hostlist of group names on the left and a count on the right', () => {

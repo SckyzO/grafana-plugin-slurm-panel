@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { FieldType, ThresholdsMode, createTheme, getDisplayProcessor } from '@grafana/data';
 import type { DisplayProcessor } from '@grafana/data';
-import type { SlurmNode } from '@slurm-views/core';
+import type { SlurmNode } from '../core';
 import { NodeCell } from './NodeCell';
 import { DEFAULT_MAPPINGS } from '../defaults/mappings';
 

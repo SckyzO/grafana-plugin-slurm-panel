@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { FieldType } from '@grafana/data';
 import type { DataFrame, RegistryItem, StandardEditorContext } from '@grafana/data';
 import { setTemplateSrv } from '@grafana/runtime';
-import type { KeySource } from '@slurm-views/core';
+import type { KeySource } from '../core';
 import { GroupingEditor } from './GroupingEditor';
 import { DEFAULT_OPTIONS } from '../types';
 import type { PanelOptions } from '../types';
@@ -15,8 +15,8 @@ import { fakeTemplateSrv } from '../testing/templateSrv';
 // needs the genuine behaviour. The name has to start with `mock` — jest hoists
 // the factory above the imports and rejects any other out-of-scope reference.
 const mockIngestCalls = { n: 0 };
-jest.mock('@slurm-views/core', () => {
-  const actual = jest.requireActual('@slurm-views/core');
+jest.mock('../core', () => {
+  const actual = jest.requireActual('../core');
   return {
     ...actual,
     ingest: (...args: Parameters<typeof actual.ingest>) => {
@@ -28,7 +28,7 @@ jest.mock('@slurm-views/core', () => {
 
 // Table-format frame: one string column per label, one row per node — the
 // same shape `toSamples` reads when a query returns node/status/partition as
-// columns rather than as per-series labels. See packages/core's ingest/labels.ts.
+// columns rather than as per-series labels. See src/core/ingest/labels.ts.
 const tableFrame = (rows: Array<{ node: string; status: string; partition: string }>): DataFrame => ({
   refId: DEFAULT_OPTIONS.queries.state,
   length: rows.length,

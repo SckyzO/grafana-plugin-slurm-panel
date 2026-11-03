@@ -1,4 +1,4 @@
-import { MAX_SLOT, MIN_SLOT, parseSlotTable } from '../src/layout/slots.js';
+import { MAX_SLOT, MIN_SLOT, parseSlotTable } from './slots.ts';
 
 describe('parseSlotTable', () => {
   it('reads a hostlist of group names on the left and a slot count on the right', () => {

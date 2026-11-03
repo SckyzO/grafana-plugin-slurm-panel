@@ -3,8 +3,8 @@ import { css } from '@emotion/css';
 import type { GrafanaTheme2, StandardEditorProps } from '@grafana/data';
 import { Field, Input, RadioButtonGroup, TextArea, useTheme2 } from '@grafana/ui';
 import { getTemplateSrv } from '@grafana/runtime';
-import { ingest, makeKeyFn, UNGROUPED } from '@slurm-views/core';
-import type { KeySource, MinimalFrame } from '@slurm-views/core';
+import { ingest, makeKeyFn, UNGROUPED } from '../core';
+import type { KeySource, MinimalFrame } from '../core';
 import type { PanelOptions } from '../types';
 
 const getStyles = (theme: GrafanaTheme2) => ({

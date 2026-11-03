@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import type { SlurmNode } from '@slurm-views/core';
+import type { SlurmNode } from '../core';
 import { NodeTooltip } from './NodeTooltip';
 
 const node = (overrides: Partial<SlurmNode> = {}): SlurmNode => ({

@@ -2,7 +2,7 @@ import React from 'react';
 import { css } from '@emotion/css';
 import type { GrafanaTheme2 } from '@grafana/data';
 import { useTheme2 } from '@grafana/ui';
-import type { NodeGroup as NodeGroupModel } from '@slurm-views/core';
+import type { NodeGroup as NodeGroupModel } from '../core';
 
 const getStyles = (theme: GrafanaTheme2, stacked: boolean) => ({
   // A rail carrying the name, the count and the assumed marker. Side by side

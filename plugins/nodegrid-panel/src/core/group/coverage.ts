@@ -1,5 +1,5 @@
-import type { KeySource } from './keys.js';
-import type { SlurmNode } from '../model/types.js';
+import type { KeySource } from './keys.ts';
+import type { SlurmNode } from '../model/types.ts';
 
 export interface CoverageSuggestion {
   label: string;

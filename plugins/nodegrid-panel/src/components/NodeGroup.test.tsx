@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { FieldType, ThresholdsMode, createTheme, getDisplayProcessor } from '@grafana/data';
 import type { DisplayProcessor } from '@grafana/data';
-import type { NodeGroup as NodeGroupModel, SlurmNode } from '@slurm-views/core';
+import type { NodeGroup as NodeGroupModel, SlurmNode } from '../core';
 import { NodeGroup } from './NodeGroup';
 import type { NodeGroupProps } from './NodeGroup';
 import { frameHeight, layoutBlades, layoutSlots, rackWidthFor, resolveCellSize, sledWidthFor } from './rackGeometry';

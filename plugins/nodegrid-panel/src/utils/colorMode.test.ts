@@ -1,5 +1,5 @@
 import { fractionFor } from './colorMode';
-import type { SlurmNode } from '@slurm-views/core';
+import type { SlurmNode } from '../core';
 
 const node = (facets: Partial<SlurmNode['facets']>): SlurmNode => ({
   name: 'c1',

@@ -5,15 +5,26 @@ process.env.TZ = 'UTC';
 const base = require('./.config/jest.config');
 
 module.exports = {
-  // Jest configuration provided by Grafana scaffolding
-  ...base,
-  moduleNameMapper: {
-    ...base.moduleNameMapper,
-    // @slurm-views/core's "main" points straight at its TS source, which
-    // uses ESM-style ".js" specifiers for sibling ".ts" files (the same
-    // convention packages/core/jest.config.js already strips for its own
-    // tests). Jest's default CJS resolver does not understand that
-    // convention, so any test that pulls in @slurm-views/core needs it too.
-    '^(\\.{1,2}/.*)\\.js$': '$1',
-  },
+  projects: [
+    {
+      // Jest configuration provided by Grafana scaffolding, for the panel:
+      // React components under jsdom.
+      ...base,
+      displayName: 'panel',
+      rootDir: __dirname,
+      testPathIgnorePatterns: ['/node_modules/', '<rootDir>/src/core/'],
+    },
+    {
+      // The engine under src/core is tested under plain Node: no DOM, no
+      // jsdom and none of the scaffold's browser setup. A test there that
+      // reaches for `window` or `document` fails instead of passing on a
+      // browser stand-in, which is how the engine stays free of the browser
+      // as well as of Grafana.
+      displayName: 'core',
+      rootDir: __dirname,
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/src/core/**/*.test.ts'],
+      transform: base.transform,
+    },
+  ],
 };

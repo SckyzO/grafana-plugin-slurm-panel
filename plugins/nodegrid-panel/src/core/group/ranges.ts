@@ -1,5 +1,5 @@
-import { expandHostlist, collapseHostlist } from './hostlist.js';
-import { UNGROUPED } from './keys.js';
+import { expandHostlist, collapseHostlist } from './hostlist.ts';
+import { UNGROUPED } from './keys.ts';
 
 export interface RangeGroup {
   name: string;

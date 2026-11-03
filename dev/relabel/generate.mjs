@@ -14,8 +14,11 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+// The engine's TypeScript source, run as it is: Node strips the types, which
+// is why tsconfig.core.json holds the engine to erasable syntax. No build
+// step stands between this script and the parser the panel bundles.
 const CORE = pathToFileURL(
-  path.resolve(import.meta.dirname, '..', '..', 'packages', 'core', 'dist', 'index.js')
+  path.resolve(import.meta.dirname, '..', '..', 'plugins', 'nodegrid-panel', 'src', 'core', 'index.ts')
 ).href;
 const { parseRangeTable } = await import(CORE);
 

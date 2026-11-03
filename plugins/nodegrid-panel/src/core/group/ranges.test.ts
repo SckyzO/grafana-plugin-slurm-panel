@@ -1,6 +1,6 @@
-import { parseRangeTable } from '../src/group/ranges.js';
-import { makeKeyFn, declaredKeys, UNGROUPED } from '../src/group/keys.js';
-import type { SlurmNode } from '../src/model/types.js';
+import { parseRangeTable } from './ranges.ts';
+import { makeKeyFn, declaredKeys, UNGROUPED } from './keys.ts';
+import type { SlurmNode } from '../model/types.ts';
 
 const node = (name: string): SlurmNode => ({
   name,

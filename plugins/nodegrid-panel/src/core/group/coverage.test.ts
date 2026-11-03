@@ -1,7 +1,7 @@
-import { suggestLabel } from '../src/group/coverage.js';
-import { buildGroups } from '../src/group/build.js';
-import { UNGROUPED } from '../src/group/keys.js';
-import type { SlurmNode } from '../src/model/types.js';
+import { suggestLabel } from './coverage.ts';
+import { buildGroups } from './build.ts';
+import { UNGROUPED } from './keys.ts';
+import type { SlurmNode } from '../model/types.ts';
 
 const node = (name: string, labels: Record<string, string>, partitions: string[] = []): SlurmNode => ({
   name,

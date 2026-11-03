@@ -1,5 +1,5 @@
 import { FieldConfigProperty, PanelPlugin } from '@grafana/data';
-import { MAX_BLADE, MAX_SLOT, MIN_BLADE, MIN_SLOT } from '@slurm-views/core';
+import { MAX_BLADE, MAX_SLOT, MIN_BLADE, MIN_SLOT } from './core';
 import { NodeGridPanel } from './components/NodeGridPanel';
 import { MIN_CELL_HEIGHT } from './components/rackGeometry';
 import { DEFAULT_MAPPINGS } from './defaults/mappings';

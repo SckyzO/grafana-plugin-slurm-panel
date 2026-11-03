@@ -2,8 +2,8 @@ import React from 'react';
 import { css } from '@emotion/css';
 import type { GrafanaTheme2 } from '@grafana/data';
 import { useTheme2 } from '@grafana/ui';
-import { parseState } from '@slurm-views/core';
-import type { SlurmNode } from '@slurm-views/core';
+import { parseState } from '../core';
+import type { SlurmNode } from '../core';
 import { formatAge, formatBytes } from '../utils/format';
 
 const getStyles = (theme: GrafanaTheme2) => ({

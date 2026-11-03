@@ -7,7 +7,7 @@
     "test": "jest --maxWorkers 4",
     "test:watch": "jest --watch --onlyChanged",
     "test:ci": "jest --maxWorkers 4",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.core.json",
     "lint": "eslint --cache .",
     "lint:fix": "pnpm run lint --fix && prettier --write --list-different .",
     "format": "prettier --write --list-different .",
@@ -77,7 +77,6 @@
     "@grafana/runtime": "^13.2.1",
     "@grafana/schema": "^13.2.1",
     "@grafana/ui": "^13.2.1",
-    "@slurm-views/core": "workspace:*",
     "react": "^18.3.0",
     "react-dom": "^18.3.0"
   },

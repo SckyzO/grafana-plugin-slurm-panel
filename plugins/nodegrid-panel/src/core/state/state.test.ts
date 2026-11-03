@@ -1,4 +1,4 @@
-import { parseState } from '../src/state/parse.js';
+import { parseState } from './parse.ts';
 
 /**
  * sinfo StateLong base states, plus inval which slurm_exporter emits. Kept

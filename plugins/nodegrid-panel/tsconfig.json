@@ -1,3 +1,10 @@
 {
-  "extends": "./.config/tsconfig.json"
+  "extends": "./.config/tsconfig.json",
+  "compilerOptions": {
+    // The engine under src/core imports its siblings by their real `.ts`
+    // name, so Node can run it as it is; see tsconfig.core.json. Nothing is
+    // emitted from this config: webpack and Jest compile through SWC.
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  }
 }

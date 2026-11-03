@@ -1,4 +1,4 @@
-import { collapseHostlist, expandHostlist } from '../group/hostlist.js';
+import { collapseHostlist, expandHostlist } from '../group/hostlist.ts';
 
 export interface CountProblem {
   /** 1-based, so it matches what the operator sees in the textarea. */

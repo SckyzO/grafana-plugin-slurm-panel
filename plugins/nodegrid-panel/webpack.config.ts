@@ -14,15 +14,6 @@ const config = async (env: Env): Promise<Configuration> => {
   const baseConfig = await grafanaConfig(env);
 
   return merge(baseConfig, {
-    resolve: {
-      // @slurm-views/core is authored as native TypeScript ESM: its relative
-      // imports carry the compiled ".js" extension (e.g. "./model/types.js")
-      // while the files on disk are ".ts". Node's ESM loader and tsc resolve
-      // this natively; webpack does not, without this alias.
-      extensionAlias: {
-        '.js': ['.ts', '.tsx', '.js'],
-      },
-    },
     plugins: [
       // The catalogue shows, per version, the README and links inside that
       // version's archive. Pointed at `main` they change under a published

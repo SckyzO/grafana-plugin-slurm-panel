@@ -1,4 +1,4 @@
-import type { MinimalFrame, Sample } from '../model/types.js';
+import type { MinimalFrame, Sample } from '../model/types.ts';
 
 const isValueField = (name: string): boolean => name !== 'Time' && name !== 'time';
 

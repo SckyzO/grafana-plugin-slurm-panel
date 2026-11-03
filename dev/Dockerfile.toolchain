@@ -75,7 +75,6 @@ RUN set -eux; \
         usermod  -o -u "${UID}" -g "${GID}" node; \
     fi; \
     mkdir -p /work/node_modules \
-             /work/packages/core/node_modules \
              /work/plugins/nodegrid-panel/node_modules \
              /work/tests/contract/node_modules \
              /pnpm/store; \

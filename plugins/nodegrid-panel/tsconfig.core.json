@@ -1,0 +1,32 @@
+{
+  // The engine under src/core, checked on stricter terms than the rest of the
+  // panel, which is checked by tsconfig.json as well:
+  //
+  // - noUncheckedIndexedAccess and exactOptionalPropertyTypes: the engine
+  //   reads untrusted query results by index and builds optional fields, the
+  //   two places these flags catch real mistakes;
+  // - lib without DOM, and no @types at all: the engine has no browser and no
+  //   Node API to call, and a reference to either is a type error here;
+  // - erasableSyntaxOnly and verbatimModuleSyntax: dev/relabel/generate.mjs
+  //   and tests/contract run these files directly under Node's type
+  //   stripping, which accepts only syntax it can erase and drops only the
+  //   imports marked `type`.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "types": [],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/core/**/*.ts"],
+  "exclude": ["src/core/**/*.test.ts"]
+}

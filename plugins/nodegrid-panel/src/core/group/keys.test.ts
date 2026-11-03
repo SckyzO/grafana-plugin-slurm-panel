@@ -1,5 +1,5 @@
-import { makeKeyFn, ordinalOf, UNGROUPED } from '../src/group/keys.js';
-import type { SlurmNode } from '../src/model/types.js';
+import { makeKeyFn, ordinalOf, UNGROUPED } from './keys.ts';
+import type { SlurmNode } from '../model/types.ts';
 
 const node = (name: string, labels: Record<string, string> = {}): SlurmNode => ({
   name,

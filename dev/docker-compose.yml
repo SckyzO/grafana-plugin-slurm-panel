@@ -123,7 +123,6 @@ services:
       # magnitude faster off the WSL2 9p bridge. One per workspace package,
       # because pnpm materialises a node_modules directory in each.
       - root-node-modules:/work/node_modules
-      - core-node-modules:/work/packages/core/node_modules
       - panel-node-modules:/work/plugins/nodegrid-panel/node_modules
       - contract-node-modules:/work/tests/contract/node_modules
       - pnpm-store:/pnpm
@@ -143,7 +142,6 @@ services:
 
 volumes:
   root-node-modules:
-  core-node-modules:
   panel-node-modules:
   contract-node-modules:
   pnpm-store:

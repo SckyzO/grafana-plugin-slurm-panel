@@ -1,5 +1,5 @@
-import { parseCountTable } from './countTable.js';
-import type { CountProblem } from './countTable.js';
+import { parseCountTable } from './countTable.ts';
+import type { CountProblem } from './countTable.ts';
 
 /**
  * The supported range for nodes in one cabinet slot. 1 is a single-node

@@ -1,5 +1,5 @@
-import type { SlurmNode } from '../model/types.js';
-import { parseRangeTable } from './ranges.js';
+import type { SlurmNode } from '../model/types.ts';
+import { parseRangeTable } from './ranges.ts';
 
 export type KeySource =
   | { kind: 'label'; label: string }

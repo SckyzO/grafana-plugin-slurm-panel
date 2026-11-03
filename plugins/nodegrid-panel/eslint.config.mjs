@@ -45,4 +45,27 @@ export default defineConfig([
       'no-duplicate-imports': ['error', { allowSeparateTypeImports: true }],
     },
   },
+  {
+    // The engine under src/core imports nothing from Grafana. It is tested
+    // under plain Node with no DOM (the `core` project in jest.config.js), and
+    // @grafana/data throws "window is not defined" the moment it is imported
+    // outside a browser. Keeping that boundary is what keeps the engine
+    // testable without a browser, and it is enforced here rather than left to
+    // review.
+    files: ['src/core/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@grafana/*', '@grafana'],
+              message:
+                'src/core must not import @grafana/*: it is the engine, tested under plain Node with no DOM, and @grafana/data throws "window is not defined" on import outside a browser.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);

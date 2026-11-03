@@ -14,7 +14,7 @@ import {
   sledHeightFor,
   sledWidthFor,
 } from './rackGeometry';
-import { MAX_SLOT, MIN_SLOT } from '@slurm-views/core';
+import { MAX_SLOT, MIN_SLOT } from '../core';
 import { DEFAULT_OPTIONS } from '../types';
 
 describe('rackGeometry', () => {

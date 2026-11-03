@@ -8,10 +8,19 @@ const { pathToFileURL } = require('node:url');
 const ROOT = path.resolve(__dirname, '..', '..');
 const GENERATE = path.join(ROOT, 'dev', 'relabel', 'generate.mjs');
 const TABLE = path.join(ROOT, 'dev', 'relabel', 'racks.txt');
-const CORE = pathToFileURL(path.join(ROOT, 'packages', 'core', 'dist', 'index.js')).href;
+// The engine's TypeScript source, which Node runs by stripping the types.
+// The panel's package.json declares no "type": "module" (its scaffolded
+// configs are CommonJS), so Node detects ESM syntax and prints a notice for
+// every file it loads: MODULE_TYPELESS_PACKAGE_JSON is turned off here and
+// in this package's test script, and no other warning is.
+const CORE = pathToFileURL(path.join(ROOT, 'plugins', 'nodegrid-panel', 'src', 'core', 'index.ts')).href;
 
 const runOn = (tableFile) =>
-  execFileSync('node', [GENERATE, tableFile, 'slurm_exporter', 'synthetic-exporter:9341'], { encoding: 'utf8' });
+  execFileSync(
+    'node',
+    ['--disable-warning=MODULE_TYPELESS_PACKAGE_JSON', GENERATE, tableFile, 'slurm_exporter', 'synthetic-exporter:9341'],
+    { encoding: 'utf8' }
+  );
 const run = () => runOn(TABLE);
 
 // The extraction below reads `regex:` and `replacement:` back out of the

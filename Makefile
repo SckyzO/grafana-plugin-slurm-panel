@@ -61,10 +61,11 @@ format: deps ## Reformat the panel sources in place
 	$(RUN) pnpm format
 
 format-check: deps ## Fail if any panel source is unformatted
-	@# Prettier is configured in plugins/nodegrid-panel only, so this covers
-	@# the panel and not packages/core. It reads .gitignore as well as
-	@# .prettierignore, which is why dist/ and playwright-report/ stay out of
-	@# it without a second ignore file to keep in step.
+	@# Prettier is configured in plugins/nodegrid-panel, which holds the panel
+	@# and its engine, so this covers everything that ships. It reads
+	@# .gitignore as well as .prettierignore, which is why dist/ and
+	@# playwright-report/ stay out of it without a second ignore file to keep
+	@# in step.
 	$(RUN) pnpm format:check
 
 typecheck: deps ## Typecheck
@@ -88,8 +89,14 @@ scrape: build ## Generate the Prometheus scrape config from dev/relabel/racks.tx
 	@# Running the generator here is what keeps it from being dead code: it is
 	@# exercised on every `make up` rather than illustrated in a README, and it
 	@# is what lets the dev stack demonstrate the rung it recommends first.
+	@#
+	@# The generator imports the engine's TypeScript source and Node strips
+	@# its types. The panel's package.json declares no "type": "module" (the
+	@# scaffold's own configs are CommonJS), so Node detects ESM syntax and
+	@# says so for every file; that one notice is turned off, nothing else.
 	@mkdir -p dev/prometheus/scrape
-	$(RUN) node dev/relabel/generate.mjs dev/relabel/racks.txt slurm_exporter synthetic-exporter:9341 \
+	$(RUN) node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON dev/relabel/generate.mjs \
+	  dev/relabel/racks.txt slurm_exporter synthetic-exporter:9341 \
 	  > dev/prometheus/scrape/nodes.yml
 	@# The file is bind-mounted, so a running Prometheus sees no container
 	@# change to act on and would keep serving the previous config. A stale
@@ -289,4 +296,4 @@ clean: ## Remove the stack, the node_modules volumes and the build output
 	$(COMPOSE) --profile tools down -v --remove-orphans
 	rm -rf plugins/nodegrid-panel/dist plugins/nodegrid-panel/.artifacts \
 	       plugins/nodegrid-panel/playwright-report plugins/nodegrid-panel/test-results \
-	       packages/core/dist coverage
+	       coverage

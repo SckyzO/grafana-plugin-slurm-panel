@@ -6,7 +6,7 @@
  * without a layout engine cannot see.
  */
 
-import { MAX_SLOT, MIN_SLOT } from '@slurm-views/core';
+import { MAX_SLOT, MIN_SLOT } from '../core';
 import { DEFAULT_OPTIONS } from '../types';
 import type { Layout } from '../types';
 
