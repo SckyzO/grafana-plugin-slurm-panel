@@ -32,9 +32,7 @@ const withoutPrototype = (from: Record<string, string> = {}): Record<string, str
  * so both paths are load-bearing rather than defensive.
  */
 export function toSamples(frame: MinimalFrame): Sample[] {
-  const labelled = frame.fields.find(
-    (f) => isValueField(f.name) && f.labels && Object.keys(f.labels).length > 0
-  );
+  const labelled = frame.fields.find((f) => isValueField(f.name) && f.labels && Object.keys(f.labels).length > 0);
 
   if (labelled) {
     return labelled.values.map((value) => ({ labels: withoutPrototype(labelled.labels), value }));

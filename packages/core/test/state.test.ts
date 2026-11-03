@@ -6,9 +6,25 @@ import { parseState } from '../src/state/parse.js';
  * against no list, so a copy in the package would only look as if it did.
  */
 const BASE_STATES = [
-  'allocated', 'blocked', 'completing', 'down', 'drained', 'draining', 'fail', 'failing',
-  'future', 'idle', 'inval', 'maint', 'mixed', 'perfctrs', 'planned', 'power_down',
-  'power_up', 'reserved', 'unknown',
+  'allocated',
+  'blocked',
+  'completing',
+  'down',
+  'drained',
+  'draining',
+  'fail',
+  'failing',
+  'future',
+  'idle',
+  'inval',
+  'maint',
+  'mixed',
+  'perfctrs',
+  'planned',
+  'power_down',
+  'power_up',
+  'reserved',
+  'unknown',
 ] as const;
 
 describe('parseState splits a sinfo state into base and modifiers', () => {

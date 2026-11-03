@@ -40,7 +40,13 @@ export interface CoverageInput {
  * the scrape would change a panel's behaviour with nothing in its JSON to
  * explain it.
  */
-export function suggestLabel({ nodes, source, placed, nodeLabel, stateLabel }: CoverageInput): CoverageSuggestion | undefined {
+export function suggestLabel({
+  nodes,
+  source,
+  placed,
+  nodeLabel,
+  stateLabel,
+}: CoverageInput): CoverageSuggestion | undefined {
   // `none` is a choice, not a failure to group.
   if (source.kind === 'none' || nodes.length === 0) {
     return undefined;

@@ -2,7 +2,11 @@ import { makeKeyFn, ordinalOf, UNGROUPED } from '../src/group/keys.js';
 import type { SlurmNode } from '../src/model/types.js';
 
 const node = (name: string, labels: Record<string, string> = {}): SlurmNode => ({
-  name, state: 'idle', partitions: [], labels, facets: { gres: [] },
+  name,
+  state: 'idle',
+  partitions: [],
+  labels,
+  facets: { gres: [] },
 });
 
 describe('label keys read a value the data already carries', () => {
@@ -29,14 +33,18 @@ describe('capture keys read structure the node name encodes', () => {
   });
 
   it('falls back on a pattern with no capture group', () => {
-    expect(makeKeyFn({ kind: 'capture', pattern: '^r\\d+' })(node('r012c04n03')))
-      .toEqual({ key: UNGROUPED, assumed: false });
+    expect(makeKeyFn({ kind: 'capture', pattern: '^r\\d+' })(node('r012c04n03'))).toEqual({
+      key: UNGROUPED,
+      assumed: false,
+    });
   });
 
   it('does not throw on a pattern that will not compile', () => {
     // A regex typed into a panel option is typed by a human, mid-thought.
-    expect(makeKeyFn({ kind: 'capture', pattern: '^(unclosed' })(node('c1')))
-      .toEqual({ key: UNGROUPED, assumed: false });
+    expect(makeKeyFn({ kind: 'capture', pattern: '^(unclosed' })(node('c1'))).toEqual({
+      key: UNGROUPED,
+      assumed: false,
+    });
   });
 });
 
@@ -62,8 +70,7 @@ describe('chunk keys invent structure, and say so', () => {
   });
 
   it('refuses a non-positive chunk size instead of dividing by zero', () => {
-    expect(makeKeyFn({ kind: 'chunk', size: 0 })(node('compute0421')))
-      .toEqual({ key: UNGROUPED, assumed: false });
+    expect(makeKeyFn({ kind: 'chunk', size: 0 })(node('compute0421'))).toEqual({ key: UNGROUPED, assumed: false });
   });
 });
 
@@ -75,7 +82,11 @@ describe('no grouping puts every node in one group', () => {
 
 describe('ordinalOf reads the trailing number of a node name', () => {
   it.each([
-    ['c1', 1], ['c10', 10], ['compute0421', 421], ['r012c04n03', 3], ['login', undefined],
+    ['c1', 1],
+    ['c10', 10],
+    ['compute0421', 421],
+    ['r012c04n03', 3],
+    ['login', undefined],
   ])('reads %s as %s', (name, expected) => {
     expect(ordinalOf(name)).toBe(expected);
   });

@@ -3,7 +3,11 @@ import { makeKeyFn, declaredKeys, UNGROUPED } from '../src/group/keys.js';
 import type { SlurmNode } from '../src/model/types.js';
 
 const node = (name: string): SlurmNode => ({
-  name, state: 'idle', partitions: [], labels: {}, facets: { gres: [] },
+  name,
+  state: 'idle',
+  partitions: [],
+  labels: {},
+  facets: { gres: [] },
 });
 
 const TABLE = `

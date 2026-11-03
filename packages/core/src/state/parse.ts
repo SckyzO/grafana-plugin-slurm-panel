@@ -26,7 +26,7 @@ const MODIFIERS: Record<string, string> = {
   '#': 'powering up',
   '!': 'power down pending',
   '%': 'powering down',
-  '$': 'in a maintenance reservation',
+  $: 'in a maintenance reservation',
   '@': 'reboot pending',
   '^': 'reboot issued',
   '-': 'planned by backfill',

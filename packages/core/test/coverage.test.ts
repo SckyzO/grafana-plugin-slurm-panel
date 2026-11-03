@@ -4,7 +4,11 @@ import { UNGROUPED } from '../src/group/keys.js';
 import type { SlurmNode } from '../src/model/types.js';
 
 const node = (name: string, labels: Record<string, string>, partitions: string[] = []): SlurmNode => ({
-  name, state: 'idle', partitions, labels, facets: { gres: [] },
+  name,
+  state: 'idle',
+  partitions,
+  labels,
+  facets: { gres: [] },
 });
 
 const withRack = [
@@ -27,8 +31,11 @@ describe('suggestLabel', () => {
 
   it('names a label that would cover more than the active source does', () => {
     const source = { kind: 'capture', pattern: '^(zzz)' } as const;
-    expect(suggestLabel({ nodes: withRack, source, placed: 0, ...args }))
-      .toEqual({ label: 'rack', covered: 3, total: 3 });
+    expect(suggestLabel({ nodes: withRack, source, placed: 0, ...args })).toEqual({
+      label: 'rack',
+      covered: 3,
+      total: 3,
+    });
   });
 
   it('never nominates the node label, which is one group per node', () => {
@@ -45,11 +52,7 @@ describe('suggestLabel', () => {
     // Three nodes, two states: the identity guard does not fire here, so the
     // state-label exclusion is the only thing that can keep this quiet. That
     // is what makes the test able to fail.
-    const nodes = [
-      node('c1', { status: 'idle' }),
-      node('c2', { status: 'down' }),
-      node('c3', { status: 'idle' }),
-    ];
+    const nodes = [node('c1', { status: 'idle' }), node('c2', { status: 'down' }), node('c3', { status: 'idle' })];
     const source = { kind: 'capture', pattern: '^(zzz)' } as const;
     expect(suggestLabel({ nodes, source, placed: 0, ...args })).toBeUndefined();
   });

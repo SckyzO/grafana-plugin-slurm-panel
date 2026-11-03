@@ -50,11 +50,7 @@ function compareNodes(a: SlurmNode, b: SlurmNode): number {
   return collator.compare(a.name, b.name);
 }
 
-export function buildGroups(
-  nodes: SlurmNode[],
-  source: KeySource,
-  opts: BuildOptions = {}
-): GroupedModel {
+export function buildGroups(nodes: SlurmNode[], source: KeySource, opts: BuildOptions = {}): GroupedModel {
   if (nodes.length === 0) {
     return { groups: [], nodeCount: 0, cellCount: 0 };
   }
@@ -105,14 +101,24 @@ export function buildGroups(
     .sort((a, b) => {
       // "ungrouped" is a fallback, not a rack; it belongs last even when a
       // table happens to declare a group by that name.
-      if (a.key === UNGROUPED) { return b.key === UNGROUPED ? 0 : 1; }
-      if (b.key === UNGROUPED) { return -1; }
+      if (a.key === UNGROUPED) {
+        return b.key === UNGROUPED ? 0 : 1;
+      }
+      if (b.key === UNGROUPED) {
+        return -1;
+      }
       const ra = rank.get(a.key);
       const rb = rank.get(b.key);
-      if (ra !== undefined && rb !== undefined) { return ra - rb; }
+      if (ra !== undefined && rb !== undefined) {
+        return ra - rb;
+      }
       // A declared group outranks one that was merely discovered.
-      if (ra !== undefined) { return -1; }
-      if (rb !== undefined) { return 1; }
+      if (ra !== undefined) {
+        return -1;
+      }
+      if (rb !== undefined) {
+        return 1;
+      }
       return collator.compare(a.key, b.key);
     });
 

@@ -19,7 +19,13 @@ const load = (name: string): MinimalFrame[] => {
   }));
 };
 
-const LABELS: LabelNames = { node: 'node', state: 'status', partition: 'partition', gresType: 'gres_type', reason: 'reason' };
+const LABELS: LabelNames = {
+  node: 'node',
+  state: 'status',
+  partition: 'partition',
+  gresType: 'gres_type',
+  reason: 'reason',
+};
 const QUERIES: QueryBindings = { state: 'A' };
 
 describe.each([
@@ -60,7 +66,13 @@ describe.each([
 describe('ingest reports rather than guesses', () => {
   it('skips a frame carrying no identity, naming its refId', () => {
     const frames: MinimalFrame[] = [
-      { refId: 'A', fields: [{ name: 'Time', type: 'time', values: [1] }, { name: 'Value', type: 'number', values: [1] }] },
+      {
+        refId: 'A',
+        fields: [
+          { name: 'Time', type: 'time', values: [1] },
+          { name: 'Value', type: 'number', values: [1] },
+        ],
+      },
     ];
     const { nodes, warnings } = ingest({ frames, queries: QUERIES, labels: LABELS });
     expect(nodes).toEqual([]);
@@ -134,7 +146,11 @@ describe('ingest names a query that carries no node identity', () => {
         { name: 'Value', type: 'number', values: [540] },
       ],
     };
-    const { warnings } = ingest({ frames: [...stateFrames, sum], queries: { state: 'A', cpuAlloc: 'B' }, labels: LABELS });
+    const { warnings } = ingest({
+      frames: [...stateFrames, sum],
+      queries: { state: 'A', cpuAlloc: 'B' },
+      labels: LABELS,
+    });
     expect(warnings).toEqual([{ ...NO_IDENTITY, refId: 'B' }]);
   });
 
@@ -161,9 +177,7 @@ describe('ingest names a query that carries no node identity', () => {
   it('counts the series skipped when only some of them carry identity', () => {
     const { nodes, warnings } = ingest({ frames: [...stateFrames, blind('A')], queries: QUERIES, labels: LABELS });
     expect(nodes.length).toBeGreaterThan(0);
-    expect(warnings).toEqual([
-      { ...NO_IDENTITY, refId: 'A', skippedSeries: 1, totalSeries: stateFrames.length + 1 },
-    ]);
+    expect(warnings).toEqual([{ ...NO_IDENTITY, refId: 'A', skippedSeries: 1, totalSeries: stateFrames.length + 1 }]);
   });
 
   it('stays quiet about a facet query whose series all carry identity', () => {
@@ -174,7 +188,11 @@ describe('ingest names a query that carries no node identity', () => {
         { name: 'Value', type: 'number', labels: { node: 'c1' }, values: [4] },
       ],
     };
-    const { warnings } = ingest({ frames: [...stateFrames, cpu], queries: { state: 'A', cpuAlloc: 'B' }, labels: LABELS });
+    const { warnings } = ingest({
+      frames: [...stateFrames, cpu],
+      queries: { state: 'A', cpuAlloc: 'B' },
+      labels: LABELS,
+    });
     expect(warnings).toEqual([]);
   });
 });
@@ -235,7 +253,12 @@ describe('ingest names a facet value that is not a finite number', () => {
 
   it('names the nodes once per query and facet', () => {
     const { warnings } = ingest({
-      frames: [...stateFrames, valued('B', 'c1', Number.NaN), valued('B', 'c9', Number.POSITIVE_INFINITY), valued('B', 'c10', 4)],
+      frames: [
+        ...stateFrames,
+        valued('B', 'c1', Number.NaN),
+        valued('B', 'c9', Number.POSITIVE_INFINITY),
+        valued('B', 'c10', 4),
+      ],
       queries: { state: 'A', cpuAlloc: 'B' },
       labels: LABELS,
     });
@@ -280,17 +303,29 @@ describe('ingest joins the facets that carry no partition label', () => {
     refId: 'B',
     fields: [
       { name: 'Time', type: 'time', values: [1789388276915] },
-      { name: 'slurm_node_drain_reason_info', type: 'number',
-        labels: { node: 'c9', reason: 'GPU fell off the bus - RMA pending' }, values: [1] },
+      {
+        name: 'slurm_node_drain_reason_info',
+        type: 'number',
+        labels: { node: 'c9', reason: 'GPU fell off the bus - RMA pending' },
+        values: [1],
+      },
     ],
   };
   const gresFrames: MinimalFrame[] = [
-    { refId: 'C', fields: [
-      { name: 'Time', type: 'time', values: [1789388276915] },
-      { name: 'slurm_node_gres_used', type: 'number', labels: { node: 'g1', gres_type: 'gpu:model_a' }, values: [2] } ] },
-    { refId: 'C', fields: [
-      { name: 'Time', type: 'time', values: [1789388276915] },
-      { name: 'slurm_node_gres_used', type: 'number', labels: { node: 'g1', gres_type: 'gpu:model_b' }, values: [1] } ] },
+    {
+      refId: 'C',
+      fields: [
+        { name: 'Time', type: 'time', values: [1789388276915] },
+        { name: 'slurm_node_gres_used', type: 'number', labels: { node: 'g1', gres_type: 'gpu:model_a' }, values: [2] },
+      ],
+    },
+    {
+      refId: 'C',
+      fields: [
+        { name: 'Time', type: 'time', values: [1789388276915] },
+        { name: 'slurm_node_gres_used', type: 'number', labels: { node: 'g1', gres_type: 'gpu:model_b' }, values: [1] },
+      ],
+    },
   ];
 
   it('attaches a drain reason to a node identified only by name', () => {
@@ -332,7 +367,9 @@ describe('ingest joins the facets that carry no partition label', () => {
       labels: LABELS,
     });
     expect(warnings).toContainEqual({
-      kind: 'ambiguous-scalar', refId: 'G', detail: 'g1 returned 2 differing values for gresUsed gpu:a100',
+      kind: 'ambiguous-scalar',
+      refId: 'G',
+      detail: 'g1 returned 2 differing values for gresUsed gpu:a100',
     });
     expect(nodes.find((n) => n.name === 'g1')?.facets.gres.find((g) => g.type === 'gpu:a100')?.used).toBeUndefined();
   });
@@ -356,12 +393,20 @@ describe('ingest joins the facets that carry no partition label', () => {
 
   it('reports an ambiguous scalar instead of keeping an arbitrary row', () => {
     const twice: MinimalFrame[] = [
-      { refId: 'D', fields: [
-        { name: 'Time', type: 'time', values: [1] },
-        { name: 'slurm_node_cpu_alloc', type: 'number', labels: { node: 'c1', partition: 'cpu' }, values: [4] } ] },
-      { refId: 'D', fields: [
-        { name: 'Time', type: 'time', values: [1] },
-        { name: 'slurm_node_cpu_alloc', type: 'number', labels: { node: 'c1', partition: 'debug' }, values: [9] } ] },
+      {
+        refId: 'D',
+        fields: [
+          { name: 'Time', type: 'time', values: [1] },
+          { name: 'slurm_node_cpu_alloc', type: 'number', labels: { node: 'c1', partition: 'cpu' }, values: [4] },
+        ],
+      },
+      {
+        refId: 'D',
+        fields: [
+          { name: 'Time', type: 'time', values: [1] },
+          { name: 'slurm_node_cpu_alloc', type: 'number', labels: { node: 'c1', partition: 'debug' }, values: [9] },
+        ],
+      },
     ];
     const { warnings } = ingest({
       frames: [...stateFrames, ...twice],
@@ -369,7 +414,9 @@ describe('ingest joins the facets that carry no partition label', () => {
       labels: LABELS,
     });
     expect(warnings).toContainEqual({
-      kind: 'ambiguous-scalar', refId: 'D', detail: 'c1 returned 2 differing values for cpuAlloc',
+      kind: 'ambiguous-scalar',
+      refId: 'D',
+      detail: 'c1 returned 2 differing values for cpuAlloc',
     });
   });
 });
@@ -451,8 +498,14 @@ describe('labels inherited from Object.prototype', () => {
     // The guard must not cost the behaviour it sits next to: `rack` differing
     // between two series of one node is genuinely ambiguous and still goes.
     const two: MinimalFrame[] = [
-      { refId: 'A', fields: [{ name: 'Value', type: 'number', labels: { node: 'c1', status: 'idle', rack: 'r1' }, values: [1] }] },
-      { refId: 'A', fields: [{ name: 'Value', type: 'number', labels: { node: 'c1', status: 'idle', rack: 'r2' }, values: [1] }] },
+      {
+        refId: 'A',
+        fields: [{ name: 'Value', type: 'number', labels: { node: 'c1', status: 'idle', rack: 'r1' }, values: [1] }],
+      },
+      {
+        refId: 'A',
+        fields: [{ name: 'Value', type: 'number', labels: { node: 'c1', status: 'idle', rack: 'r2' }, values: [1] }],
+      },
     ];
     const node = ingest({ frames: two, queries: QUERIES, labels: LABELS }).nodes[0];
     expect(node?.labels['rack']).toBeUndefined();

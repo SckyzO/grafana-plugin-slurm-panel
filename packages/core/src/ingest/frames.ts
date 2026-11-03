@@ -1,6 +1,13 @@
 import { toSamples } from './labels.js';
 import type {
-  GresEntry, IngestInput, IngestResult, IngestWarning, MinimalFrame, NodeFacets, Sample, SlurmNode,
+  GresEntry,
+  IngestInput,
+  IngestResult,
+  IngestWarning,
+  MinimalFrame,
+  NodeFacets,
+  Sample,
+  SlurmNode,
 } from '../model/types.js';
 
 type ScalarFacet = 'cpuAlloc' | 'cpuTotal' | 'memAlloc' | 'memTotal' | 'drainSince';
@@ -244,7 +251,9 @@ export function ingest({ frames, queries, labels }: IngestInput): IngestResult {
         continue;
       }
       if (values.size > 1) {
-        warnings.push(warn('ambiguous-scalar', refId, `${name} returned ${values.size} differing values for ${facet} ${type}`));
+        warnings.push(
+          warn('ambiguous-scalar', refId, `${name} returned ${values.size} differing values for ${facet} ${type}`)
+        );
         continue;
       }
       const value = [...values][0];
