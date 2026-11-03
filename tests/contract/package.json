@@ -1,6 +1,6 @@
 {
   "name": "@slurm-views/contract-tests",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "scripts": {
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test value-mappings.test.cjs relabel.test.cjs readme-pins.test.cjs"

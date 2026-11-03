@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.1
+
+No change in behaviour. The panel draws, warns and behaves exactly as in
+0.1.0; only where its source lives has changed.
+
+The engine the panel is built on (ingest, state parsing, grouping, layout)
+moved from a separate workspace package into the plugin's own directory, under
+`src/core`, so that the plugin's source is complete on its own, as the Grafana
+catalogue review asked. The links in this README and in `plugin.json` point at
+this version's tag.
+
 ## 0.1.0
 
 First release, and an unofficial one: the plugin is not signed and is not in the
