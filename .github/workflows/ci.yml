@@ -77,7 +77,7 @@ jobs:
         # but `cache-to: type=gha,mode=max` grants write on the repository
         # cache, so an unreviewed change to @main reaches further than the
         # matrix it resolves. Dependabot updates the pin like any other.
-        uses: grafana/plugin-actions/e2e-version@ddb2d6b73b35db65cf6347881aa0ef6a1e2d3cb4 # main as of 2026-10-26
+        uses: grafana/plugin-actions/e2e-version@3a3c7b24545d8427541d0f0761e407a1bfa10a3e # main as of 2026-10-26
         with:
           # The plugin lives in a monorepo subdirectory; the action reads
           # grafanaDependency from its plugin.json, not the repo root's.
