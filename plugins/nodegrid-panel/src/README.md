@@ -578,18 +578,10 @@ _where_.
 - [`docs/value-mappings.md`](https://github.com/SckyzO/grafana-plugin-slurm-panel/blob/main/docs/value-mappings.md) — read
   before editing a Value mapping by hand. The obvious way to write one fails
   silently.
-- [`dev/README.md`](https://github.com/SckyzO/grafana-plugin-slurm-panel/blob/main/dev/README.md) — the dev stack, its
-  synthetic cluster and the provisioned dashboards this documentation's
-  screenshots come from.
 
-## Contributing and feedback
+## Feedback
 
 Bug reports and questions go to
 [GitHub issues](https://github.com/SckyzO/grafana-plugin-slurm-panel/issues) — a dashboard JSON
 that reproduces the problem is the single most useful thing you can attach,
 since almost everything this panel does is decided by its options.
-
-If you want to send code, [`CONTRIBUTING.md`](https://github.com/SckyzO/grafana-plugin-slurm-panel/blob/main/CONTRIBUTING.md)
-has the toolchain contract: everything runs in containers through `make`, so
-there is nothing to install but Docker, and `make check` on a fresh clone is
-the whole build.
