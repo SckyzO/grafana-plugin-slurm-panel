@@ -10,6 +10,11 @@ on:
 
 permissions:
   contents: write
+  # Both for the provenance attestation alone: the OIDC token proves to
+  # Sigstore which workflow, commit and runner built the archive, and the
+  # second lets the job store the attestation against this repository.
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -129,6 +134,18 @@ jobs:
           fi
           echo "signed=$signed" >> "$GITHUB_OUTPUT"
 
+      - id: attest
+        name: Attest the archive's provenance
+        # The archive exactly as published, after signing and validation: an
+        # attestation of dist/ would vouch for files nobody downloads. Anyone
+        # can then check that the zip came from this workflow at this tag with
+        # `gh attestation verify <zip> --repo <owner>/<repo>`. The catalogue
+        # review recommends it; the same action and pin as Grafana's own
+        # build-plugin action.
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ steps.artifact.outputs.path }}
+
       - name: Publish the release
         # `gh` rather than a third-party action: every action this workflow
         # runs is pinned to a commit and every image to an exact version tag,
@@ -139,6 +156,7 @@ jobs:
           NAME: ${{ steps.artifact.outputs.name }}
           SHA1: ${{ steps.artifact.outputs.sha1 }}
           SIGNED: ${{ steps.artifact.outputs.signed }}
+          ATTESTATION: ${{ steps.attest.outputs.attestation-url }}
         run: |
           url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${NAME}"
           # The plugin's own directory, not the repository root: pointed at
@@ -147,6 +165,7 @@ jobs:
           source="https://github.com/${GITHUB_REPOSITORY}/tree/${GITHUB_REF_NAME}/plugins/nodegrid-panel"
           {
             echo "Signed: ${SIGNED}"
+            echo "Provenance attestation: ${ATTESTATION}"
             echo
             echo "Submitting this version to the Grafana catalogue needs these three values:"
             echo
