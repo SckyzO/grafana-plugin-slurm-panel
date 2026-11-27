@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.2
+
+No change in behaviour. The first signed release, with a Community signature,
+and its archive now carries a provenance attestation that ties it to the
+release workflow at this tag.
+
+The catalogue page no longer points at the development stack or at how to
+send code: both are for contributors and stay in the repository. Bug reports
+still go to GitHub issues.
+
 ## 0.1.1
 
 No change in behaviour. The panel draws, warns and behaves exactly as in
