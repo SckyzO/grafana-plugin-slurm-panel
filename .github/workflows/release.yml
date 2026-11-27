@@ -8,19 +8,22 @@ on:
   push:
     tags: ['v*']
 
+# Read-only by default. The job that builds runs `make check` — eslint, jest
+# and webpack, dependency code in process — so it gets nothing it could write
+# with. Only `publish`, which runs no dependency code, can create the release
+# and mint the OIDC token the attestation needs.
 permissions:
-  contents: write
-  # Both for the provenance attestation alone: the OIDC token proves to
-  # Sigstore which workflow, commit and runner built the archive, and the
-  # second lets the job store the attestation against this repository.
-  id-token: write
-  attestations: write
+  contents: read
 
 jobs:
-  release:
-    name: Build, sign and publish the archive
+  build:
+    name: Build, sign and validate the archive
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      name: ${{ steps.artifact.outputs.name }}
+      sha1: ${{ steps.artifact.outputs.sha1 }}
+      signed: ${{ steps.artifact.outputs.signed }}
     env:
       # A boolean, not the secret. The signing step has to test whether the
       # token exists, and the `secrets` context is not available in a step's
@@ -134,6 +137,39 @@ jobs:
           fi
           echo "signed=$signed" >> "$GITHUB_OUTPUT"
 
+      - name: Hand the archive to the publishing job
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: |
+            ${{ steps.artifact.outputs.path }}
+            ${{ steps.artifact.outputs.path }}.sha1
+          # .artifacts/ starts with a dot, and the action skips anything under
+          # a hidden directory unless told otherwise.
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Attest and publish the archive
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The only job that writes. It checks nothing out and runs no dependency
+    # code: it takes the archive `build` validated, attests it, publishes it.
+    permissions:
+      contents: write
+      # Both for the provenance attestation alone: the OIDC token proves to
+      # Sigstore which workflow, commit and runner built the archive, and the
+      # second lets the job store the attestation against this repository.
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: release
+
       - id: attest
         name: Attest the archive's provenance
         # The archive exactly as published, after signing and validation: an
@@ -144,7 +180,7 @@ jobs:
         # build-plugin action.
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: ${{ steps.artifact.outputs.path }}
+          subject-path: release/${{ needs.build.outputs.name }}
 
       - name: Publish the release
         # `gh` rather than a third-party action: every action this workflow
@@ -152,10 +188,12 @@ jobs:
         # and the CLI is already on the runner.
         env:
           GH_TOKEN: ${{ github.token }}
-          ZIP: ${{ steps.artifact.outputs.path }}
-          NAME: ${{ steps.artifact.outputs.name }}
-          SHA1: ${{ steps.artifact.outputs.sha1 }}
-          SIGNED: ${{ steps.artifact.outputs.signed }}
+          # No checkout here, so `gh` cannot read the repository from .git.
+          GH_REPO: ${{ github.repository }}
+          ZIP: release/${{ needs.build.outputs.name }}
+          NAME: ${{ needs.build.outputs.name }}
+          SHA1: ${{ needs.build.outputs.sha1 }}
+          SIGNED: ${{ needs.build.outputs.signed }}
           ATTESTATION: ${{ steps.attest.outputs.attestation-url }}
         run: |
           url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${NAME}"
