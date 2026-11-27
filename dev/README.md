@@ -443,6 +443,14 @@ absent and signs the moment it is present, with no edit needed between the two.
 To sign in CI later, add the token as a repository secret named
 `GRAFANA_ACCESS_POLICY_TOKEN`. Nothing else changes.
 
+Signed or not, the release job also attests the archive it publishes, and the
+release notes link the attestation. To check that a downloaded zip is the one
+this workflow built:
+
+```bash
+gh attestation verify tomzone-slurm-panel-<version>.zip --repo SckyzO/grafana-plugin-slurm-panel
+```
+
 ### Submitting to the catalogue
 
 *Grafana Cloud > Org Settings > My Plugins > Submit New Plugin* asks for the
